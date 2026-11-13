@@ -10,5 +10,5 @@
 
 | Episode | Topic | Status |
 |---|---|---|
-| 1 | What if you hussed 2× faster every 2 seconds? | Brief added; video pending |
+| 1 | What if you hussed 2× faster every 2 seconds? | Complete (v2 cut) |
 | 2 | What if your money doubled every 2 seconds? | Complete (v2 cut) |
