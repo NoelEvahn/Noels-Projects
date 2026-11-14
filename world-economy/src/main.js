@@ -135,7 +135,7 @@ async function boot() {
   function frame(now) {
     requestAnimationFrame(frame);
     if (frozen) { lastT = now; return; }
-    const dtReal = Math.min(0.1, Math.max(0, (now - lastT) / 1000)); lastT = now;
+    const dtReal = Math.min(0.25, Math.max(0, (now - lastT) / 1000)); lastT = now; // S3B: 0.25 s cap + 8 sub-steps so slow (software GL) frames do not run the sim in slow motion
     perf.beginFrame(now);
     Input.poll();
     if (Input.pressed('debugHud')) hud.toggle();
@@ -143,8 +143,8 @@ async function boot() {
     acc += dtReal;
     let steps2 = 0;
     const tSim = performance.now();
-    while (acc >= 1 / 60 && steps2 < 4) { game.fixedUpdate(1 / 60); clock.advance(1 / 60); bus.flush(); acc -= 1 / 60; steps2++; }
-    if (steps2 === 4) acc = 0;
+    while (acc >= 1 / 60 && steps2 < 8) { game.fixedUpdate(1 / 60); clock.advance(1 / 60); bus.flush(); acc -= 1 / 60; steps2++; }
+    if (steps2 === 8) acc = 0;
     game.update(dtReal, acc * 60);
     perf.mark('physics', performance.now() - tSim);
     const pv = game.activeVehicle();

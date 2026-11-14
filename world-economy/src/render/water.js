@@ -52,7 +52,7 @@ float calmF(vec2 p){ float h = smoothstep(-1140.0, -1100.0, p.x) * smoothstep(-6
   vec3 objectNormal = normalize(vec3(-sl.x, 1.0, -sl.y));`)
         .replace('#include <begin_vertex>', '#include <begin_vertex>\n  transformed.y += hh;');
       fs = fs.replace('#include <common>', `#include <common>
-uniform sampler2D tHeight; uniform vec3 uShallow, uMid, uDeep, uRiver; uniform float uLevel, uNA, uNB, uFoamL, uTime, uWet, uNight;
+uniform sampler2D tHeight; uniform vec3 uShallow, uMid, uDeep, uRiver; uniform float uLevel, uNA, uNB, uFoamL, uTime, uWet, uNight, uWaveF;
 uniform sampler2DArray tSA, tSD, tDA; varying vec3 vWave;
 float depthAt(vec2 p){ vec2 uv = (p + 2000.0) / 4000.0; if (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0 || uv.y > 1.0) return 40.0; return uLevel - texture2D(tHeight, uv).r; }`)
         .replace('#include <map_fragment>', `

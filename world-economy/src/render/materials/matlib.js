@@ -66,6 +66,7 @@ export const MatLib = {
       if (variant && variant.doubleSided) m.side = THREE.DoubleSide;
       m.name = matId;
       if (lit.has(m) && csm) applyCsm(m);
+      if (MatLib.shaderTier === 'low' && m.userData.patchFlags && m.userData.patchFlags.arr) { m.defines = m.defines || {}; m.defines.LOE_LOW = ''; }
       cache.set(key, m);
     }
     return m;
@@ -76,6 +77,20 @@ export const MatLib = {
   textureSet() { return null; },
   ensure() { return Promise.resolve(); },
   release() {},
+  /** shader tier: 'low' compiles the cheap variant (2-layer splat, albedo-only taps, no normal maps) for the Low texture tier */
+  setShaderTier(tier) {
+    const low = tier === 'low';
+    if (MatLib.shaderTier === tier) return false;
+    MatLib.shaderTier = tier;
+    for (const m of lit) {
+      if (!m.userData.patchFlags || !m.userData.patchFlags.arr) continue;
+      m.defines = m.defines || {};
+      if (low) m.defines.LOE_LOW = ''; else delete m.defines.LOE_LOW;
+      m.needsUpdate = true;
+    }
+    return true;
+  },
+  shaderTier: 'full',
   forEach(fn) { for (const m of cache.values()) fn(m); },
   stats() { return { materials: cache.size, programs: 0, textureBytes: MemTracker.libraryTextureBytes }; },
 };

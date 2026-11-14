@@ -86,6 +86,7 @@ export function createRenderer({ canvas, settings, perf, quality, onRendererStri
       const all = changed.includes('*');
       if (w) api.resize(w, h);
       lighting.setShadows(d.shadows);
+      MatLib.setShaderTier(d.textures.tier === 'low' ? 'low' : 'full');
       sky.envMode = d.reflections.mode === 'off' ? 'off' : 'env';
       camera.fov = d.camera.fov; camera.far = Math.max(2500, d.farClip); camera.updateProjectionMatrix();
       veg.configure({ density: d.vegetation.density, treeCaps: d.vegetation.treeCaps, groundCoverRadius: d.vegetation.groundCoverRadius, lodBias: d.lodBias, mid: d.chunkRadii[1], shadows: d.shadows.enabled, atlasSize: Math.min(2048, d.textures.atlas) });

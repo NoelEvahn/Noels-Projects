@@ -33,6 +33,15 @@ async function load(browser, url, label) {
 }
 const pos = (page) => page.evaluate(() => window.__LOE.game.playerPos());
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+// Annex G: frame rate is never a pass/fail measure here. Keys are held for an amount of *simulated* time (software GL renders
+// at 2-4 fps with the Stage 3 renderer), capped at 60 s of wall time.
+const simT = (page) => page.evaluate(() => { const s = window.__LOE.clock.state; return (s.total + s.frac) / (s.scale || 1); });
+async function hold(page, key, simSeconds) {
+  const t0 = await simT(page), w0 = Date.now();
+  await page.keyboard.down(key);
+  while ((await simT(page)) - t0 < simSeconds && Date.now() - w0 < 60000) await wait(100);
+  await page.keyboard.up(key);
+}
 
 (async () => {
   const browser = await chromium.launch();
@@ -50,7 +59,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   await page.bringToFront();
   await page.evaluate(() => window.__LOE.teleport('poi.city.spawn', 0));
   const p0 = await pos(page);
-  await page.keyboard.down('KeyW'); await wait(2500); await page.keyboard.up('KeyW');
+  await hold(page, 'KeyW', 2.5);
   const p1 = await pos(page);
   const moved = Math.hypot(p1[0] - p0[0], p1[2] - p0[2]);
   check('player walks forward with W', moved > 3, `moved ${moved.toFixed(1)} m, dz ${(p1[2] - p0[2]).toFixed(1)}`);
@@ -61,11 +70,11 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   let mode = await page.evaluate(() => window.__LOE.game.player.mode);
   check('E enters the starter car', mode === 'vehicle', 'mode ' + mode);
   const c0 = await pos(page);
-  await page.keyboard.down('KeyW'); await wait(3500); await page.keyboard.up('KeyW');
+  await hold(page, 'KeyW', 3.5);
   const c1 = await pos(page);
   const sp = await page.evaluate(() => window.__LOE.game.activeVehicle().sim.speed);
   check('car drives with W', Math.hypot(c1[0] - c0[0], c1[2] - c0[2]) > 8 && sp > 3, `moved ${Math.hypot(c1[0] - c0[0], c1[2] - c0[2]).toFixed(1)} m, speed ${sp.toFixed(1)}`);
-  await page.keyboard.down('KeyS'); await wait(2500); await page.keyboard.up('KeyS');
+  await hold(page, 'KeyS', 2.5);
   await page.keyboard.press('KeyE'); await wait(600);
   mode = await page.evaluate(() => window.__LOE.game.player.mode);
   check('E exits the car', mode === 'foot', 'mode ' + mode);
@@ -75,7 +84,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   mode = await page.evaluate(() => window.__LOE.game.player.mode);
   check('E enters the river skiff', mode === 'boat', 'mode ' + mode);
   const b0 = await pos(page);
-  await page.keyboard.down('KeyW'); await wait(4000); await page.keyboard.up('KeyW');
+  await hold(page, 'KeyW', 4);
   const b1 = await pos(page);
   check('boat moves with W', Math.hypot(b1[0] - b0[0], b1[2] - b0[2]) > 2, `moved ${Math.hypot(b1[0] - b0[0], b1[2] - b0[2]).toFixed(1)} m, y ${b1[1].toFixed(2)}`);
   await page.keyboard.press('KeyE'); await wait(600);

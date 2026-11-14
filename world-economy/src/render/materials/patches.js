@@ -54,9 +54,17 @@ const ARR_PARS = `
 uniform sampler2DArray tHA, tHD, tSA, tSD, tDA, tDD; uniform sampler2D tProps;
 uniform float uWet, uNight, uWinLit, uLampGain, uWinGain, uDay, uMacro, uNoiseL, uTime;
 void sampleLayer(float L, vec2 uv, vec2 gx, vec2 gy, out vec4 a, out vec4 d){
+#ifdef LOE_LOW
+  // Low tier: albedo only (no normal/roughness/AO fetch); constant data texel
+  d = vec4(0.5, 0.5, 0.86, 1.0);
+  if (L < 63.5) a = textureGrad(tHA, vec3(uv, L), gx, gy);
+  else if (L < 127.5) a = textureGrad(tSA, vec3(uv, L - 64.0), gx, gy);
+  else a = textureGrad(tDA, vec3(uv, L - 128.0), gx, gy);
+#else
   if (L < 63.5){ a = textureGrad(tHA, vec3(uv, L), gx, gy); d = textureGrad(tHD, vec3(uv, L), gx, gy); }
   else if (L < 127.5){ a = textureGrad(tSA, vec3(uv, L - 64.0), gx, gy); d = textureGrad(tSD, vec3(uv, L - 64.0), gx, gy); }
   else { a = textureGrad(tDA, vec3(uv, L - 128.0), gx, gy); d = textureGrad(tDD, vec3(uv, L - 128.0), gx, gy); }
+#endif
 }
 float hashW(float n){ return fract(sin(n * 12.9898 + uDay * 78.233) * 43758.5453); }
 `;
@@ -65,17 +73,32 @@ const ARR_MAIN = (splat) => `
   vec2 tuv = vTUv; vec2 gx = dFdx(tuv), gy = dFdy(tuv);
   vec4 sA, sD; float Lmain;
 ${splat ? `
+#ifdef LOE_LOW
+  // Low tier: blend the two strongest layers only
+  float wa = -1.0, wb = -1.0, Lb = uSplatL[0]; Lmain = uSplatL[0];
+  for (int i = 0; i < 8; i++){
+    float w = i < 4 ? vW0[i] : vW1[i - 4];
+    if (w > wa){ wb = wa; Lb = Lmain; wa = w; Lmain = uSplatL[i]; } else if (w > wb){ wb = w; Lb = uSplatL[i]; }
+  }
+  vec4 a2, d2; sampleLayer(Lmain, tuv, gx, gy, sA, sD);
+  if (wb > 0.04){ sampleLayer(Lb, tuv, gx, gy, a2, d2); float f = wb / (wa + wb); sA = mix(sA, a2, f); }
+#else
   sA = vec4(0.0); sD = vec4(0.0); float wsum = 0.0; Lmain = uSplatL[0]; float wbest = 0.0;
   for (int i = 0; i < 8; i++){
     float w = i < 4 ? vW0[i] : vW1[i - 4];
     if (w > 0.02){ vec4 a, d; sampleLayer(uSplatL[i], tuv, gx, gy, a, d); sA += a * w; sD += d * w; wsum += w; if (w > wbest){ wbest = w; Lmain = uSplatL[i]; } }
   }
-  sA /= max(wsum, 1e-3); sD /= max(wsum, 1e-3);` : `
+  sA /= max(wsum, 1e-3); sD /= max(wsum, 1e-3);
+#endif` : `
   Lmain = vAux.x; sampleLayer(vAux.x, tuv, gx, gy, sA, sD);`}
   vec4 lp = texelFetch(tProps, ivec2(int(Lmain + 0.5), 0), 0);
   vec2 mvUv = vWPos.xz * 0.013;
   vec4 mn = texture(tDA, vec3(mvUv, uNoiseL));
+#ifdef LOE_LOW
+  vec4 mn2 = mn.gbar;
+#else
   vec4 mn2 = texture(tDA, vec3(vWPos.xz * 0.0021 + 0.37, uNoiseL));
+#endif
   float macro = (mn.r * 0.6 + mn2.r * 0.4 - 0.5) * lp.b * uMacro;
   vec3 albedo = sA.rgb * vTint.rgb * ${splat ? '1.28' : '1.0'} * (1.0 + 0.16 * macro);
   float rough = clamp(sD.z * (1.0 + 0.2 * macro), 0.02, 1.0);
@@ -86,6 +109,7 @@ ${splat ? `
   diffuseColor.rgb *= albedo;
 `;
 const NORMAL_MAIN = `
+#ifndef LOE_LOW
   {
     vec3 mapN = vec3(sD.xy * 2.0 - 1.0, 0.0);
     float puddleFlat = 1.0 - puddle;
@@ -97,6 +121,7 @@ const NORMAL_MAIN = `
     float det = max(dot(T, T), dot(B, B)); float sc = det == 0.0 ? 0.0 : inversesqrt(det);
     normal = normalize(T * sc * mapN.x + B * sc * mapN.y + N * mapN.z);
   }
+#endif
 `;
 const AO_MAIN = `
   {

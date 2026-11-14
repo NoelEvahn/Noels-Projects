@@ -59,7 +59,7 @@ export function createChunkManager({ scene, far, getRadii }) {
         ctx.seed = pl.seed;
         const r = b(pl, ctx);
         for (const batch of r.batches) {
-          const mid = MatLib.has(batch.materialId) ? batch.materialId : 'mat.world';
+          const mid = batch.geometry.art && MatLib.has(batch.materialId) ? batch.materialId : 'mat.world';
           if (r.worldSpace) appendBatch(gbFor(mid), batch.geometry, 0, 0, 0, 0);
           else appendBatch(gbFor(mid), batch.geometry, pl.x, pl.y, pl.z, pl.rotY);
         }

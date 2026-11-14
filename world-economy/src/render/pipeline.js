@@ -122,28 +122,28 @@ export function createPipeline(renderer, perf) {
   const fxaaMat = new THREE.ShaderMaterial({ ...FXAAShader, uniforms: THREE.UniformsUtils.clone(FXAAShader.uniforms), depthTest: false, depthWrite: false });
   let smaa = null;
   let cfg = null, w = 0, h = 0;
-  let rtScene = null, rtAO = null, rtRays = null, rtLDR = null; const bloomRTs = [];
+  let rtScene = null, rtAO = null, rtRays = null, rtLDR = null; const bloomRTs = [], upRTs = [];
   const tmpV = new THREE.Vector3();
 
   function rt(wi, hi, o = {}) { const t = new THREE.WebGLRenderTarget(Math.max(1, wi), Math.max(1, hi), { depthBuffer: false, type: THREE.HalfFloatType, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, generateMipmaps: false, ...o }); MemTracker.addRenderTarget(t, t.width, t.height, o.type === THREE.UnsignedByteType ? 4 : 8); return t; }
   function free(t) { if (t) { MemTracker.removeRenderTarget(t); t.dispose(); } }
   function rebuild() {
-    for (const t of [rtScene, rtAO, rtRays, rtLDR, ...bloomRTs]) free(t);
-    bloomRTs.length = 0;
+    for (const t of [rtScene, rtAO, rtRays, rtLDR, ...bloomRTs, ...upRTs]) free(t);
+    bloomRTs.length = 0; upRTs.length = 0;
     const depthTexture = new THREE.DepthTexture(w, h); depthTexture.type = THREE.UnsignedIntType;
     rtScene = rt(w, h, { depthBuffer: true, depthTexture, samples: cfg.msaaSamples || 0 });
     MemTracker.removeRenderTarget(rtScene); MemTracker.addRenderTarget(rtScene, w, h, 8 + 4, Math.max(1, cfg.msaaSamples || 1));
     const hw = Math.ceil(w / 2), hh = Math.ceil(h / 2);
     if (cfg.ao.enabled) rtAO = rt(hw, hh); else rtAO = null;
     if (cfg.godRays) rtRays = rt(hw, hh); else rtRays = null;
-    if (cfg.bloom) { let bw = hw, bh = hh; for (let i = 0; i < 5; i++) { bloomRTs.push(rt(bw, bh)); bw = Math.ceil(bw / 2); bh = Math.ceil(bh / 2); } }
+    if (cfg.bloom) { let bw = hw, bh = hh; for (let i = 0; i < 5; i++) { bloomRTs.push(rt(bw, bh)); if (i < 4) upRTs.push(rt(bw, bh)); bw = Math.ceil(bw / 2); bh = Math.ceil(bh / 2); } }
     const needLDR = cfg.antialiasing === 'fxaa' || cfg.antialiasing === 'smaa';
     rtLDR = needLDR ? rt(w, h, { type: THREE.UnsignedByteType }) : null;
     if (cfg.antialiasing === 'smaa') { if (!smaa) smaa = new SMAAPass(); smaa.setSize(w, h); }
     compMat.uniforms.tColor.value = rtScene.texture; compMat.uniforms.tDepthC.value = depthTexture;
     compMat.uniforms.tAO.value = rtAO ? rtAO.texture : whiteTex; compMat.uniforms.uAOOn.value = rtAO ? 1 : 0;
     compMat.uniforms.tRays.value = rtRays ? rtRays.texture : blackTex;
-    compMat.uniforms.tBloom.value = bloomRTs.length ? bloomRTs[0].texture : blackTex;
+    compMat.uniforms.tBloom.value = upRTs.length ? upRTs[0].texture : blackTex;
     compMat.uniforms.uAOTexel.value.set(1 / hw, 1 / hh); compMat.uniforms.uTexel.value.set(1 / w, 1 / h);
     aoMat.uniforms.tDepth.value = depthTexture; aoMat.uniforms.uTexel.value.set(2 / w, 2 / h); aoMat.uniforms.uSamples.value = cfg.ao.samples || 8;
     raysMat.uniforms.tDepth.value = depthTexture; raysMat.uniforms.tColor.value = rtScene.texture; raysMat.uniforms.uSamples.value = cfg.godRaysSamples || 40;
@@ -198,7 +198,8 @@ export function createPipeline(renderer, perf) {
         preMat.uniforms.tSrc.value = rtScene.texture; preMat.uniforms.uTexel.value.set(1 / w, 1 / h); preMat.uniforms.uThreshold.value = st.bloomThreshold || 1.0;
         pass(preMat, bloomRTs[0], 'bloom');
         for (let i = 1; i < bloomRTs.length; i++) { downMat.uniforms.tSrc.value = bloomRTs[i - 1].texture; downMat.uniforms.uTexel.value.set(1 / bloomRTs[i - 1].width, 1 / bloomRTs[i - 1].height); pass(downMat, bloomRTs[i], 'bloom'); }
-        for (let i = bloomRTs.length - 1; i > 0; i--) { upMat.uniforms.tSrc.value = bloomRTs[i].texture; upMat.uniforms.tPrev.value = bloomRTs[i - 1].texture; upMat.uniforms.uTexel.value.set(1 / bloomRTs[i].width, 1 / bloomRTs[i].height); pass(upMat, bloomRTs[i - 1], 'bloom'); }
+        // upsample chain into separate targets (reading and writing one texture is a feedback loop)
+        for (let i = bloomRTs.length - 1; i > 0; i--) { const src = i === bloomRTs.length - 1 ? bloomRTs[i] : upRTs[i]; upMat.uniforms.tSrc.value = src.texture; upMat.uniforms.tPrev.value = bloomRTs[i - 1].texture; upMat.uniforms.uTexel.value.set(1 / src.width, 1 / src.height); pass(upMat, upRTs[i - 1], 'bloom'); }
         compMat.uniforms.uBloom.value = st.bloom != null ? st.bloom : 0.08;
       }
       compMat.uniforms.uExposure.value = st.exposure; compMat.uniforms.uTime.value = st.time % 100;
@@ -211,7 +212,7 @@ export function createPipeline(renderer, perf) {
       if (perf) perf.recordPass('post', 0, 0);
       api.postCalls = info.render.calls - p0;
     },
-    dispose() { for (const t of [rtScene, rtAO, rtRays, rtLDR, ...bloomRTs]) free(t); },
+    dispose() { for (const t of [rtScene, rtAO, rtRays, rtLDR, ...bloomRTs, ...upRTs]) free(t); },
     get sceneTarget() { return rtScene; },
   };
   return api;
