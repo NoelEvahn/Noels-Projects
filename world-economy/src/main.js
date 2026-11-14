@@ -16,6 +16,7 @@ import { createPerfHud } from './ui/hud/perfHud.js';
 import { createQuality, benchmarkMedian } from './render/quality.js';
 import { attachGovernor } from './render/governor.js';
 import { Audio } from './audio/engine.js';
+import { sunDirection } from './game/env/daynight.js';
 
 const H = installHarness();
 const $ = (id) => document.getElementById(id);
@@ -205,7 +206,7 @@ async function boot() {
     game.camera.fixed = false;
     return settle(120000, 2);
   };
-  H.setTime = (h) => { clock.setHour(h); game.env.timeOfDay = clock.hourFloat; };
+  H.setTime = (h) => { clock.setHour(h); game.env.timeOfDay = clock.hourFloat; sunDirection(game.env.timeOfDay, game.env.sunDir); }; // S3B: sun follows while frozen
   H.setWeather = (type, intensity) => { game.env.weather.type = type; game.env.weather.intensity = intensity; bus.emit('env:weather', { type, intensity }); };
   H.setQuality = (preset) => { if (typeof preset === 'string') quality.applyPreset(preset); else quality.apply(preset); syncPerfQuality(); resize(); return quality.get().graphics; };
   H.quality = quality; H.governor = governor; H.perfHud = perfHud; H.audio = Audio;
