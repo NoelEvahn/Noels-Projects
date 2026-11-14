@@ -13,7 +13,7 @@ import { installHarness } from './qa/harness.js';
 import { VIEWPOINTS } from './qa/viewpoints.js';
 import { createDebugHud } from './ui/hud/debugHud.js';
 import { createPerfHud } from './ui/hud/perfHud.js';
-import { createQuality } from './render/quality.js';
+import { createQuality, benchmarkMedian } from './render/quality.js';
 import { attachGovernor } from './render/governor.js';
 import { Audio } from './audio/engine.js';
 
@@ -56,17 +56,21 @@ async function boot() {
   const perf = createPerf();
   const canvas = $('c');
   let rend;
-  try { rend = createRenderer({ canvas, settings, perf }); }
+  // S3B: the renderer reports its string before baking so Auto resolves first (software GL -> Low, Annex G 3.4)
+  try { rend = createRenderer({ canvas, settings, perf, quality, onRendererString: (rs) => quality.resolveAutoPreset({ rendererString: rs }) }); }
   catch (e) { H.errors.push({ type: 'webgl', message: String(e && e.message || e) }); setStatus('WebGL2 is required: ' + (e && e.message), 1); H._reject(e); return; }
-  // S3A hook: Auto preset (Annex G 3.4). Software GL forces Low with adaptive on; the GPU benchmark path is wired by the renderer (3B).
-  quality.resolveAutoPreset({ rendererString: perf.renderer });
+  Object.assign(marks, rend.marks);
   const governor = attachGovernor(quality);
-  const resize = () => { rend.resize(window.innerWidth, window.innerHeight); const pr = quality.derived().pixelRatio; if (Math.abs(rend.renderer.getPixelRatio() - pr) > 1e-6) rend.renderer.setPixelRatio(pr); };
+  const resize = () => { rend.resize(window.innerWidth, window.innerHeight); };
   const syncPerfQuality = () => { const e = quality.effective(); perf.quality.preset = settings.graphics.preset; perf.quality.resolutionScale = e.resolutionScale; perf.quality.governorLevel = quality.governorLevel; };
-  // minimal Stage-2 renderer adapter: pixel ratio only. 3B replaces it with quality.setAdapter(renderer adapter) (docs/DECISIONS.md).
-  quality.subscribe((ev) => { syncPerfQuality(); if (ev.changed.some((c) => c === 'governor' || c === '*' || c.startsWith('graphics.'))) resize(); if (ev.changed.includes('audio.voiceLimit') || ev.changed.includes('*')) Audio.setVoiceLimit(settings.audio.voiceLimit); });
+  // S3B: the renderer adapter (render/renderer.js, quality.setAdapter) applies every derived change; this subscriber only syncs HUD/audio
+  quality.subscribe((ev) => { syncPerfQuality(); if (ev.changed.includes('audio.voiceLimit') || ev.changed.includes('*')) Audio.setVoiceLimit(settings.audio.voiceLimit); });
   syncPerfQuality();
   window.addEventListener('resize', resize); resize();
+  const applyingEl = document.createElement('div');
+  applyingEl.id = 'applying'; applyingEl.textContent = 'Applying...';
+  applyingEl.style.cssText = 'position:absolute;right:12px;bottom:34px;padding:4px 10px;border-radius:6px;background:rgba(10,14,20,.7);color:#cdd9e5;font:12px system-ui;display:none';
+  $('ui').appendChild(applyingEl);
   marks.rendererMs = Math.round(performance.now() - t0);
 
   game = createGame();
@@ -91,6 +95,22 @@ async function boot() {
   let guard = 0;
   while (Streaming.size && guard++ < 60) { Streaming.pump(40); if (guard % 5 === 0) await tick(); }
   marks.firstChunksMs = Math.round(performance.now() - t0);
+  // shader prewarm (MASTER_SPEC 4.1 step 5): compile every program the first view needs before the first frame
+  setStatus('Compiling shaders...', 0.9); await tick();
+  rend.frame(game, 1, 1 / 60);
+  rend.renderer.compile(rend.scene, rend.camera);
+  marks.prewarmMs = Math.round(performance.now() - t0) - marks.firstChunksMs;
+  // GPU Auto benchmark (Annex G 3.4): Old Town view, 90 frames (first 30 discarded), median -> preset. Software GL resolved Low already.
+  if (settings.graphics.preset === 'auto' && !perf.software) {
+    setStatus('Measuring your GPU...', 0.95); await tick();
+    const v = VIEWPOINTS.V02, saved = { pos: game.camera.pos.slice(), target: game.camera.target.slice(), fixed: game.camera.fixed };
+    game.camera.fixed = true; game.camera.pos = [v.x, World.heightAt(v.x, v.z) + v.h, v.z]; game.camera.target = [v.t[0], World.heightAt(v.t[0], v.t[1]) + v.t[2], v.t[1]];
+    const px = new Uint8Array(4), gl = rend.renderer.getContext(), frames = new Float32Array(90);
+    for (let i = 0; i < 90; i++) { const tb = performance.now(); rend.frame(game, 1, 1 / 60); gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); frames[i] = performance.now() - tb; if (i % 10 === 9) await tick(); }
+    game.camera.pos = saved.pos; game.camera.target = saved.target; game.camera.fixed = saved.fixed;
+    marks.benchmarkMedianMs = +benchmarkMedian(frames).toFixed(2);
+    quality.resolveAutoPreset({ medianFrameMs: marks.benchmarkMedianMs });
+  }
 
   let frozen = false, started = false;
   const hud = createDebugHud({
@@ -100,11 +120,11 @@ async function boot() {
   });
   const perfHud = createPerfHud({ root: $('ui'), perf, quality, getSnapshot: () => H.perf.snapshot(), visible: !!settings.debug.perfHud });
 
-  function renderNow(alpha = 1) {
-    perf.draw.calls; // keep shape stable
-    rend.frame(game, alpha);
+  function renderNow(alpha = 1, dt = 1 / 60) {
+    rend.frame(game, alpha, dt);
+    applyingEl.style.display = rend.applying() ? '' : 'none';
     perf.counts.chunksNear = rend.chunks.counts.near; perf.counts.chunksMid = rend.chunks.counts.mid;
-    perf.counts.entities = game.entities.count; perf.counts.materials = 0;
+    perf.counts.entities = game.entities.count; perf.counts.materials = rend.matStats().materials;
     perf.stream.queue = Streaming.size; perf.stream.sliceOverruns = Streaming.stats.sliceOverruns; perf.stream.maxPumpMs = Streaming.stats.maxPumpMs;
     perf.blockoutFallbacks = Builders.blockoutIds().length;
   }
@@ -135,7 +155,7 @@ async function boot() {
     Streaming.pump(perf.software ? 45 : prevFrameMs > 15 ? 1.5 : 3);
     perf.mark('stream', performance.now() - tS);
     const tR = performance.now();
-    renderNow(acc * 60);
+    renderNow(acc * 60, dtReal);
     perf.mark('render', performance.now() - tR);
     const tU = performance.now();
     hud.update(dtReal); perfHud.update(dtReal);
@@ -170,7 +190,7 @@ async function boot() {
   const settle = async (maxMs = 120000, frames = 3) => {
     const t = performance.now();
     rend.chunks.update(camXZ(), 0, 0, true);
-    while (Streaming.size && performance.now() - t < maxMs) { Streaming.pump(50); await tick(); }
+    while ((Streaming.size || rend.baker.pending) && performance.now() - t < maxMs) { Streaming.pump(50); await tick(); }
     rend.chunks.update(camXZ(), 0, 0); // applies the far-proxy mask for the final chunk set
     for (let i = 0; i < frames; i++) { renderNow(1); await tick(); }
     return { ms: Math.round(performance.now() - t), queue: Streaming.size, frames };
@@ -204,7 +224,10 @@ async function boot() {
       const s = perf.snapshot();
       s.counts.chunksNear = rend.chunks.counts.near; s.counts.chunksMid = rend.chunks.counts.mid; s.counts.entities = game.entities.count;
       s.stream.queue = Streaming.size; s.stream.sliceOverruns = Streaming.stats.sliceOverruns; s.stream.maxPumpMs = Streaming.stats.maxPumpMs;
-      s.draw.calls = rend.renderer.info.render.calls; s.draw.triangles = rend.renderer.info.render.triangles; s.counts.programs = rend.renderer.info.programs ? rend.renderer.info.programs.length : 0;
+      const rc = rend.counters; s.draw.calls = rc.mainCalls; s.draw.triangles = rc.mainTris; s.draw.shadowCalls = rc.shadowCalls; s.draw.shadowTriangles = rc.shadowTris; s.draw.postCalls = rc.postCalls;
+      s.counts.programs = rend.renderer.info.programs ? rend.renderer.info.programs.length : 0;
+      s.mem.textureBytes = MemTracker.textureBytes; s.mem.libraryTextureBytes = MemTracker.libraryTextureBytes; s.mem.renderTargetBytes = MemTracker.renderTargetBytes; s.mem.gpuEstimateBytes = MemTracker.gpuEstimate();
+      s.veg = { ...rend.veg.state, lastPos: undefined }; s.counts.chunksDetail = rend.chunks.counts.detail; s.counts.lights = rend.fx.activeLights; s.counts.particles = rend.fx.particlesAlive;
       s.mem.geometryBytes = MemTracker.geometryBytes; s.blockoutFallbacks = Builders.blockoutIds().length; s.boot = marks; s.sun = game.env.sunDir.slice();
       s.farTris = rend.far.terrain.visibleTris + rend.far.masses.visibleTris; s.chunkTris = rend.chunks.counts.loadedTris;
       s.quality = { preset: settings.graphics.preset, autoResolved: settings.graphics.autoResolved || null, resolutionScale: quality.effective().resolutionScale, governorLevel: quality.governorLevel, adaptive: settings.graphics.adaptive };

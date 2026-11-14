@@ -1,32 +1,27 @@
-// Far proxy (Annex B 7): whole-world terrain at 25 m, merged LOD2 building masses and infrastructure boxes, plus the +-6000 m skirt
-// with Mt. Sable. Chunks covered by loaded near/mid meshes are masked out of the index buffers so nothing is drawn twice.
+// Far proxy (Annex B 7): whole-world terrain at 25 m with the same 8-layer splat as near chunks, LOD2 building masses (baked
+// facade colour + night window pattern) and far road strips, plus an outer ring to +-6000 m that makes the world edge
+// intentional: a forested mountain ring with ridges and snow to the north and east (Mt. Sable), open sea to the south and
+// west fading into the horizon haze. Chunks covered by loaded meshes are masked out of the index buffers (drawn once).
 import * as THREE from 'three';
 import { World } from '../world/query.js';
-import { GeoBuilder } from '../blockout/geo.js';
-import { terrainRgb } from './terrainMesh.js';
 import { terrainPre } from '../world/layout/terrain.js';
-import { addPart } from '../blockout/index.js';
 import { MatLib } from './materials/matlib.js';
-import { MemTracker } from './perf.js';
-import { ARCHETYPES } from '../world/archetypes.js';
-import { hash2 } from '../core/rng.js';
+import { TerrainWriter, terrainWeights } from './terrainMesh.js';
+import { artGeometry, GB, appendBatch } from './geom.js';
+import { Builders } from './builders.js';
+import { addPartDetailed } from '../art/infra/parts.js';
+import { valueNoise, fbm } from '../core/math.js';
 
 const NC = 40;
 
 class MaskedMesh {
-  constructor(geo, ranges, name) {
-    this.ranges = ranges; // per chunk: [start,count] into the master index array
-    this.master = geo.idx.slice(0, geo.in);
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.BufferAttribute(geo.pos.slice(0, geo.vn * 3), 3));
-    g.setAttribute('normal', new THREE.BufferAttribute(geo.nrm.slice(0, geo.vn * 3), 3));
-    g.setAttribute('color', new THREE.BufferAttribute(geo.col.slice(0, geo.vn * 3), 3, true));
-    g.setIndex(new THREE.BufferAttribute(this.master.slice(), 1));
-    g.computeBoundingSphere();
-    MemTracker.addGeometry(g);
-    this.geometry = g;
-    this.mesh = new THREE.Mesh(g, MatLib.get('mat.blockout_far'));
-    this.mesh.name = name; this.mesh.matrixAutoUpdate = false; this.mesh.frustumCulled = false;
+  constructor(arrays, ranges, name, matId) {
+    this.ranges = ranges;
+    this.master = arrays.index instanceof Uint32Array ? arrays.index : Uint32Array.from(arrays.index);
+    const a = { ...arrays, index: this.master.slice() };
+    this.geometry = artGeometry(a);
+    this.mesh = new THREE.Mesh(this.geometry, MatLib.get(matId));
+    this.mesh.name = name; this.mesh.matrixAutoUpdate = false; this.mesh.frustumCulled = false; this.mesh.receiveShadow = true;
     this.visibleTris = 0;
   }
   apply(covered) {
@@ -34,9 +29,8 @@ class MaskedMesh {
     let n = 0;
     for (let k = 0; k < NC * NC; k++) {
       if (covered[k]) continue;
-      const [s, c] = this.ranges[k];
-      if (!c) continue;
-      out.set(this.master.subarray(s, s + c), n); n += c;
+      const r = this.ranges[k]; if (!r || !r[1]) continue;
+      out.set(this.master.subarray(r[0], r[0] + r[1]), n); n += r[1];
     }
     this.geometry.setDrawRange(0, n);
     this.geometry.index.needsUpdate = true;
@@ -44,121 +38,123 @@ class MaskedMesh {
   }
 }
 
-function skirtHeight(x, z) {
+const ridged = (x, z, seed) => { let s = 0, a = 0.5, f = 1; for (let i = 0; i < 4; i++) { const v = 1 - Math.abs(valueNoise(x * f, z * f, seed + i) * 2 - 1); s += a * v * v; a *= 0.5; f *= 2.1; } return s; };
+/** outer ring height: continues the world edge, rises into a mountain ring on land, sinks into the sea elsewhere */
+export function skirtHeight(x, z) {
   const cx = Math.max(-2000, Math.min(2000, x)), cz = Math.max(-2000, Math.min(2000, z));
   const d = Math.max(Math.abs(x - cx), Math.abs(z - cz));
   const base = terrainPre(cx, cz);
-  let h = base > 0 ? base + 0.16 * d + 0.00004 * d * d : base - 0.002 * d;
+  let h;
+  if (base > 0) {
+    const ring = Math.min(1, d / 1400);
+    const mount = (180 + 520 * ridged(x / 1300, z / 1300, 41)) * ring * ring * (3 - 2 * ring);
+    h = base + 0.12 * d + mount + 25 * fbm(x / 300, z / 300, 3, 7) * Math.min(1, d / 200);
+  } else h = base - 0.004 * d - 6 * Math.min(1, d / 300);
   const sx = x - 300, sz = z + 3600, ds = Math.hypot(sx, sz);
-  const sable = 1150 * Math.pow(Math.max(0, 1 - ds / 2500), 1.6);
+  const sable = 1150 * Math.pow(Math.max(0, 1 - ds / 2500), 1.6) * (0.9 + 0.2 * ridged(x / 700, z / 700, 5));
   if (sable > h) h = sable;
   return h;
 }
-const SNOW = GeoBuilder.rgb(0xf2f4f6, 1), ROCKC = GeoBuilder.rgb(0x6f6d68, 1), FOREST = GeoBuilder.rgb(0x2f4a33, 1), SEA = GeoBuilder.rgb(0x6f7f7f, 1), GRASS = GeoBuilder.rgb(0x5f7a48, 1);
 
 export function buildFar(scene) {
   const group = new THREE.Group(); group.name = 'far';
-  // ---- terrain at 25 m, per-chunk index ranges --------------------------------------------------------------------------------
+  const wts = new Float32Array(8);
+  // ---- terrain at 25 m, per-chunk index ranges ----------------------------------------------------------------------------
   const cells = 160, step = 25, N = cells + 1;
-  const g = new GeoBuilder(N * N + 16);
+  const tw = new TerrainWriter(N * N + 16);
   const H = new Float32Array(N * N);
   for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) H[j * N + i] = World.heightAt(-2000 + i * step, -2000 + j * step);
   for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
     const h = H[j * N + i];
     const hl = H[j * N + Math.max(0, i - 1)], hr = H[j * N + Math.min(N - 1, i + 1)], hu = H[Math.max(0, j - 1) * N + i], hd = H[Math.min(N - 1, j + 1) * N + i];
     const dx = (hr - hl) / (2 * step), dz = (hd - hu) / (2 * step), l = Math.sqrt(dx * dx + 1 + dz * dz);
-    const rgb = terrainRgb(-2000 + i * step, -2000 + j * step, h, Math.hypot(dx, dz));
-    g.vert(-2000 + i * step, h - 1.2, -2000 + j * step, -dx / l, 1 / l, -dz / l, rgb[0], rgb[1], rgb[2]);
+    const x = -2000 + i * step, z = -2000 + j * step;
+    const tint = terrainWeights(x, z, h, Math.hypot(dx, dz), wts);
+    tw.vert(x, h - 1.2, z, -dx / l, 1 / l, -dz / l, wts, tint, 1);
   }
   const ranges = [];
-  const idxAll = [];
+  const idx = [];
   for (let cz = 0; cz < NC; cz++) for (let cx = 0; cx < NC; cx++) {
-    const start = idxAll.length;
-    for (let j = cz * 4; j < cz * 4 + 4; j++) for (let i = cx * 4; i < cx * 4 + 4; i++) {
-      const a = j * N + i, b = a + 1, c = a + N, d = c + 1;
-      idxAll.push(a, c, b, b, c, d);
-    }
-    ranges[cz * NC + cx] = [start, idxAll.length - start];
+    const start = idx.length;
+    for (let j = cz * 4; j < cz * 4 + 4; j++) for (let i = cx * 4; i < cx * 4 + 4; i++) { const a = j * N + i, b = a + 1, c = a + N, d = c + 1; idx.push(a, c, b, b, c, d); }
+    ranges[cz * NC + cx] = [start, idx.length - start];
   }
-  g.idx = Uint32Array.from(idxAll); g.in = idxAll.length;
-  const terrain = new MaskedMesh(g, ranges, 'far.terrain');
+  const ta = tw.toArrays(); ta.index = Uint32Array.from(idx); ta.triangles = idx.length / 3;
+  const terrain = new MaskedMesh(ta, ranges, 'far.terrain', 'mat.terrain');
   group.add(terrain.mesh);
 
-  // ---- LOD2 masses (buildings + infrastructure boxes), grouped per chunk ---------------------------------------------------------
+  // ---- LOD2 masses (buildings via their LOD2 builders + infrastructure) and far road strips, grouped per chunk -----------------------------
   const D = World.data;
-  const bg = new GeoBuilder(1 << 15);
+  const bg = new GB(1 << 16);
   const bRanges = Array.from({ length: NC * NC }, () => [0, 0]);
-  const byChunk = Array.from({ length: NC * NC }, () => []);
-  for (let k = 0; k < NC * NC; k++) { for (const b of D.plByChunk[k]) byChunk[k].push({ b }); for (const e of D.partsByChunk[k]) byChunk[k].push({ part: e.part }); }
-  // far road ribbons (width >= 9 m so they read at distance), grouped by the chunk of each segment midpoint
-  const FAR_ROAD = GeoBuilder.rgb(0x44474a, 1), FAR_DIRT = GeoBuilder.rgb(0x8a7a60, 1);
+  const roadsBy = Array.from({ length: NC * NC }, () => []);
   for (const e of D.R.edges) {
     if (e.cls === 'path' || e.noRender) continue;
-    const w = Math.max(9, e.carriage) / 2, rgb = e.surface === 'surf.dirt' || e.surface === 'surf.gravel' ? FAR_DIRT : FAR_ROAD;
+    const w = Math.max(9, e.carriage) / 2, dirt = e.surface === 'surf.dirt' || e.surface === 'surf.gravel';
     for (let i = 0; i < e.n - 1; i += 2) {
       const j = Math.min(e.n - 1, i + 2);
-      const ax = e.pts[i * 3], ay = e.pts[i * 3 + 1], az = e.pts[i * 3 + 2], bx = e.pts[j * 3], by = e.pts[j * 3 + 1], bz = e.pts[j * 3 + 2];
+      const ax = e.pts[i * 3], az = e.pts[i * 3 + 2], bx = e.pts[j * 3], bz = e.pts[j * 3 + 2];
       const k = Math.min(NC - 1, Math.max(0, Math.floor(((az + bz) / 2 + 2000) / 100))) * NC + Math.min(NC - 1, Math.max(0, Math.floor(((ax + bx) / 2 + 2000) / 100)));
-      byChunk[k].push({ road: [ax, ay, az, bx, by, bz, w, rgb] });
+      roadsBy[k].push([ax, e.pts[i * 3 + 1], az, bx, e.pts[j * 3 + 1], bz, w, dirt]);
     }
   }
+  const ctx = { lod: 2, seed: 0 };
   for (let k = 0; k < NC * NC; k++) {
-    if (!byChunk[k].length) continue;
     const start = bg.in;
-    for (const it of byChunk[k]) {
-      if (it.road) {
-        const [ax, ay, az, bx, by, bz, w, rgb] = it.road;
-        const dx = bx - ax, dz = bz - az, l = Math.hypot(dx, dz) || 1, nx = -dz / l * w, nz = dx / l * w;
-        bg.quad([ax + nx, ay + 0.3, az + nz], [ax - nx, ay + 0.3, az - nz], [bx - nx, by + 0.3, bz - nz], [bx + nx, by + 0.3, bz + nz], rgb, 1);
-      } else if (it.b) {
-        const b = it.b, A = ARCHETYPES[b.archetype];
-        const col = (A.color || 0x888888);
-        if (A.round) bg.cyl(b.x, b.y, b.z, b.params.w / 2, b.params.w / 3, b.params.h, col, 8);
-        else bg.box(b.x, b.y + b.params.h / 2, b.z, b.params.w, b.params.h, b.params.d, b.rotY, col);
-      } else addPart(bg, it.part);
+    for (const r of roadsBy[k]) {
+      const [ax, ay, az, bx, by, bz, w, dirt] = r;
+      const dx = bx - ax, dz = bz - az, l = Math.hypot(dx, dz) || 1, nx = -dz / l * w, nz = dx / l * w;
+      bg.mat(dirt ? 'tex.dirt_track' : 'tex.asphalt'); bg.groundAO = false;
+      bg.quad([ax - nx, ay + 0.3, az - nz], [ax + nx, ay + 0.3, az + nz], [bx + nx, by + 0.3, bz + nz], [bx - nx, by + 0.3, bz - nz]);
+      bg.groundAO = true;
     }
+    for (const b of D.plByChunk[k]) {
+      const fn = Builders.get(b.archetype); if (!fn) continue;
+      ctx.seed = b.seed;
+      const r = fn(b, ctx);
+      for (const batch of r.batches) { if (r.worldSpace) appendBatch(bg, batch.geometry, 0, 0, 0, 0); else appendBatch(bg, batch.geometry, b.x, b.y, b.z, b.rotY); }
+    }
+    for (const e of D.partsByChunk[k]) addPartDetailed(bg, e.part, 2);
     bRanges[k] = [start, bg.in - start];
   }
-  const masses = new MaskedMesh(bg, bRanges, 'far.masses');
+  const ma = bg.toArrays(); if (!(ma.index instanceof Uint32Array)) ma.index = Uint32Array.from(ma.index);
+  const masses = new MaskedMesh(ma, bRanges, 'far.masses', 'mat.world');
   group.add(masses.mesh);
 
-  // ---- skirt ring to +-6000 m ------------------------------------------------------------------------------------------------------------
+  // ---- outer ring to +-6000 m (finer near the world edge) ---------------------------------------------------------------------------------------
   {
-    const sc = 60, ss = 200, sg = new GeoBuilder(sc * sc);
-    const SN = sc + 1, vid = new Int32Array(SN * SN).fill(-1);
+    const coords = [];
+    for (let v = -6000; v < -3500; v += 250) coords.push(v);
+    for (let v = -3500; v < -2600; v += 100) coords.push(v);
+    for (let v = -2600; v <= 2600; v += 50) coords.push(v);
+    for (let v = 2700; v <= 3500; v += 100) coords.push(v);
+    for (let v = 3750; v <= 6000; v += 250) coords.push(v);
+    const M = coords.length, vid = new Int32Array(M * M).fill(-1);
+    const sw = new TerrainWriter(M * M);
     const getV = (i, j) => {
-      const k = j * SN + i;
+      const k = j * M + i;
       if (vid[k] >= 0) return vid[k];
-      const x = -6000 + i * ss, z = -6000 + j * ss, h = skirtHeight(x, z);
-      const e = 40; const hx = skirtHeight(x + e, z) - skirtHeight(x - e, z), hz = skirtHeight(x, z + e) - skirtHeight(x, z - e);
-      const l = Math.sqrt(hx * hx / (4 * e * e) + 1 + hz * hz / (4 * e * e));
-      let rgb;
-      if (h < 0) rgb = SEA; else if (h > 700) rgb = SNOW; else if (h > 420) rgb = ROCKC; else if (z < -2000 || x > 2000) rgb = h > 160 ? FOREST : GRASS; else rgb = GRASS;
-      vid[k] = sg.vert(x, h - 1.5, z, -hx / (2 * e) / l, 1 / l, -hz / (2 * e) / l, rgb[0], rgb[1], rgb[2]);
+      const x = coords[i], z = coords[j], h = skirtHeight(x, z), e = 30;
+      const hx = skirtHeight(x + e, z) - skirtHeight(x - e, z), hz = skirtHeight(x, z + e) - skirtHeight(x, z - e);
+      const gx = hx / (2 * e), gz = hz / (2 * e), l = Math.sqrt(gx * gx + 1 + gz * gz);
+      const inside = Math.abs(x) <= 2000 && Math.abs(z) <= 2000;
+      const tint = inside ? terrainWeights(x, z, h, Math.hypot(gx, gz), wts) : terrainWeights(x, z, h, Math.hypot(gx, gz), wts, false);
+      vid[k] = sw.vert(x, h - 1.5, z, -gx / l, 1 / l, -gz / l, wts, tint, 1);
       return vid[k];
     };
-    for (let j = 0; j < sc; j++) for (let i = 0; i < sc; i++) {
-      const cxm = -6000 + (i + 0.5) * ss, czm = -6000 + (j + 0.5) * ss;
+    for (let j = 0; j < M - 1; j++) for (let i = 0; i < M - 1; i++) {
+      const cxm = (coords[i] + coords[i + 1]) / 2, czm = (coords[j] + coords[j + 1]) / 2;
       if (cxm > -2000 && cxm < 2000 && czm > -2000 && czm < 2000) continue;
       const a = getV(i, j), b = getV(i + 1, j), c = getV(i, j + 1), d = getV(i + 1, j + 1);
-      sg._grow(0, 6); sg.tri(a, c, b); sg.tri(b, c, d);
+      sw.grow(0, 6); sw.tri(a, c, b); sw.tri(b, c, d);
     }
-    const arr = sg.toArrays();
-    const geom = new THREE.BufferGeometry();
-    geom.setAttribute('position', new THREE.BufferAttribute(arr.position, 3)); geom.setAttribute('normal', new THREE.BufferAttribute(arr.normal, 3));
-    geom.setAttribute('color', new THREE.BufferAttribute(arr.color, 3, true)); geom.setIndex(new THREE.BufferAttribute(arr.index, 1));
-    geom.computeBoundingSphere(); MemTracker.addGeometry(geom);
-    const m = new THREE.Mesh(geom, MatLib.get('mat.blockout_far')); m.name = 'far.skirt'; m.matrixAutoUpdate = false; m.frustumCulled = false;
+    const sa = sw.toArrays();
+    const m = new THREE.Mesh(artGeometry(sa), MatLib.get('mat.terrain')); m.name = 'far.skirt'; m.matrixAutoUpdate = false; m.frustumCulled = false; m.receiveShadow = true;
     group.add(m);
   }
   scene.add(group);
   const covered = new Uint8Array(NC * NC);
-  /** mask = Uint8Array(NC*NC), 1 where a loaded near/mid chunk already draws that area */
-  function setCovered(mask) {
-    covered.set(mask);
-    terrain.apply(covered); masses.apply(covered);
-  }
+  function setCovered(mask) { covered.set(mask); terrain.apply(covered); masses.apply(covered); }
   terrain.apply(covered); masses.apply(covered);
-  void hash2;
   return { group, setCovered, terrain, masses };
 }
