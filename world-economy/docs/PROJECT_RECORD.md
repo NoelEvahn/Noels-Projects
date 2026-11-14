@@ -4,7 +4,7 @@ Orchestrator/QA: Sonnet 5.5 High (main) | Planner: Fable 5.2 High | Visual/UI/Fi
 ## Status
 - Stage 1 (master spec, Fable): COMPLETE; spec and the 8 default decisions approved by the user.
 - Stage 2 (S2a scaffold + S2 world blockout, Sonnet): COMPLETE, see "Stage 2 report" below. Checkpoint commit `a1e8d26` (tag `checkpoint/stage2-blockout` exists locally only: the git proxy returns 403 on tag pushes, so the commit hash is the reference). Orchestrator re-verified: `npm test` 33/33, e2e smoke all pass, screenshots reviewed.
-- Next: Stage 3 visual production (Opus) and Stage 4 gameplay (Sonnet); they touch disjoint folders (MASTER_SPEC 9.8).
+- Stage 3 split by the user into 3A (Opus: audio + quality system) and 3B (Opus: visual production). Stage 3A: COMPLETE, see "Stage 3A report" below. Next: Stage 3B (visual), then Stage 4 gameplay (Sonnet).
 - Spec: docs/MASTER_SPEC.md + docs/spec/A-G. Build: `npm run build` OK (dist/life.html 0.645 MB). Tests: 33 unit/sim pass, e2e smoke pass, perf spec pass.
 
 ## Standing decisions
@@ -13,7 +13,7 @@ Orchestrator/QA: Sonnet 5.5 High (main) | Planner: Fable 5.2 High | Visual/UI/Fi
 - Engine: three.js 0.180.0 WebGL2, esbuild, own physics, own audio, DOM UI. No CDN at runtime.
 - Size: file size is not binding (~3.8 MB est.); runtime memory/load time/fps are.
 - Performance: STABLE 60 FPS (p95 ≤16.7 ms), Low/Med/High/Ultra/Auto presets, adaptive governor; Stage 3 must meet optimisation mandates O1–O12 and deliver docs/PERF_REPORT.md.
-- Repo home: `world-economy/` (user-approved exception in CLAUDE.md). Branch: claude/blissful-sagan-uiqlcy.
+- Repo home: `world-economy/` (user-approved exception in CLAUDE.md). Branch: `main` (all work is committed and pushed directly on main).
 
 ## Model assignments
 S1 Fable (done) · S2 Sonnet · S3 Opus · S4 Sonnet · S5 Opus · S6 Sonnet · S7 Sonnet review + Opus fixes (max 2 rounds)
@@ -73,3 +73,20 @@ No image, audio or model files are used by the game. The repo holds only test sc
 - Annex B 5.2 lists the `r.bridge` touchdown at y = 8 and the west end at y = 18, with the west tower deck at 26 m; terrain there is lower, so the west approach is a viaduct (about 190 m) instead of an embankment.
 - Annex G 7.2 V08 says "north-west across the lake to Mt. Sable", but the peak is at (300, -3600).
 - The spec's `Annex G 2.3` S2 column has no "shadow-caster batches" figure; S2 renders without shadows (0 shadow draws).
+
+## Stage 3A report (audio, quality system, governor, perf HUD) — Opus
+
+### Completed
+- Audio (`src/audio/`, all WebAudio synthesis, no samples, no AudioWorklet): engine facade with the exact MASTER_SPEC 5.8 API plus additive `attach/update/stats/prewarm/music.sting/emitters/duck`; mixer (music, ambience, sfx, vehicles, ui buses, squared user volumes, ducking, per-bus lowpass for interior/vehicle/underwater, two generated-IR convolvers crossfaded over 1.5 s, limiter); voice pool with priority classes and quietest-of-lowest-class stealing; spatial panners (HRTF for up to 6), doppler/occlusion math; synth toolkit (noise, envelopes, PeriodicWave, FM, Karplus–Strong, modal, grains and seamless texture loops, formants, chirps, shapers, offline render cache); engine model for 10 engines driven by rpm/load/speed; 50 ambience patches (19 beds, 15 emitters, 16 scheduler one-shots) with environment rules driven by `player:region/district/interior`, `env:weather`, `time:hour`; generative music (9 suites with the Annex E keys/modes/tempos, work/drive layers, 6 stingers, piece form, bar-line crossfades); 145 one-shot and loop sfx patches covering every P0 id and 118 P1 ids. 48 P1/P2 ids are registered stubs for Stage 6.
+- Quality (`src/render/quality.js`): full Annex G 3.1 schema, Low/Medium/High/Ultra/Auto presets, per-field validation, derived renderer parameters, persistence under `loe.settings` with storage-throws fallback, change events, adapter interface for 3B. Governor (`src/render/governor.js`) exactly per Annex G 4.1. Perf (`src/render/perf.js`): allocation-free frame stats, CPU scopes, per-pass counters, MemTracker bytes, budgets per preset, allocation meter. F3 perf HUD (`src/ui/hud/perfHud.js`) with graph, budget colours, Copy report and a preset/adaptive panel (Settings hook point).
+- `docs/PERF_REPORT.md` created from the Annex G 8 template (audio and quality sections; visual sections marked for 3B). Hooks and interpretations in `docs/DECISIONS.md` (no contract change).
+
+### Test results (this container)
+- `npm test`: 59/59 (adds 7 governor, 10 quality, 9 audio-logic tests).
+- `npm run test:e2e`: smoke all pass; `quality.spec.cjs` 21 checks pass (auto → Low under SwiftShader, 4 presets at runtime, custom switch, governor level in snapshot and HUD, F3 HUD fields, Copy report JSON, persistence across reload, storage blocked).
+- `npm run test:perf`: Stage-2 budgets and fly-through still pass (0 slice overruns, programs 4 → 4).
+- `npm run test:audio`: 250/250 rendered ids pass (every `amb.*`, `mus.*`, `eng.*`, P0 `sfx.*`, plus 118 P1), 10/10 engines track rpm within 8 %, buffer loops seam-free, mix peak ≤ 0.62 and RMS −18.4 dBFS, 351 concurrent nodes (≤ 400), 20.9 MB cached one-shots (≤ 24 MB), live engine running after the Start click with zero console errors.
+- NOT verified: sound quality by ear (signal analysis only), real-GPU frame times, governor under real frame times.
+
+### For 3B
+- Replace the pixel-ratio-only adapter in `main.js` with `quality.setAdapter({ apply(derived, effective, changed) })` (interface in DECISIONS.md); read `derived.chunkRadii`; report passes with `perf.recordPass` and bytes with `MemTracker.addTexture/addRenderTarget`; add the Old Town benchmark render for the GPU Auto path (`benchmarkMedian` + `resolveAutoPreset({medianFrameMs})`); fill PERF_REPORT §2–§8, §11.
