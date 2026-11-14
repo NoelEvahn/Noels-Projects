@@ -72,6 +72,11 @@ async function boot() {
   game = createGame();
   Input.init(canvas, bus);
   game.init({ bus, input: Input, settings, clock });
+  // S3A hook: audio reacts to bus events (MASTER_SPEC 7.6) and reads the player vehicle read-only; it never touches game state
+  Audio.attach({
+    bus, settings, getTime: () => game.env.timeOfDay % 24, getPlayerPos: () => game.playerPos(),
+    getVehicle: () => { const v = game.activeVehicle(); if (!v) return null; const sm = v.sim; return { archetype: sm.archetype, speed: sm.speed, rpm: sm.rpm != null ? sm.rpm : Math.abs(sm.throttle || 0), throttle: sm.throttle != null ? Math.max(0, sm.throttle) : undefined }; },
+  });
   marks.gameMs = Math.round(performance.now() - t0);
 
   // initial near ring is built without a frame budget so the first frame is playable
@@ -104,6 +109,7 @@ async function boot() {
 
   // ---- main loop (4.2) ------------------------------------------------------------------------------------------------------------------------------
   let lastT = performance.now(), acc = 0, prevFrameMs = 16;
+  const aFwd = [0, 0, -1], aUp = [0, 1, 0];
   function frame(now) {
     requestAnimationFrame(frame);
     if (frozen) { lastT = now; return; }
@@ -132,6 +138,10 @@ async function boot() {
     const tU = performance.now();
     hud.update(dtReal); perfHud.update(dtReal);
     perf.mark('ui', performance.now() - tU);
+    const tA = performance.now();
+    { const c = game.camera, fx = c.target[0] - c.pos[0], fy = c.target[1] - c.pos[1], fz = c.target[2] - c.pos[2], fl = Math.hypot(fx, fy, fz) || 1; aFwd[0] = fx / fl; aFwd[1] = fy / fl; aFwd[2] = fz / fl; Audio.setListener(c.pos, aFwd, aUp); }
+    Audio.update(dtReal);
+    perf.mark('audio', performance.now() - tA);
     Input.endFrame();
     perf.endFrame(now, rend.renderer.info);
     governor.sample(dtReal * 1000);
@@ -143,7 +153,11 @@ async function boot() {
   function start() {
     if (started) return;
     started = true; overlay.style.display = 'none';
-    Audio.init();
+    Audio.init().then(() => {
+      const h = game.env.timeOfDay % 24;
+      Audio.setEnvironment({ region: game.regionNow(), district: game.districtNow(), timeOfDay: h, weather: { ...game.env.weather } });
+      Audio.music.setContext({ mode: 'game', region: game.regionNow(), night: h >= 20 || h < 6, activity: game.activeVehicle() ? 'drive' : 'idle' });
+    });
     Input.requestPointerLock().then((r) => { $('lockhint').style.display = r.locked ? 'none' : ''; });
   }
   $('start').addEventListener('click', start);
@@ -172,7 +186,7 @@ async function boot() {
   H.setTime = (h) => { clock.setHour(h); game.env.timeOfDay = clock.hourFloat; };
   H.setWeather = (type, intensity) => { game.env.weather.type = type; game.env.weather.intensity = intensity; bus.emit('env:weather', { type, intensity }); };
   H.setQuality = (preset) => { if (typeof preset === 'string') quality.applyPreset(preset); else quality.apply(preset); syncPerfQuality(); resize(); return quality.get().graphics; };
-  H.quality = quality; H.governor = governor; H.perfHud = perfHud;
+  H.quality = quality; H.governor = governor; H.perfHud = perfHud; H.audio = Audio;
   H.camera = {
     set({ pos, target, fov }) { const c = game.camera; c.fixed = true; c.mode = 'fixed'; c.pos = pos.slice(); c.target = target.slice(); if (fov) c.fov = fov; },
     release() { game.camera.fixed = false; },

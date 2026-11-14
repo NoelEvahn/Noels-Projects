@@ -7,11 +7,12 @@
   "scripts": {
     "build": "node build.mjs",
     "build:dev": "node build.mjs --dev",
-    "test": "node --test \"test/unit/*.test.mjs\" \"test/sim/*.sim.mjs\"",
+    "test": "node --test \"test/unit/*.test.mjs\" \"test/sim/*.sim.mjs\" \"test/audio/*.test.mjs\"",
     "test:e2e": "node test/e2e/smoke.spec.cjs && node test/e2e/quality.spec.cjs",
     "shots": "node test/visual/shots.cjs",
     "test:perf": "node test/perf/perf.spec.cjs",
-    "test:all": "npm run build && npm test && npm run test:e2e && npm run test:perf"
+    "test:all": "npm run build && npm test && npm run test:e2e && npm run test:perf && npm run test:audio",
+    "test:audio": "node --test \"test/audio/*.test.mjs\" && node test/audio/audio.spec.cjs"
   },
   "devDependencies": {
     "esbuild": "0.25.10",
