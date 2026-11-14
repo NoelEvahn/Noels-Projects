@@ -27,14 +27,23 @@ export function terrainRgb(x, z, h, slope) {
   return [Math.min(255, c[0] * n), Math.min(255, c[1] * n), Math.min(255, c[2] * n)];
 }
 
-/** appends the terrain of chunk (cx,cz) to g; lod 0 = 4 m cells, lod 1 = 12.5 m cells. */
-export function addTerrainChunk(g, cx, cz, lod) {
+/** phase 1: sample heights (with a 1-cell border for normals). Split from the mesh build so each piece fits the streaming slice. */
+export function sampleTerrainChunk(cx, cz, lod) {
   const x0 = -2000 + cx * CHUNK, z0 = -2000 + cz * CHUNK;
   const n = lod === 0 ? 25 : 8;
   const step = CHUNK / n;
   const hh = new Float32Array((n + 3) * (n + 3));
   const W2 = n + 3;
   for (let j = -1; j <= n + 1; j++) for (let i = -1; i <= n + 1; i++) hh[(j + 1) * W2 + (i + 1)] = World.heightAt(x0 + i * step, z0 + j * step);
+  return hh;
+}
+/** appends the terrain of chunk (cx,cz) to g; lod 0 = 4 m cells, lod 1 = 12.5 m cells. hh from sampleTerrainChunk. */
+export function addTerrainChunk(g, cx, cz, lod, hh) {
+  const x0 = -2000 + cx * CHUNK, z0 = -2000 + cz * CHUNK;
+  const n = lod === 0 ? 25 : 8;
+  const step = CHUNK / n;
+  const W2 = n + 3;
+  if (!hh) hh = sampleTerrainChunk(cx, cz, lod);
   g._grow((n + 1) * (n + 1) + 4 * (n + 1), n * n * 6 + 4 * n * 6);
   const base = g.vn;
   const skirt = lod === 0 ? 6 : 14;

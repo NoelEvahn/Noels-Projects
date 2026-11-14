@@ -6,7 +6,7 @@ import { Builders } from './builders.js';
 import { Streaming } from './streaming.js';
 import { MatLib } from './materials/matlib.js';
 import { MemTracker } from './perf.js';
-import { addTerrainChunk } from './terrainMesh.js';
+import { addTerrainChunk, sampleTerrainChunk } from './terrainMesh.js';
 import { addRoadPiece, addIntersections } from './roadGeo.js';
 import { addPart } from '../blockout/index.js';
 import { treeArrays, TREE_KIND, TREE_SCALE } from '../blockout/trees.js';
@@ -16,11 +16,12 @@ const NC = 40;
 const KINDS = ['conifer', 'broadleaf', 'palm'];
 
 function bufferGeometry(arr) {
+  if (!(arr.index instanceof Uint16Array) && arr.position.length / 3 <= 65535) arr = { ...arr, index: Uint16Array.from(arr.index) };
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.BufferAttribute(arr.position, 3));
   g.setAttribute('normal', new THREE.BufferAttribute(arr.normal, 3));
   g.setAttribute('color', new THREE.BufferAttribute(arr.color, 3, true));
-  g.setIndex(new THREE.BufferAttribute(arr.index.length && arr.position.length / 3 > 65535 ? arr.index : Uint16Array.from(arr.index), 1));
+  g.setIndex(new THREE.BufferAttribute(arr.index, 1));
   g.computeBoundingSphere();
   MemTracker.addGeometry(g);
   return g;
@@ -49,11 +50,19 @@ export function createChunkManager({ scene, far, settings }) {
     api.counts.loadedTris -= rec.tris;
   }
 
+  const gpool = [];
+  const acquire = () => (gpool.pop() || new GeoBuilder(16384)).reset();
+  const release = (g) => { gpool.push(g); };
   function* buildChunk(cx, cz, lod) {
+    const g = acquire();
+    try { return yield* buildChunkInner(g, cx, cz, lod); } finally { release(g); }
+  }
+  function* buildChunkInner(g, cx, cz, lod) {
     const D = World.data;
     const cont = World.chunkContents(cx, cz);
-    const g = new GeoBuilder(lod === 0 ? 8192 : 2048);
-    addTerrainChunk(g, cx, cz, lod);
+    const hh = sampleTerrainChunk(cx, cz, lod);
+    yield;
+    addTerrainChunk(g, cx, cz, lod, hh);
     yield;
     addIntersections(g, cx, cz);
     for (const piece of cont.roads) addRoadPiece(g, piece, lod);
@@ -83,7 +92,8 @@ export function createChunkManager({ scene, far, settings }) {
       }
     }
     yield;
-    const arr = g.toArrays();
+    const arr = g.toArrays16();
+    yield;
     const geom = bufferGeometry(arr);
     const mesh = new THREE.Mesh(geom, MatLib.get('mat.blockout'));
     mesh.name = `chunk.${cx}.${cz}.L${lod}`;

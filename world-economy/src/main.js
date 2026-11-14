@@ -7,7 +7,7 @@ import { World } from './world/query.js';
 import { createGame } from './game/index.js';
 import { Input } from './game/input/actions.js';
 import { defaultSettings } from './data/settings.js';
-import { createPerf } from './render/perf.js';
+import { createPerf, MemTracker } from './render/perf.js';
 import { Streaming } from './render/streaming.js';
 import { installHarness } from './qa/harness.js';
 import { VIEWPOINTS } from './qa/viewpoints.js';
@@ -167,6 +167,8 @@ async function boot() {
     release() { game.camera.fixed = false; },
     get state() { return game.camera; },
   };
+  H.rend = rend;
+  H.fog = (density) => { rend.scene.fog.density = density; };
   H.settle = settle;
   H.freeze = (on) => { frozen = !!on; };
   H.renderNow = () => { renderNow(1); };
@@ -176,7 +178,7 @@ async function boot() {
       s.counts.chunksNear = rend.chunks.counts.near; s.counts.chunksMid = rend.chunks.counts.mid; s.counts.entities = game.entities.count;
       s.stream.queue = Streaming.size; s.stream.sliceOverruns = Streaming.stats.sliceOverruns; s.stream.maxPumpMs = Streaming.stats.maxPumpMs;
       s.draw.calls = rend.renderer.info.render.calls; s.draw.triangles = rend.renderer.info.render.triangles; s.counts.programs = rend.renderer.info.programs ? rend.renderer.info.programs.length : 0;
-      s.blockoutFallbacks = Builders.blockoutIds().length; s.boot = marks; s.sun = game.env.sunDir.slice();
+      s.mem.geometryBytes = MemTracker.geometryBytes; s.blockoutFallbacks = Builders.blockoutIds().length; s.boot = marks; s.sun = game.env.sunDir.slice();
       s.farTris = rend.far.terrain.visibleTris + rend.far.masses.visibleTris; s.chunkTris = rend.chunks.counts.loadedTris;
       return s;
     },
@@ -213,7 +215,7 @@ async function boot() {
     return settle(settleMs, 2);
   };
   /** scripted 30 m/s fly-through of the ring route with the camera on rails; cpuOnly skips GL draws. Returns streaming stats. */
-  H.flythrough = async ({ speed = 30, cpuOnly = true, maxFrames = 40000, budget = 3 } = {}) => {
+  H.flythrough = async ({ speed = 30, cpuOnly = true, maxFrames = 40000, budget = 3, gcEvery = 0 } = {}) => {
     const N = (id) => World.data.R.nodes.get(id);
     const stops = [World.poi('poi.city.spawn').pos, N('g0_5'), N('g2_5'), N('n.bridge.touch'), N('n.harlan.west'), N('n.pinehaven'), N('n.forest.gate'), N('g5_0'), N('g5_7'), N('g0_7')];
     const pts = [];
@@ -224,7 +226,7 @@ async function boot() {
     }
     const prevCpu = rend.cpuOnly; rend.cpuOnly = cpuOnly;
     frozen = true;
-    Streaming.stats.sliceOverruns = 0; Streaming.stats.maxPumpMs = 0; Streaming.stats.calls = 0;
+    Streaming.stats.sliceOverruns = 0; Streaming.stats.maxPumpMs = 0; Streaming.stats.calls = 0; Streaming.stats.maxStepMs = 0;
     const stat = { frames: 0, overruns: 0, maxPump: 0, maxFrameMs: 0, completedStart: Streaming.stats.completed, programsStart: rend.renderer.info.programs ? rend.renderer.info.programs.length : 0, distance: 0 };
     let seg = 0, off = 0, x = pts[0][0], z = pts[0][2];
     const dt = 1 / 60, ds = speed * dt;
@@ -242,6 +244,7 @@ async function boot() {
       const y = a[1] + (b[1] - a[1]) * off / L;
       const dx = (b[0] - a[0]) / L, dz = (b[2] - a[2]) / L;
       game.camera.fixed = true; game.camera.pos = [x - dx * 8, y + 4, z - dz * 8]; game.camera.target = [x + dx * 20, y + 1.5, z + dz * 20];
+      if (gcEvery && stat.frames % gcEvery === 0 && window.gc) window.gc(); // measurement mode: collect between frames so GC pauses are not charged to a pump slice
       const t = performance.now();
       rend.chunks.update({ x, z }, dx * speed, dz * speed);
       Streaming.pump(budget);
@@ -251,7 +254,7 @@ async function boot() {
       stat.frames++; stat.distance += ds;
       if (performance.now() - lastYield > 30) { await tick(); lastYield = performance.now(); }
     }
-    stat.overruns = Streaming.stats.sliceOverruns; stat.maxPump = Streaming.stats.maxPumpMs; stat.completed = Streaming.stats.completed - stat.completedStart;
+    stat.overruns = Streaming.stats.sliceOverruns; stat.maxPump = Streaming.stats.maxPumpMs; stat.maxStep = Streaming.stats.maxStepMs; stat.maxStepAt = Streaming.stats.maxStepKey + '#' + Streaming.stats.maxStepIndex; stat.completed = Streaming.stats.completed - stat.completedStart;
     stat.programsEnd = rend.renderer.info.programs ? rend.renderer.info.programs.length : 0; stat.queueEnd = Streaming.size;
     rend.cpuOnly = prevCpu; game.camera.fixed = false; frozen = false;
     return stat;

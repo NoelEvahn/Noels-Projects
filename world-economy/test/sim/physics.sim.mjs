@@ -134,7 +134,7 @@ test('character: speeds, jump height, step height, walls, water barrier', () => 
   assert.ok(k.z >= b.z + b.params.d / 2 + 0.29, 'blocked by the wall ' + k.z.toFixed(2));
   // kerb-high ledge is climbed, a 1 m wall is not (Harlan Bridge parapet blocks the walkway edge)
   // water: wading barrier at the river bank
-  const r = createCharacter(-240, World.groundAt(-240, 100, 600).y, 600);
+  const r = createCharacter(-240, World.groundAt(-240, 100, 700).y, 700);
   for (let i = 0; i < 600; i++) stepCharacter(r, { dirX: -1, dirZ: 0, mode: 'run', jump: false }, DT);
   const wa = World.waterAt(r.x, r.z, 0);
   assert.ok(!wa || wa.depth <= 1.4, 'did not wade into deep water: depth ' + (wa ? wa.depth.toFixed(2) : 0));

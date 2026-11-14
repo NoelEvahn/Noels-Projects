@@ -90,11 +90,27 @@ export function buildFar(scene) {
   const bRanges = Array.from({ length: NC * NC }, () => [0, 0]);
   const byChunk = Array.from({ length: NC * NC }, () => []);
   for (let k = 0; k < NC * NC; k++) { for (const b of D.plByChunk[k]) byChunk[k].push({ b }); for (const e of D.partsByChunk[k]) byChunk[k].push({ part: e.part }); }
+  // far road ribbons (width >= 9 m so they read at distance), grouped by the chunk of each segment midpoint
+  const FAR_ROAD = GeoBuilder.rgb(0x44474a, 1), FAR_DIRT = GeoBuilder.rgb(0x8a7a60, 1);
+  for (const e of D.R.edges) {
+    if (e.cls === 'path' || e.noRender) continue;
+    const w = Math.max(9, e.carriage) / 2, rgb = e.surface === 'surf.dirt' || e.surface === 'surf.gravel' ? FAR_DIRT : FAR_ROAD;
+    for (let i = 0; i < e.n - 1; i += 2) {
+      const j = Math.min(e.n - 1, i + 2);
+      const ax = e.pts[i * 3], ay = e.pts[i * 3 + 1], az = e.pts[i * 3 + 2], bx = e.pts[j * 3], by = e.pts[j * 3 + 1], bz = e.pts[j * 3 + 2];
+      const k = Math.min(NC - 1, Math.max(0, Math.floor(((az + bz) / 2 + 2000) / 100))) * NC + Math.min(NC - 1, Math.max(0, Math.floor(((ax + bx) / 2 + 2000) / 100)));
+      byChunk[k].push({ road: [ax, ay, az, bx, by, bz, w, rgb] });
+    }
+  }
   for (let k = 0; k < NC * NC; k++) {
     if (!byChunk[k].length) continue;
     const start = bg.in;
     for (const it of byChunk[k]) {
-      if (it.b) {
+      if (it.road) {
+        const [ax, ay, az, bx, by, bz, w, rgb] = it.road;
+        const dx = bx - ax, dz = bz - az, l = Math.hypot(dx, dz) || 1, nx = -dz / l * w, nz = dx / l * w;
+        bg.quad([ax + nx, ay + 0.3, az + nz], [ax - nx, ay + 0.3, az - nz], [bx - nx, by + 0.3, bz - nz], [bx + nx, by + 0.3, bz + nz], rgb, 1);
+      } else if (it.b) {
         const b = it.b, A = ARCHETYPES[b.archetype];
         const col = (A.color || 0x888888);
         if (A.round) bg.cyl(b.x, b.y, b.z, b.params.w / 2, b.params.w / 3, b.params.h, col, 8);

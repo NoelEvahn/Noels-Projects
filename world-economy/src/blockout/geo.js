@@ -114,8 +114,15 @@ export class GeoBuilder {
     }
     for (let i = 0; i < a.index.length; i++) this.idx[this.in++] = a.index[i] + base;
   }
+  reset() { this.vn = 0; this.in = 0; return this; }
   get empty() { return this.vn === 0; }
   toArrays() {
     return { position: this.pos.slice(0, this.vn * 3), normal: this.nrm.slice(0, this.vn * 3), color: this.col.slice(0, this.vn * 3), index: this.idx.slice(0, this.in), triangles: this.in / 3 };
+  }
+  /** like toArrays but with a Uint16 index when it fits (one allocation less for the renderer) */
+  toArrays16() {
+    const a = { position: this.pos.slice(0, this.vn * 3), normal: this.nrm.slice(0, this.vn * 3), color: this.col.slice(0, this.vn * 3), triangles: this.in / 3 };
+    if (this.vn <= 65535) { const ix = new Uint16Array(this.in); for (let i = 0; i < this.in; i++) ix[i] = this.idx[i]; a.index = ix; } else a.index = this.idx.slice(0, this.in);
+    return a;
   }
 }
