@@ -141,6 +141,7 @@ async function boot() {
     const t = performance.now();
     rend.chunks.update(camXZ(), 0, 0, true);
     while (Streaming.size && performance.now() - t < maxMs) { Streaming.pump(50); await tick(); }
+    rend.chunks.update(camXZ(), 0, 0); // applies the far-proxy mask for the final chunk set
     for (let i = 0; i < frames; i++) { renderNow(1); await tick(); }
     return { ms: Math.round(performance.now() - t), queue: Streaming.size, frames };
   };

@@ -3,7 +3,7 @@ import { World } from '../world/query.js';
 import { GeoBuilder } from '../blockout/geo.js';
 import { regionAt } from '../world/layout/regions.js';
 import { hash2 } from '../core/rng.js';
-import { LAKE } from '../world/layout/water.js';
+import { LAKE, waterBodyAt } from '../world/layout/water.js';
 
 const CHUNK = 100;
 const C = (hex) => GeoBuilder.rgb(hex, 1);
@@ -15,7 +15,7 @@ export function terrainRgb(x, z, h, slope) {
   const reg = regionAt(x, z);
   let c;
   if (h < -0.2) c = x > -1900 && x < -250 && z < 1150 && h > -9 && Math.abs(x + 350) < 150 ? COL.riverbed : COL.seabed;
-  else if (h > LAKE.level - 20 && h < LAKE.level + 0.1 && x < -700 && x > -1700 && z < -700 && z > -1500) c = COL.lakebed;
+  else if (h < LAKE.level + 0.1 && h > LAKE.level - 20 && x < -700 && x > -1700 && z < -700 && z > -1500 && waterBodyAt(x, z)) c = COL.lakebed;
   else if (slope > 0.8) c = COL.rock;
   else if (h < 3.4 && (reg === 'ocean' || reg === 'city')) c = COL.sand;
   else if (reg === 'forest') c = h > 170 ? COL.highland : COL.forest;

@@ -34,7 +34,7 @@ export function createChunkManager({ scene, far, settings }) {
   const pending = new Map();    // key -> lod being built
   const treeGeoms = new Map();  // shared instanced geometries
   let center = [-999, -999];
-  let lastFarKey = '';
+  const coveredMask = new Uint8Array(NC * NC);
   let farDirty = false;
   const api = { chunks, group, counts: { near: 0, mid: 0, pending: 0, loadedTris: 0 }, onLoaded: null };
 
@@ -45,6 +45,7 @@ export function createChunkManager({ scene, far, settings }) {
   }
   function disposeRec(rec) {
     group.remove(rec.group);
+    coveredMask[rec.cz * NC + rec.cx] = 0; farDirty = true;
     for (const g of rec.geoms) { MemTracker.removeGeometry(g); g.dispose(); }
     for (const im of rec.instanced) im.dispose();
     api.counts.loadedTris -= rec.tris;
@@ -135,6 +136,7 @@ export function createChunkManager({ scene, far, settings }) {
       const old = chunks.get(key);
       if (old) disposeRec(old);
       chunks.set(key, rec);
+      coveredMask[key] = 1;
       group.add(rec.group);
       api.counts.loadedTris += rec.tris;
       farDirty = true;
@@ -171,18 +173,13 @@ export function createChunkManager({ scene, far, settings }) {
       }
       for (const [key, rec] of chunks) {
         const d = Math.max(Math.abs(rec.cx - ccx), Math.abs(rec.cz - ccz));
-        if (d > mid + 1) { disposeRec(rec); chunks.delete(key); farDirty = true; }
+        if (d > mid + 1) { disposeRec(rec); chunks.delete(key); }
       }
     }
     let nn = 0, mm = 0;
     for (const rec of chunks.values()) { if (rec.lod === 0) nn++; else mm++; }
     api.counts.near = nn; api.counts.mid = mm; api.counts.pending = Streaming.size;
-    if (farDirty && !Streaming.size) { // refresh the far mask only when the queue is idle (coalesced)
-      farDirty = false;
-      const keys = []; for (const [k, rec] of chunks) keys.push(k);
-      const key = keys.length + ':' + center.join(',');
-      if (key !== lastFarKey) { lastFarKey = key; far.setCovered(keys); }
-    }
+    if (farDirty) { farDirty = false; far.setCovered(coveredMask); } // an unloaded chunk uncovers its far proxy in the same frame
   };
   api.flush = function () { Streaming.pump(Infinity); api.update({ x: center[0] * 100 - 1950, z: center[1] * 100 - 1950 }, 0, 0); };
   api.centerChunk = () => center.slice();

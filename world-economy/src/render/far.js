@@ -153,9 +153,9 @@ export function buildFar(scene) {
   }
   scene.add(group);
   const covered = new Uint8Array(NC * NC);
-  function setCovered(keys) {
-    covered.fill(0);
-    for (const k of keys) covered[k] = 1;
+  /** mask = Uint8Array(NC*NC), 1 where a loaded near/mid chunk already draws that area */
+  function setCovered(mask) {
+    covered.set(mask);
     terrain.apply(covered); masses.apply(covered);
   }
   terrain.apply(covered); masses.apply(covered);
