@@ -60,12 +60,13 @@ const check = (name, ok, detail = '') => { if (!ok) failures++; console.log(`${o
   // fly-through (High preset, cpuOnly): streaming slices and program count
   await p.evaluate(() => window.__LOE.setQuality('high'));
   const nat = await p.evaluate(() => window.__LOE.flythrough({ speed: 30, cpuOnly: true }));
-  console.log('fly-through (natural GC):', JSON.stringify(nat));
-  check('fly-through (natural GC): overruns bounded', nat.overruns <= 3, `overruns ${nat.overruns}, max pump ${nat.maxPump.toFixed(2)} ms, max single step ${nat.maxStep.toFixed(2)} ms`);
+  console.log('fly-through (natural GC, gating):', JSON.stringify(nat));
+  check('fly-through: Streaming.pump never exceeds its budget by more than 2 ms (overruns = 0)', nat.overruns === 0, `overruns ${nat.overruns}, max pump ${nat.maxPump.toFixed(2)} ms, max single step ${nat.maxStep.toFixed(2)} ms at ${nat.maxStepAt}`);
   const fly = await p.evaluate(() => window.__LOE.flythrough({ speed: 30, cpuOnly: true, gcEvery: 60 }));
   console.log('fly-through (GC between frames):', JSON.stringify(fly));
   check('fly-through completes the ring route', fly.distance > 4500 && fly.queueEnd === 0);
-  check('fly-through: Streaming.pump never exceeds its budget by more than 2 ms (overruns = 0)', fly.overruns === 0, `max pump ${fly.maxPump.toFixed(2)} ms, max single step ${fly.maxStep.toFixed(2)} ms at ${fly.maxStepAt}`);
+  // informational bound: forced full collections flush compiled code, so the first builder call after one re-compiles inside a slice
+  check('fly-through (forced GC every 60 frames): overruns bounded', fly.overruns <= 6, `overruns ${fly.overruns}, max pump ${fly.maxPump.toFixed(2)} ms, max single step ${fly.maxStep.toFixed(2)} ms at ${fly.maxStepAt}`);
   check('fly-through: program count constant', fly.programsStart === fly.programsEnd, `${fly.programsStart} -> ${fly.programsEnd}`);
   const alloc = await p.evaluate(() => window.__LOE.perf.allocPerFrame(300));
   console.log('allocation per frame:', JSON.stringify(alloc));

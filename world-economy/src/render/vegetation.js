@@ -119,24 +119,26 @@ export function createVegetation({ scene, renderer }) {
   // ---- impostor blocks (4x4 chunks) ---------------------------------------------------------------------------------------------------------------
   const blocks = new Map(); // key -> {mesh, bx, bz}
   const pendingBlocks = new Set();
+  const SPH = TREE_TYPES.map((id) => treeGeometry(id, 0).height);
   function* buildBlock(bx, bz) {
+    Streaming.phase = 'vegBlock';
     const ids = [];
     for (let cz = bz * 4; cz < bz * 4 + 4; cz++) for (let cx = bx * 4; cx < bx * 4 + 4; cx++) {
       const k = cz * NC + cx;
       for (let q = T.chunkStart[k]; q < T.chunkStart[k + 1]; q++) { const i = T.order[q]; if (keepHash(i) < cfg.density) ids.push(i); }
+      yield;
     }
-    yield;
     if (!ids.length) return { mesh: null, bx, bz };
     const geo = quad.clone(); geo.boundingSphere = null;
     const sp = new Float32Array(ids.length);
     const mesh = new THREE.InstancedMesh(geo, impMat, ids.length);
     const m = mesh.instanceMatrix.array;
     for (let k = 0; k < ids.length; k++) {
-      const i = ids[k], s = T.type[i], H = treeGeometry(TREE_TYPES[s], 0).height * T.scale[i], c = Math.cos(T.rot[i]), sn = Math.sin(T.rot[i]), o = k * 16;
+      const i = ids[k], s = T.type[i], H = SPH[s] * T.scale[i], c = Math.cos(T.rot[i]), sn = Math.sin(T.rot[i]), o = k * 16;
       m[o] = c * H; m[o + 1] = 0; m[o + 2] = -sn * H; m[o + 3] = 0; m[o + 4] = 0; m[o + 5] = H; m[o + 6] = 0; m[o + 7] = 0; m[o + 8] = sn * H; m[o + 9] = 0; m[o + 10] = c * H; m[o + 11] = 0;
       m[o + 12] = T.x[i]; m[o + 13] = T.y[i] - 0.2; m[o + 14] = T.z[i]; m[o + 15] = 1;
       sp[k] = s;
-      if ((k & 1023) === 1023) yield;
+      if ((k & 255) === 255) yield;
     }
     // geometry attribute for species; bounds for per-block frustum culling
     mesh.geometry.setAttribute('aSpecies', new THREE.InstancedBufferAttribute(sp, 1));
