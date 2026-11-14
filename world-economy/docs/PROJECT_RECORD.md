@@ -2,9 +2,10 @@
 Orchestrator/QA: Sonnet 5.5 High (main) | Planner: Fable 5.2 High | Visual/UI/Fixes: Opus 5.5 High
 
 ## Status
-- Stage 1 (master spec, Fable): COMPLETE — awaiting user approval of spec + 8 open decisions (MASTER_SPEC §14; defaults apply).
-- Next: Stage 2 world blockout (Sonnet) — NOT started.
-- Spec: docs/MASTER_SPEC.md + docs/spec/A–G (3,512 lines). Build status: no code yet.
+- Stage 1 (master spec, Fable): COMPLETE; spec and the 8 default decisions approved by the user.
+- Stage 2 (S2a scaffold + S2 world blockout, Sonnet): COMPLETE, see "Stage 2 report" below. Tag `checkpoint/stage2-blockout`.
+- Next: Stage 3 visual production (Opus) and Stage 4 gameplay (Sonnet); they touch disjoint folders (MASTER_SPEC 9.8).
+- Spec: docs/MASTER_SPEC.md + docs/spec/A-G. Build: `npm run build` OK (dist/life.html 0.645 MB). Tests: 33 unit/sim pass, e2e smoke pass, perf spec pass.
 
 ## Standing decisions
 - Deliverables: single `dist/life.html` + multi-file `dist/artifact/`, published as an Artifact.
@@ -20,5 +21,55 @@ S1 Fable (done) · S2 Sonnet · S3 Opus · S4 Sonnet · S5 Opus · S6 Sonnet · 
 ## Known limits of verification (this container)
 Headless Chromium = SwiftShader software GL (~0.5–1.6 fps). Real fps, audio by ear, Safari/Firefox, live artifact frame are NOT verifiable here; counters-based budgets used instead. User runs a real-GPU check after Stage 3 and before release.
 
-## Known bugs / asset inventory / test results
-(empty)
+## Stage 2 report (world blockout)
+
+### Completed
+- Scaffold: package.json (three 0.180.0, esbuild 0.25.10 pinned), build.mjs (life.html inline + code-split artifact, size table, budget and forbidden-API scan), core (bus, rng, clock, math, save, log, pool, contracts), data/ids.js, settings, vehicles table, stubs for the other data tables, Sim facade skeleton, Ledger (double entry, invariant), Save (slots, export code, storage-throws fallback), audio no-op API.
+- World (pure JS, `src/world/`): terrain base profile + water basins + road/pad stamps in a 1001x1001 height grid, 4 regions / 23 districts, 7 water bodies (Gerstner set shared with boat physics), road graph (13 x 10 city grid, 22 inter-regional and local roads, tracks, paths; 43 km of roads incl. Harlan Bridge viaduct and towers, Mill Bridge, Harbor Causeway), 160 POIs (90 from Annex B + 40 delivery + 30 taxi), 795 blockout buildings on lots, ~36.7k trees, infrastructure (footbridges, quays, breakwater arms, piers, docks, tunnel portal, weir), 210 archetypes with colliders/anchors/LOD distances, colliders (1.6k) with spatial hash, `World.*` API incl. drive/walk/boat `route`, ground/surface/water queries, raycast, chunk contents.
+- Blockout renderer (`src/render`, `src/blockout`): terrain chunks (LOD0 4 m, LOD1 12.5 m, skirts), road ribbons with sidewalks/median/markings/bridge decks, flat-shaded building masses, instanced placeholder trees, water (sea/river plane, lake raster, ponds, creeks), sky, sun, fog, far proxy and skirt with Mt. Sable, 100 m chunk streaming with generator builds under `Streaming.pump`.
+- Game: on-foot controller, basic car and boat physics, third-person/vehicle/first-person camera, enter/exit with E, interaction focus, day/night sun, region/district events.
+- Debug HUD (position, region, district, fps, draw calls, triangles, geometry MB, chunk counts) with a teleport menu to all 160 POIs, `window.__LOE` harness (ready, errors, sim, teleport, setTime, setWeather, setQuality, camera.set, settle, freeze, perf.snapshot, perf.cpuOnly, grant, viewpoint, flythrough, pixelStats).
+
+### Outstanding / deferred (by design, not S2)
+- Materials, textures, detailed builders, shadows, post, weather visuals (Stage 3). Interiors are not built (V07, V09 first-person, V14 are exterior stand-ins). Audio (stub). Sim beyond the ledger, jobs, traffic, pedestrians (Stage 4). Final UI (Stage 5).
+- Water is a flat translucent plane (no waves in the render; physics uses the Gerstner set).
+- Trees are non-solid placeholders; props are not placed in the world yet (builders exist for all prop ids).
+- Moored/ambient boats and wildlife not placed (ambient set pieces are Stage 4).
+
+### Asset inventory
+No image, audio or model files are used by the game. The repo holds only test screenshots in `test/screenshots/` (16 standard viewpoints at 960x540 plus 5 overview shots, 3.3 MB) as QA artefacts.
+
+### Test results (this container, SwiftShader software GL)
+- `npm test`: 33/33 pass (bus, rng, clock, ledger invariant after 10,000 random transfers, save round-trip and code export, import rules, world invariants, blockout registry, physics sim).
+- `npm run test:e2e`: all checks pass for `dist/life.html` (file://) and `dist/artifact` (http): ready in about 0.8 s, `__LOE.errors.length === 0`, cash 10000 with one genesis tx, walk, enter/drive/exit car, enter/drive boat, teleport menu.
+- `node test/visual/shots.cjs`: 16/16 non-blank, max 160 draw calls and 255k triangles (S2 budget 300 / 300k), 4 programs (budget 12), geometry 13 MB (budget 60 MB), 0 console errors.
+- `npm run test:perf`: 16 viewpoints within budgets and baseline; ring fly-through at 30 m/s (5.8 km, 11.6k frames, 2.1k chunk builds): 0 slice overruns with GC collected between frames (max pump 4.0 ms against a 3 ms budget), 0-1 overruns with natural GC (a V8 scavenge of about 4 ms landing inside a slice); program count constant at 4.
+- Ring-route bot (Annex B 5.5): 5.90 km in 401 s (limit 485 s), average 14.7 m/s, max deviation 3.4 m from the route, never below `heightAt - 1`.
+- Not measurable here: real fps, GPU memory, shader cost; frame time is never asserted.
+
+### Stage 2 acceptance (MASTER_SPEC 9.2)
+1. POIs in `World.pois()` with region/district: VERIFIED (`world.test.mjs`: ids from Annex B parsed from the annex file, count 160, region/district derived and checked, coordinates within 30 m).
+2. Connectivity: VERIFIED (28 hub pairs drive, walk from spawn to every on-foot POI, boat between every pair of docks on the same water body; ocean and river count as one body).
+3. Traversal bot: VERIFIED (numbers above; the route is 5.9 km, not 7.6 km, see Spec issues).
+4. No colliders on lanes: VERIFIED (all lane centrelines at 2 m, 50k+ samples, vertical rule for decks).
+5. Scale checks: VERIFIED (lane 3.5 m, door 2.1 m, storeys 3.2-4.5 m, capsule 0.3 x 1.8 m asserted from data).
+6. Screenshots at the 16 viewpoints: VERIFIED (exist, non-blank by pixel variance); V07, V09, V14 are exterior stand-ins because interiors are Stage 3/4.
+7. Streaming fly-through: VERIFIED with the measurement caveat above; counters at all 16 viewpoints within the S2 column.
+8. Blockout builder for 100% of archetypes: VERIFIED (210/210).
+
+### Known bugs / limitations
+- A natural-GC fly-through can show one pump slice of about 5-7 ms (V8 scavenge); fixing needs the Stage 3 pooling work (O9).
+- Overhead views exceed the S2 draw-call budget (385 calls at 2,600 m altitude); the budget applies to the standard viewpoints only.
+- Boats collide with floating dock decks at the waterline (intended for docks, but the river dock leaves little room to turn).
+- Character cannot swim: deep water (> 1.3 m) is a barrier unless standing on a deck.
+- Blockout lighting has no shadows, so faces away from the sun are dark; Stage 3 replaces it.
+- Mt. Sable from the village dock (V08) is NE of the lake, not north-west as written in Annex G 7.2.
+
+### Spec issues (most conservative interpretation chosen)
+- Annex B 5.5 gives the ring route as about 7.6 km, but the sum of its own road lengths is about 5.9 km (stretch lengths in 5.2 sum to 4.0 km plus about 1.9 km of city legs). Built from the roads as specified: 5.90 km. The traversal acceptance (15% of length / 14 m/s) is applied to the built length.
+- Annex B 2 terrain slopes in the forest (about 12.7 %) exceed the 8 % / 10 % road grade limits in the same section; see DECISIONS.md for the grade relaxation and the Fire Tower Track switchbacks (0.6 km becomes about 1.0 km).
+- Annex B 4 first-match district order puts the annex coordinate of `poi.ocean.seagrass` in `ocean.marina` (snapped 30 m west).
+- Annex B 3 pond levels (55 m and 30 m) sit above the surrounding terrain (44 m and about 20 m); implemented as raised mounds around the ponds.
+- Annex B 5.2 lists the `r.bridge` touchdown at y = 8 and the west end at y = 18, with the west tower deck at 26 m; terrain there is lower, so the west approach is a viaduct (about 190 m) instead of an embankment.
+- Annex G 7.2 V08 says "north-west across the lake to Mt. Sable", but the peak is at (300, -3600).
+- The spec's `Annex G 2.3` S2 column has no "shadow-caster batches" figure; S2 renders without shadows (0 shadow draws).

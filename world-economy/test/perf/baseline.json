@@ -1,0 +1,162 @@
+{
+ "V01": {
+  "calls": 121,
+  "tris": 154102,
+  "geoMB": 8.66,
+  "programs": 4,
+  "shadowCalls": 0,
+  "shadowTris": 0,
+  "farTris": 55300,
+  "chunkTris": 204312
+ },
+ "V02": {
+  "calls": 111,
+  "tris": 142878,
+  "geoMB": 8.66,
+  "programs": 4,
+  "shadowCalls": 0,
+  "shadowTris": 0,
+  "farTris": 55300,
+  "chunkTris": 204312
+ },
+ "V03": {
+  "calls": 151,
+  "tris": 161107,
+  "geoMB": 9.48,
+  "programs": 4,
+  "shadowCalls": 0,
+  "shadowTris": 0,
+  "farTris": 53258,
+  "chunkTris": 258409
+ },
+ "V04": {
+  "calls": 113,
+  "tris": 137844,
+  "geoMB": 10,
+  "programs": 4,
+  "shadowCalls": 0,
+  "shadowTris": 0,
+  "farTris": 53166,
+  "chunkTris": 258298
+ },
+ "V05": {
+  "calls": 112,
+  "tris": 129464,
+  "geoMB": 8.65,
+  "programs": 4,
+  "shadowCalls": 0,
+  "shadowTris": 0,
+  "farTris": 54312,
+  "chunkTris": 236604
+ },
+ "V06": {
+  "calls": 137,
+  "tris": 163976,
+  "geoMB": 9.22,
+  "programs": 4,
+  "shadowCalls": 0,
+  "shadowTris": 0,
+  "farTris": 56898,
+  "chunkTris": 244769
+ },
+ "V07": {
+  "calls": 100,
+  "tris": 142321,
+  "geoMB": 9.29,
+  "programs": 4,
+  "shadowCalls": 0,
+  "shadowTris": 0,
+  "farTris": 64222,
+  "chunkTris": 269708
+ },
+ "V08": {
+  "calls": 129,
+  "tris": 176290,
+  "geoMB": 10.22,
+  "programs": 4,
+  "shadowCalls": 0,
+  "shadowTris": 0,
+  "farTris": 64410,
+  "chunkTris": 289542
+ },
+ "V09": {
+  "calls": 138,
+  "tris": 180281,
+  "geoMB": 8.15,
+  "programs": 4,
+  "shadowCalls": 0,
+  "shadowTris": 0,
+  "farTris": 68606,
+  "chunkTris": 231939
+ },
+ "V10": {
+  "calls": 91,
+  "tris": 122426,
+  "geoMB": 7.56,
+  "programs": 4,
+  "shadowCalls": 0,
+  "shadowTris": 0,
+  "farTris": 58534,
+  "chunkTris": 170650
+ },
+ "V11": {
+  "calls": 96,
+  "tris": 118904,
+  "geoMB": 7.86,
+  "programs": 4,
+  "shadowCalls": 0,
+  "shadowTris": 0,
+  "farTris": 58534,
+  "chunkTris": 187166
+ },
+ "V12": {
+  "calls": 43,
+  "tris": 117701,
+  "geoMB": 7,
+  "programs": 4,
+  "shadowCalls": 0,
+  "shadowTris": 0,
+  "farTris": 63936,
+  "chunkTris": 183464
+ },
+ "V13": {
+  "calls": 142,
+  "tris": 202367,
+  "geoMB": 10.91,
+  "programs": 4,
+  "shadowCalls": 0,
+  "shadowTris": 0,
+  "farTris": 66982,
+  "chunkTris": 335639
+ },
+ "V14": {
+  "calls": 160,
+  "tris": 254842,
+  "geoMB": 11.18,
+  "programs": 4,
+  "shadowCalls": 0,
+  "shadowTris": 0,
+  "farTris": 63216,
+  "chunkTris": 387953
+ },
+ "V15": {
+  "calls": 106,
+  "tris": 203032,
+  "geoMB": 13.08,
+  "programs": 4,
+  "shadowCalls": 0,
+  "shadowTris": 0,
+  "farTris": 67954,
+  "chunkTris": 463816
+ },
+ "V16": {
+  "calls": 101,
+  "tris": 200760,
+  "geoMB": 12.99,
+  "programs": 4,
+  "shadowCalls": 0,
+  "shadowTris": 0,
+  "farTris": 68256,
+  "chunkTris": 492925
+ }
+}
