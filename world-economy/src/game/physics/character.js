@@ -35,7 +35,7 @@ export function stepCharacter(c, input, dt) {
     let nx = x + sx, nz = z + sz;
     // wading limit: water deeper than 1.3 m is a barrier (no swimming in Stage 2)
     const w = World.waterAt(nx, nz, 0);
-    if (w && w.depth > 1.3 && c.y < w.height + 0.2) { c.vx *= 0.5; c.vz *= 0.5; c.swimBlocked = true; continue; }
+    if (w && w.depth > 1.3 && !World.groundAt(nx, c.y + SCALE.stepHeight, nz).platformId) { c.vx *= 0.5; c.vz *= 0.5; c.swimBlocked = true; continue; }
     c.swimBlocked = false;
     const hit = resolveCircle(nx, nz, SCALE.capsuleRadius, c.y + SCALE.stepHeight + 0.02, c.y + SCALE.capsuleHeight, out);
     if (hit) { nx = out.x; nz = out.z; const vn = c.vx * out.nx + c.vz * out.nz; if (vn < 0) { c.vx -= vn * out.nx; c.vz -= vn * out.nz; } }

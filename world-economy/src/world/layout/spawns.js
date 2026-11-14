@@ -12,7 +12,7 @@ export const VEHICLE_SPAWNS = [
 ];
 /** boats: spawned in open water beside the dock point of the POI */
 export const BOAT_SPAWNS = [
-  { id: 'b.riverdock', archetype: 'boat.skiff', xz: [-306, 588], yaw: 0 },
+  { id: 'b.riverdock', archetype: 'boat.skiff', xz: [-288, 595.6], yaw: Math.PI / 2 },
   { id: 'b.village', archetype: 'boat.rowboat', poi: 'poi.lake.fish.dock', yaw: -Math.PI / 2 },
   { id: 'b.boathouse', archetype: 'boat.skiff', xz: [-905, -825], yaw: Math.PI },
   { id: 'b.harbor', archetype: 'boat.skiff', xz: [-862, 1182], yaw: Math.PI },

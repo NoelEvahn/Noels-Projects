@@ -179,7 +179,7 @@ export function buildInfra({ edges, nodes, roadIndex, heightAt }) {
     const parts = [];
     const bankY = heightAt(-252, 600);
     parts.push(deckSlab([-252, bankY, 600], [-270, 0.55, 600], 3.6, 0.4, COL.wood));
-    parts.push(box(-287, 0.4, 600, 33, 0.3, 4, PI / 2, COL.wood, { solid: true, walk: true }));
+    parts.push(box(-287, 0.4, 600, 4, 0.3, 33, PI / 2, COL.wood, { solid: true, walk: true }));
     add('infra.dock.city.river', 'infra.dock_floating', parts, ['dock']);
   }
   {

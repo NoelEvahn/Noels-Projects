@@ -70,7 +70,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   mode = await page.evaluate(() => window.__LOE.game.player.mode);
   check('E exits the car', mode === 'foot', 'mode ' + mode);
   // boat
-  await page.evaluate(() => window.__LOE.teleport([-296, 0.6, 590], 0));
+  await page.evaluate(() => window.__LOE.teleport([-288, 0.6, 598.2], 0));
   await page.keyboard.press('KeyE'); await wait(600);
   mode = await page.evaluate(() => window.__LOE.game.player.mode);
   check('E enters the river skiff', mode === 'boat', 'mode ' + mode);
