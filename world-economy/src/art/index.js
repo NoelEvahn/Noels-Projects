@@ -5,3 +5,6 @@ import './props/index.js';
 import './vehicles/index.js';
 import './boats/index.js';
 import './characters/index.js';
+import './vegetation/index.js';
+import './infra/index.js';
+import './interiors/index.js';

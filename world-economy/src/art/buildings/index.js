@@ -456,3 +456,23 @@ reg('bld.player_built', (g, { w, d }) => {
   g.mat('tex.wood_planks', 0xc8a878); for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) g.box(sx * (w / 2 - 0.1), 0.6, sz * (d / 2 - 0.1), 0.1, 1.0, 0.1);
   g.mat('tex.flat', 0xe8d040); g.box(0, 0.9, -d / 2 + 0.1, w, 0.02, 0.02); g.box(0, 0.9, d / 2 - 0.1, w, 0.02, 0.02);
 });
+
+// ---- interiors in their host buildings (Annex A 6.4): appended at LOD0 only ------------------------------------------------------------------------
+import { addInterior } from '../interiors/index.js';
+const HOSTS = {
+  'bld.cabin_log': (D) => ['int.cabin_log', D.w, D.d, 3.0, 0.2], 'bld.cabin_plank': (D) => ['int.cabin_log', D.w, D.d, 2.9, 0.2],
+  'bld.boathouse': (D) => ['int.boathouse', D.w, D.d, 4.6, 0.28], 'bld.diner': (D) => ['int.diner', D.w, D.d, D.st, 0.02],
+  'bld.general_store': (D) => ['int.shop_small', D.w, D.d, 3.4, 0.2], 'bld.fishing_hut': (D) => ['int.shop_small', D.w, D.d, 2.6, 0.2],
+  'bld.lodge_restaurant': (D) => ['int.lodge_restaurant', D.w, D.d, 3.8, 0.2], 'bld.bank': (D) => ['int.bank_lobby', D.w, D.d, D.st * 1.2, 0.02],
+  'bld.supermarket': (D) => ['int.supermarket', D.w, D.d, D.H, 0.02], 'bld.garage_workshop': (D) => ['int.garage', D.w, D.d, D.H, 0.02],
+  'bld.warehouse': (D) => ['int.warehouse', D.w, D.d, 7.5, 0.02], 'bld.sawmill': (D) => ['int.sawmill', D.w, D.d, 7, 0.02],
+};
+const IG = new GB(1 << 14);
+for (const id in HOSTS) {
+  const base = Builders.get(id);
+  Builders.register(id, (pl, ctx) => {
+    const r = base(pl, ctx);
+    if ((ctx.lod || 0) === 0) { const D = dims(pl), [iid, w, d, h, y0] = HOSTS[id](D); const g = IG.reset(); addInterior(g, iid, w, d, h, y0, pl.seed); r.batches.push({ geometry: g.toArrays(), materialId: 'mat.world' }); }
+    return r;
+  }, { stage: 3 });
+}

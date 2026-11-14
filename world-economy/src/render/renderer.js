@@ -91,6 +91,7 @@ export function createRenderer({ canvas, settings, perf, quality, onRendererStri
       camera.fov = d.camera.fov; camera.far = Math.max(2500, d.farClip); camera.updateProjectionMatrix();
       veg.configure({ density: d.vegetation.density, treeCaps: d.vegetation.treeCaps, groundCoverRadius: d.vegetation.groundCoverRadius, lodBias: d.lodBias, mid: d.chunkRadii[1], shadows: d.shadows.enabled, atlasSize: Math.min(2048, d.textures.atlas) });
       fx.configure({ particles: d.particles.maxAlive, lightPool: d.lightPool, fogCards: d.fogCards });
+      views.configure({ lodBias: d.lodBias, shadows: d.shadows.enabled });
       const texChanged = !all && prev && (JSON.stringify(prev.textures) !== JSON.stringify(d.textures));
       if (texChanged) { applying++; baker.start(texSizes(d)); Streaming.add('rebake', baker.job(), -1, () => { applying--; }); }
       if (!all && prev && (prev.lodBias !== d.lodBias || prev.chunkRadii.join() !== d.chunkRadii.join())) chunks.invalidate();
