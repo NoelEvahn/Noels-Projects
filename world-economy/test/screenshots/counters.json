@@ -1,0 +1,102 @@
+{
+ "hour": 8,
+ "rows": [
+  {
+   "id": "V04",
+   "ms": 256,
+   "calls": 103,
+   "tris": 128582,
+   "geoMB": 8.3,
+   "programs": 4,
+   "chunksNear": 49,
+   "chunksMid": 191,
+   "variance": 3154.7,
+   "colors": 148
+  },
+  {
+   "id": "V05",
+   "ms": 225,
+   "calls": 112,
+   "tris": 127960,
+   "geoMB": 8.3,
+   "programs": 4,
+   "chunksNear": 59,
+   "chunksMid": 133,
+   "variance": 6439.8,
+   "colors": 208
+  },
+  {
+   "id": "V07",
+   "ms": 266,
+   "calls": 100,
+   "tris": 130907,
+   "geoMB": 8.3,
+   "programs": 4,
+   "chunksNear": 3,
+   "chunksMid": 21,
+   "variance": 5635.9,
+   "colors": 297
+  },
+  {
+   "id": "V09",
+   "ms": 238,
+   "calls": 129,
+   "tris": 155729,
+   "geoMB": 8.3,
+   "programs": 4,
+   "chunksNear": 35,
+   "chunksMid": 105,
+   "variance": 5761.6,
+   "colors": 326
+  },
+  {
+   "id": "V11",
+   "ms": 228,
+   "calls": 96,
+   "tris": 113178,
+   "geoMB": 8.3,
+   "programs": 4,
+   "chunksNear": 0,
+   "chunksMid": 0,
+   "variance": 3570.7,
+   "colors": 113
+  },
+  {
+   "id": "V12",
+   "ms": 180,
+   "calls": 43,
+   "tris": 106573,
+   "geoMB": 8.3,
+   "programs": 4,
+   "chunksNear": 49,
+   "chunksMid": 155,
+   "variance": 1534.7,
+   "colors": 279
+  },
+  {
+   "id": "V14",
+   "ms": 334,
+   "calls": 130,
+   "tris": 210918,
+   "geoMB": 8.3,
+   "programs": 4,
+   "chunksNear": 0,
+   "chunksMid": 0,
+   "variance": 5475.1,
+   "colors": 236
+  },
+  {
+   "id": "V16",
+   "ms": 319,
+   "calls": 101,
+   "tris": 185312,
+   "geoMB": 8.3,
+   "programs": 4,
+   "chunksNear": 28,
+   "chunksMid": 80,
+   "variance": 5380.4,
+   "colors": 267
+  }
+ ],
+ "errors": []
+}
