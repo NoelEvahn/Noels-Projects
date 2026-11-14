@@ -1,0 +1,18 @@
+{
+  "name": "loe-open-economy",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "PROJECT: LIFE - OPEN ECONOMY (code namespace LOE)",
+  "scripts": {
+    "build": "node build.mjs",
+    "build:dev": "node build.mjs --dev",
+    "test": "node --test test/unit/ test/sim/",
+    "test:e2e": "node test/e2e/smoke.spec.cjs",
+    "shots": "node test/visual/shots.cjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.10",
+    "three": "0.180.0"
+  }
+}
