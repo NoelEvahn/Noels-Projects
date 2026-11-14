@@ -144,5 +144,7 @@ export function createLedger({ bus = null, now = () => 0 } = {}) {
     nextTx = s.nextTx || journal.length + 1;
   }
 
-  return { openAccount, closeAccount, balance, canAfford, transfer, charge, query, totals, checkInvariant, serialize, restore, accountIds: () => Array.from(accounts.keys()) };
+  function reset() { accounts.clear(); journal = []; nextTx = 1; daily = {}; lifetime = {}; }
+
+  return { reset, openAccount, closeAccount, balance, canAfford, transfer, charge, query, totals, checkInvariant, serialize, restore, accountIds: () => Array.from(accounts.keys()) };
 }

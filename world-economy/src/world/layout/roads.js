@@ -18,11 +18,11 @@ export const ROAD_CLASSES = {
   rural:     { carriage: 8, row: 12, walk: 0, speed: 20, surface: 'surf.asphalt', lanes: [-2, 2], grade: 0.08 },
   highway:   { carriage: 14, row: 18, walk: 0, speed: 25, surface: 'surf.asphalt', lanes: [-5.25, -1.75, 1.75, 5.25], grade: 0.06 },
   loop:      { carriage: 6, row: 10, walk: 0, speed: 12, surface: 'surf.gravel', lanes: [-1.5, 1.5], grade: 0.08 },
-  gravel:    { carriage: 6, row: 10, walk: 0, speed: 14, surface: 'surf.gravel', lanes: [-1.5, 1.5], grade: 0.08 },
-  dirt:      { carriage: 4, row: 8, walk: 0, speed: 10, surface: 'surf.dirt', lanes: [-1, 1], grade: 0.10 },
+  gravel:    { carriage: 6, row: 10, walk: 0, speed: 14, surface: 'surf.gravel', lanes: [-1.5, 1.5], grade: 0.11 },
+  dirt:      { carriage: 4, row: 8, walk: 0, speed: 10, surface: 'surf.dirt', lanes: [-1, 1], grade: 0.11 },
   local:     { carriage: 7, row: 12, walk: 2, speed: 10, surface: 'surf.asphalt', lanes: [-1.75, 1.75], grade: 0.08 },
-  track:     { carriage: 4, row: 8, walk: 0, speed: 8, surface: 'surf.dirt', lanes: [-1, 1], grade: 0.10 },
-  path:      { carriage: 2, row: 4, walk: 0, speed: 0, surface: 'surf.gravel', lanes: [], grade: 0.12 },
+  track:     { carriage: 4, row: 8, walk: 0, speed: 8, surface: 'surf.dirt', lanes: [-1, 1], grade: 0.11 },
+  path:      { carriage: 2, row: 4, walk: 0, speed: 0, surface: 'surf.gravel', lanes: [], grade: 0.16 },
 };
 
 /** Free-form roads. ctrl items: 'nodeId' | [x,z] free control | [x,z,'nodeId'] free control that is also a node. */
@@ -40,7 +40,7 @@ const SPLINES = [
   { id: 'r.spur.a', name: 'Logging Spur A', cls: 'dirt', ctrl: ['n.timber.yard', [1230, -1380], 'n.stand.a'] },
   { id: 'r.spur.b', name: 'Logging Spur B', cls: 'dirt', ctrl: ['n.timber.yard', [1050, -1400], 'n.stand.b'] },
   { id: 'r.spur.c', name: 'Logging Spur C', cls: 'dirt', ctrl: ['n.timber.yard', [1300, -1200], 'n.stand.c'] },
-  { id: 'r.tower', name: 'Fire Tower Track', cls: 'dirt', ctrl: ['n.tower.junction', [820, -1400], 'n.firetower'] },
+  { id: 'r.tower', name: 'Fire Tower Track', cls: 'dirt', ctrl: ['n.tower.junction', [860, -1230], [940, -1330], [830, -1440], [900, -1540], [790, -1610], 'n.firetower'], grade: 0.11 },
   { id: 'r.causeway', bridges: true, name: 'Harbor Causeway', cls: 'rural', ctrl: [gid(0, 12), [-250, 1000], [-450, 1000], 'n.calder.terminal', [-760, 1067, 'n.cause.pce'], 'n.portcalder'], pins: [[-250, 1000, 7], [-350, 1000, 7], [-450, 1000, 7]] },
   { id: 'r.east', name: 'East Highway', cls: 'highway', ctrl: [gid(9, 7), [1500, 420], 'n.east.tunnel'], grade: 0.075 },
   { id: 'r.eastside', name: 'Eastside Loop', cls: 'street', ctrl: [gid(9, 3), [1200, 58], [1290, 70, 'n.es.a'], [1380, 80], [1396, 200, 'n.es.b'], [1400, 350], [1250, 300, 'n.es.c'], gid(9, 5)] },
@@ -112,7 +112,16 @@ export function buildRoads(ground = terrainPre) {
       y[i] = a / c;
     }
     const pinned = new Uint8Array(n);
-    for (const [i, py] of pinsIdx) { y[i] = py; pinned[i] = 1; }
+    const deckPins = pinsIdx.filter((q) => q[3]).sort((a, b) => a[0] - b[0]);
+    for (let k = 0; k + 1 < deckPins.length; k++) {
+      const [i0, y0] = deckPins[k], [i1, y1] = deckPins[k + 1];
+      for (let i = i0; i <= i1; i++) { y[i] = y0 + (y1 - y0) * (s[i] - s[i0]) / Math.max(1e-6, s[i1] - s[i0]); pinned[i] = 1; }
+    }
+    for (const pin of pinsIdx) {
+      const [i, py, isNode] = pin;
+      y[i] = py; pinned[i] = 1;
+      if (isNode) for (const k of [-2, -1, 1, 2]) { const q = i + k; if (q >= 0 && q < n && !pinned[q]) { y[q] = py; pinned[q] = 1; } }
+    }
     for (let pass = 0; pass < 4; pass++) {
       for (let i = 1; i < n; i++) { if (pinned[i]) continue; const d = grade * (s[i] - s[i - 1]); y[i] = Math.min(y[i - 1] + d, Math.max(y[i - 1] - d, y[i])); }
       for (let i = n - 2; i >= 0; i--) { if (pinned[i]) continue; const d = grade * (s[i + 1] - s[i]); y[i] = Math.min(y[i + 1] + d, Math.max(y[i + 1] - d, y[i])); }
@@ -137,7 +146,7 @@ export function buildRoads(ground = terrainPre) {
     }
     const C = ROAD_CLASSES[cls];
     const elevated = new Uint8Array(n);
-    for (let i = 0; i < n; i++) elevated[i] = ((gs[i] < -0.3 && ys[i] - gs[i] > 1.5) || (extra.bridges && ys[i] - gs[i] > 3.0)) ? 1 : 0;
+    for (let i = 0; i < n; i++) elevated[i] = cls !== 'path' && ((gs[i] < -0.3 && ys[i] - gs[i] > 1.5) || (extra.bridges && ys[i] - gs[i] > 3.0)) ? 1 : 0;
     // dilate by 1 sample and drop runs shorter than 3 samples
     const el2 = new Uint8Array(n);
     for (let i = 0; i < n; i++) if (elevated[i]) { el2[Math.max(0, i - 1)] = 1; el2[i] = 1; el2[Math.min(n - 1, i + 1)] = 1; }
@@ -171,7 +180,7 @@ export function buildRoads(ground = terrainPre) {
       const m = Math.max(1, Math.ceil(ds / 10));
       const xs = [], zs = [];
       for (let q = 0; q <= m; q++) { xs.push(A.x + (B.x - A.x) * q / m); zs.push(A.z + (B.z - A.z) * q / m); }
-      const pr = profile(xs, zs, [[0, A.y], [m, B.y]], ROAD_CLASSES[cls].grade);
+      const pr = profile(xs, zs, [[0, A.y, true], [m, B.y, true]], ROAD_CLASSES[cls].grade);
       makeEdge(`e.${nameBase}.${k}`, nameBase, cls, A.id, B.id, xs, zs, pr.y, pr.g, extraProps(A, B));
     }
   }
@@ -214,11 +223,11 @@ export function buildRoads(ground = terrainPre) {
     const pins = [];
     const first = nodes.get(typeof ctrl[0] === 'string' ? ctrl[0] : null);
     // pin every node control to its node elevation
-    ctrl.forEach((c, k) => { if (typeof c === 'string' && nodes.get(c).fixed) pins.push([idx[k], nodes.get(c).y]); });
+    ctrl.forEach((c, k) => { if (typeof c === 'string' && nodes.get(c).fixed) pins.push([idx[k], nodes.get(c).y, true]); });
     for (const [px, pz, py] of (R.pins || [])) {
       let bi = 0, bd = 1e18;
       for (let i = 0; i < xs.length; i++) { const d = (xs[i] - px) ** 2 + (zs[i] - pz) ** 2; if (d < bd) { bd = d; bi = i; } }
-      pins.push([bi, py]);
+      pins.push([bi, py, false, true]);
     }
     void first;
     const pr = profile(xs, zs, pins, R.grade || ROAD_CLASSES[R.cls].grade);
@@ -296,8 +305,8 @@ export function buildRoads(ground = terrainPre) {
     let pr;
     if (o.y !== undefined) { const n = xs.length; pr = { y: new Float64Array(n).fill(o.y), g: new Float64Array(n).fill(o.y) }; }
     else {
-      const pins = [[0, A.y]];
-      if (B.fixed) pins.push([xs.length - 1, B.y]);
+      const pins = [[0, A.y, true]];
+      if (B.fixed) pins.push([xs.length - 1, B.y, true]);
       pr = profile(xs, zs, pins, ROAD_CLASSES[cls].grade);
     }
     if (!B.fixed) { B.y = pr.y[pr.y.length - 1]; B.fixed = true; }

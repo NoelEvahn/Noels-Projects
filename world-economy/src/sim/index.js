@@ -14,6 +14,8 @@ export function createSim({ bus = null } = {}) {
       ledger.restore(state.ledger);
       flags = { ...(state.flags || {}) };
     } else {
+      ledger.reset();
+      cheated = false;
       openStartingAccounts(ledger);
       genesis(ledger);
       flags = { tutorial: 0 };

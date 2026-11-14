@@ -32,7 +32,7 @@ export function* buildWorld(seed = 1) {
   let trackN = 0;
   for (const p of poiDefs) {
     const d = p.data;
-    if (d.noAccess || d.water || p.tags.includes('boatonly')) continue;
+    if (d.noAccess || d.water || d.building || p.tags.includes('boatonly')) continue;
     const [x, , z] = p.pos;
     const hit = idx0.nearest(x, z, 600, (e) => e.cls !== 'path');
     if (!hit) continue;
@@ -216,7 +216,7 @@ export function* buildWorld(seed = 1) {
     const a = `n.pier.${key}.a`, b = `n.pier.${key}.b`;
     R.addNode(a, pr.x0, pr.z0, pr.y); R.addNode(b, pr.x1, pr.z1, pr.y);
     R.addLink(`e.pier.${key}`, 'Pier', 'path', a, b, { y: pr.y, extra: { walkOnly: true, drive: false, noStamp: true, noRender: true, pier: key } });
-    const land = R.splitNearest(pr.x0, pr.z0, 70, (e) => e.cls !== 'path' || e.pathId);
+    const land = R.splitNearest(pr.x0, pr.z0, 200, (e) => e.cls !== 'path' || e.pathId);
     if (land && land !== a) R.addLink(`e.pier.${key}.land`, 'Pier access', 'path', a, land, { extra: { walkOnly: true, drive: false, noStamp: true, noRender: true, pier: key } });
   }
   W.roadIndex = buildRoadIndex(edges);
@@ -273,10 +273,23 @@ export function* buildWorld(seed = 1) {
     ['r.1000', riverX(1000), 1000], ['r.800', riverX(800), 800], ['r.600', riverX(600) + 20, 600], ['r.dock', riverX(600) + 35, 600], ['r.400', riverX(400), 400], ['r.200', riverX(200), 200], ['r.0', riverX(0), 0], ['r.-200', riverX(-200), -200], ['r.weir', riverX(-300), -300],
     ['o.boatyard', -760, 1185], ['o.terminal', -660, 1160], ['o.harbor.mid', -900, 1330]].forEach(([id, x, z]) => addWp(id, x, z));
   // lake
-  [['l.village', -805, -1070], ['l.boathire', -805, -1040], ['l.boathouse', -905, -830], ['l.camp', -1200, -1405], ['l.inlet', -1618, -1150], ['l.rocks', -1250, -810], ['l.deep', -1200, -1100], ['l.reeds', -1480, -1340], ['l.mid.e', -1000, -1100], ['l.mid.w', -1400, -1100], ['l.south', -1100, -900], ['l.north', -1100, -1300]].forEach(([id, x, z]) => addWp(id, x, z));
+  [['l.village', -805, -1070], ['l.boathire', -832, -1046], ['l.boathouse', -905, -812], ['l.camp', -1200, -1375], ['l.inlet', -1560, -1150], ['l.rocks', -1250, -850], ['l.deep', -1200, -1100], ['l.reeds', -1480, -1340], ['l.mid.e', -1000, -1100], ['l.mid.w', -1400, -1100], ['l.south', -1100, -900], ['l.north', -1100, -1300]].forEach(([id, x, z]) => addWp(id, x, z));
   W.boatNav = createBoatNav({ waterDepth, waypoints: wp });
 
   // ---- chunk index ----------------------------------------------------------------------------------------------------------------------------------------------
+  // static interactables: a door per POI building, a marker per other POI
+  W.interactables = [];
+  for (const p of poiDefs) {
+    const pl = poiPlacement.get(p.id);
+    let pos = p.pos.slice(), kind = 'sign';
+    if (pl) {
+      const fx = Math.sin(pl.rotY), fz = -Math.cos(pl.rotY);
+      pos = [pl.x + fx * (pl.params.d / 2 + 0.6), pl.y, pl.z + fz * (pl.params.d / 2 + 0.6)];
+      kind = 'door';
+    } else if (p.type === 'dock') kind = 'cleat';
+    else if (p.type === 'bank') kind = 'atm';
+    W.interactables.push({ id: `int.${p.id}`, kind, pos, radius: 2.5, prompt: `prompt.${p.id}`, poiId: p.id, placementId: pl ? pl.id : undefined });
+  }
   yield 'chunks';
   const NC = 40;
   const ck = (x, z) => Math.min(NC - 1, Math.max(0, Math.floor((z + 2000) / 100))) * NC + Math.min(NC - 1, Math.max(0, Math.floor((x + 2000) / 100)));

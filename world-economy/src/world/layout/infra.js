@@ -230,8 +230,8 @@ export function buildInfra({ edges, nodes, roadIndex, heightAt }) {
     add('infra.tunnel.east', 'infra.tunnel_portal', parts, ['portal']);
   }
   {
-    const g = Math.max(heightAt(-1640, -1160), heightAt(-1640, -1140));
-    add('infra.footbridge.inlet', 'infra.footbridge_wood', [box(-1640, g + 0.3 - 0.15, -1150, 3, 0.3, 16, 0, COL.wood, { solid: true, walk: true })], ['footbridge']);
+    const g = Math.max(heightAt(-1722, -1158), heightAt(-1722, -1142));
+    add('infra.footbridge.inlet', 'infra.footbridge_wood', [box(-1722, g + 0.3 - 0.15, -1150, 3, 0.3, 16, 0, COL.wood, { solid: true, walk: true })], ['footbridge']);
   }
   return { groups, piers };
 }

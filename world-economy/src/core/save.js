@@ -1,5 +1,6 @@
 // Save (MASTER_SPEC 5.9, 8). Dependency-injected so core/ stays free of sim/game imports.
-import { ERR } from '../data/ids.js';
+// Error codes mirror data/ids.js ERR.* (core/ may not import data/).
+const ERR = { INVALID_ARG: 'ERR.INVALID_ARG', NOT_FOUND: 'ERR.NOT_FOUND', SAVE_INVALID: 'ERR.SAVE_INVALID' };
 
 export const SAVE_VERSION = 1;
 const KEYS = { auto: 'loe.save.auto', 1: 'loe.save.1', 2: 'loe.save.2', 3: 'loe.save.3' };
@@ -23,7 +24,7 @@ function unb64url(str) {
 }
 async function pipeBytes(stream, bytes) {
   const w = stream.writable.getWriter();
-  w.write(bytes); w.close();
+  w.write(bytes).catch(() => {}); w.close().catch(() => {});
   return new Uint8Array(await new Response(stream.readable).arrayBuffer());
 }
 

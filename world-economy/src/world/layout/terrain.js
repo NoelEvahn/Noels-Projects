@@ -1,6 +1,7 @@
 // Terrain base profile (Annex B 2). Pure. Stamps (roads, pads) are applied in world/heightgrid.js.
 import { smoothstep as S, fbm, valueNoise } from '../../core/math.js';
-import { shoreD, quayWeight, coastEff, GULL_ROCK, LAKE, lakeR, PONDS, riverMetrics, RIVER } from './water.js';
+import { shoreD, quayWeight, coastEff, GULL_ROCK, LAKE, lakeParts, PONDS, riverMetrics, RIVER } from './water.js';
+const _lp = {};
 
 const mix = (a, b, t) => a + (b - a) * t;
 
@@ -31,7 +32,7 @@ function northH(x, z) {
   let h = mix(ramp(z), far, wFar);
   const rimW = 70 * S(-1750, -2000, x);
   const rimN = 70 * S(-1550, -2000, z) * (1 - blendX) * wFar;
-  const hillAmp = 4 + wFar * mix(6, 22, S(0, 500, x));
+  const hillAmp = 4 + wFar * mix(6, 9, S(0, 500, x));
   h += rimW + rimN + hillAmp * fbm(x / 240, z / 240, 3, 13);
   return h;
 }
@@ -63,9 +64,10 @@ export function baseRaw(x, z) {
 export function terrainPre(x, z) {
   let h = baseRaw(x, z);
   // lake
-  const lr = lakeR(x, z);
+  lakeParts(x, z, _lp);
+  const lr = _lp.r;
   if (lr < 1.06) {
-    if (lr < 1) h = LAKE.level - LAKE.maxDepth * S(1, 0.4, lr);
+    if (lr < 1) h = LAKE.level - Math.max(_lp.rE < 1 ? LAKE.maxDepth * S(1, 0.4, _lp.rE) : 0, 8 * S(1, 0.3, _lp.rB));
     else h = mix(LAKE.level, Math.max(h, LAKE.level + 0.2), S(1, 1.06, lr));
   }
   // ponds (raised mounds so the pond holds its level)

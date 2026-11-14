@@ -12,6 +12,7 @@ export const PATHS = [
   { id: 'p.footbridge.w', name: 'Footbridge stairs', items: ['n.footbridge', [380, 200, 'n.fb.w']], link: true, fixedY: { 'n.fb.w': 14.2 } },
   { id: 'p.footbridge.e', name: 'Footbridge stairs', items: ['n.footbridge', [420, 200, 'n.fb.e']], link: true, fixedY: { 'n.fb.e': 14.2 } },
   { id: 'p.footbridge.span', name: 'Central Ave footbridge', items: ['n.fb.w', 'n.fb.e'], link: true, flatY: 14.2 },
+  { id: 'p.riverdock', name: 'Riverside dock gangway', items: ['n.prom.8', [-215, 578], [-250, 598, 'n.riverdock.bank'], [-296, 600, 'n.riverdock.end']], link: true, fixedY: { 'n.riverdock.end': 0.55 } },
   // Port Calder harbour promenade and marina boardwalk
   { id: 'p.pc.prom.w', name: 'Harbour promenade', items: ['n.pc.w', [-1098, 1135, 'n.pcp.w']] },
   { id: 'p.pc.prom.c', name: 'Harbour promenade', items: ['n.pc.c', [-900, 1135, 'n.pcp.c']] },

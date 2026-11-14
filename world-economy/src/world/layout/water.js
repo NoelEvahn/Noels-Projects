@@ -83,20 +83,25 @@ export function riverMetrics(x, z) {
 export const LAKE = { cx: -1200, cz: -1100, a: 430, b: 320, level: 40, maxDepth: 18 };
 const LAKE_BAYS = [
   { cx: -1480, cz: -1340, r: 70 }, // Reed Bay (north-west)
-  { cx: -905, cz: -805, r: 65 },   // Boathouse Bay (south-east)
-  { cx: -795, cz: -1085, r: 45 },  // Pinehaven village docks
+  { cx: -905, cz: -845, r: 75 },   // Boathouse Bay (south-east)
+  { cx: -795, cz: -1085, r: 55 },  // Pinehaven village docks
 ];
-/** normalised radius: <1 inside the lake outline */
-export function lakeR(x, z) {
+/** lake geometry: r = min over ellipse and bays (<1 inside the outline), rE = ellipse only, rB = nearest bay */
+export function lakeParts(x, z, out = {}) {
   const dx = (x - LAKE.cx) / LAKE.a, dz = (z - LAKE.cz) / LAKE.b;
-  let r = Math.sqrt(dx * dx + dz * dz);
-  if (r < 2) r *= 1 + 0.06 * fbm(x / 260, z / 260, 2, 7);
+  let rE = Math.sqrt(dx * dx + dz * dz);
+  if (rE < 2) rE *= 1 + 0.06 * fbm(x / 260, z / 260, 2, 7);
+  let rB = 9;
   for (const b of LAKE_BAYS) {
     const ex = x - b.cx, ez = z - b.cz;
-    r = Math.min(r, Math.sqrt(ex * ex + ez * ez) / b.r);
+    const r = Math.sqrt(ex * ex + ez * ez) / b.r;
+    if (r < rB) rB = r;
   }
-  return r;
+  out.rE = rE; out.rB = rB; out.r = Math.min(rE, rB);
+  return out;
 }
+const _lp = {};
+export function lakeR(x, z) { return lakeParts(x, z, _lp).r; }
 
 // ---- ponds ---------------------------------------------------------------------------------------------------
 export const PONDS = {

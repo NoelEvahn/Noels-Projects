@@ -22,7 +22,8 @@ export function createHeightGrid() {
     }
     const bestW = new Float32Array(GRID_N * GRID_N);
     const bestY = new Float32Array(GRID_N * GRID_N);
-    const stampCell = (idx, w, y) => { if (w > bestW[idx]) { bestW[idx] = w; bestY[idx] = y; } };
+    const bestD = new Float32Array(GRID_N * GRID_N).fill(1e9);
+    const stampCell = (idx, w, y, d) => { if (w > bestW[idx] || (w === bestW[idx] && d < bestD[idx])) { bestW[idx] = w; bestY[idx] = y; bestD[idx] = d; } };
     // road corridors: flatten to the road profile with 8 m blend shoulders
     let count = 0;
     for (const e of edges) {
@@ -45,7 +46,7 @@ export function createHeightGrid() {
             const d = Math.sqrt(qx * qx + qz * qz);
             if (d > R) continue;
             const w = d <= inner ? 1 : 1 - smoothstep(0, 8, d - inner);
-            stampCell(j * GRID_N + i, w, ay + (by - ay) * t);
+            stampCell(j * GRID_N + i, w, ay + (by - ay) * t, d);
           }
         }
         if (++count % 400 === 0) yield 1;
@@ -63,7 +64,7 @@ export function createHeightGrid() {
           const ox = Math.max(0, Math.abs(x - pd.cx) - pd.hx), oz = Math.max(0, Math.abs(z - pd.cz) - pd.hz);
           const d = Math.sqrt(ox * ox + oz * oz);
           if (d > R) continue;
-          stampCell(j * GRID_N + i, d <= 0 ? 1 : 1 - smoothstep(0, R, d), pd.y);
+          stampCell(j * GRID_N + i, (d <= 0 ? 1 : 1 - smoothstep(0, R, d)) * 0.98, pd.y, d + 100);
         }
       }
     }
