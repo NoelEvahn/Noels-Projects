@@ -7,11 +7,14 @@ import { World } from './world/query.js';
 import { createGame } from './game/index.js';
 import { Input } from './game/input/actions.js';
 import { defaultSettings } from './data/settings.js';
-import { createPerf, MemTracker } from './render/perf.js';
+import { createPerf, MemTracker, createAllocMeter } from './render/perf.js';
 import { Streaming } from './render/streaming.js';
 import { installHarness } from './qa/harness.js';
 import { VIEWPOINTS } from './qa/viewpoints.js';
 import { createDebugHud } from './ui/hud/debugHud.js';
+import { createPerfHud } from './ui/hud/perfHud.js';
+import { createQuality } from './render/quality.js';
+import { attachGovernor } from './render/governor.js';
 import { Audio } from './audio/engine.js';
 
 const H = installHarness();
@@ -25,7 +28,8 @@ async function boot() {
   const marks = {};
   const bus = createBus((type, e) => { H.errors.push({ type: 'bus', message: type + ': ' + (e && e.message || e) }); });
   const settings = defaultSettings();
-  try { const s = localStorage.getItem('loe.settings'); if (s) Object.assign(settings.graphics, JSON.parse(s).graphics || {}); } catch (e) { /* storage unavailable */ }
+  // S3A hook: settings load/persist + presets + change events (render/quality.js); storage failures fall back to memory
+  const quality = createQuality({ settings, bus, devicePixelRatio: window.devicePixelRatio || 1 });
   const sim = createSim({ bus });
   sim.init({});
   const clock = createClock(bus, { total: 480 });
@@ -54,9 +58,14 @@ async function boot() {
   let rend;
   try { rend = createRenderer({ canvas, settings, perf }); }
   catch (e) { H.errors.push({ type: 'webgl', message: String(e && e.message || e) }); setStatus('WebGL2 is required: ' + (e && e.message), 1); H._reject(e); return; }
-  if (perf.software) { settings.graphics.preset = 'low'; settings.graphics.resolutionScale = 0.7; settings.graphics.maxPixelRatio = 1; }
-  perf.quality.preset = settings.graphics.preset; perf.quality.resolutionScale = settings.graphics.resolutionScale;
-  const resize = () => rend.resize(window.innerWidth, window.innerHeight);
+  // S3A hook: Auto preset (Annex G 3.4). Software GL forces Low with adaptive on; the GPU benchmark path is wired by the renderer (3B).
+  quality.resolveAutoPreset({ rendererString: perf.renderer });
+  const governor = attachGovernor(quality);
+  const resize = () => { rend.resize(window.innerWidth, window.innerHeight); const pr = quality.derived().pixelRatio; if (Math.abs(rend.renderer.getPixelRatio() - pr) > 1e-6) rend.renderer.setPixelRatio(pr); };
+  const syncPerfQuality = () => { const e = quality.effective(); perf.quality.preset = settings.graphics.preset; perf.quality.resolutionScale = e.resolutionScale; perf.quality.governorLevel = quality.governorLevel; };
+  // minimal Stage-2 renderer adapter: pixel ratio only. 3B replaces it with quality.setAdapter(renderer adapter) (docs/DECISIONS.md).
+  quality.subscribe((ev) => { syncPerfQuality(); if (ev.changed.some((c) => c === 'governor' || c === '*' || c.startsWith('graphics.'))) resize(); if (ev.changed.includes('audio.voiceLimit') || ev.changed.includes('*')) Audio.setVoiceLimit(settings.audio.voiceLimit); });
+  syncPerfQuality();
   window.addEventListener('resize', resize); resize();
   marks.rendererMs = Math.round(performance.now() - t0);
 
@@ -82,6 +91,7 @@ async function boot() {
     onTeleport: (id) => H.teleport(id), onSpawn: () => H.teleport('poi.city.spawn', 0),
     getCounts: () => rend.chunks.counts,
   });
+  const perfHud = createPerfHud({ root: $('ui'), perf, quality, getSnapshot: () => H.perf.snapshot(), visible: !!settings.debug.perfHud });
 
   function renderNow(alpha = 1) {
     perf.draw.calls; // keep shape stable
@@ -101,6 +111,7 @@ async function boot() {
     perf.beginFrame(now);
     Input.poll();
     if (Input.pressed('debugHud')) hud.toggle();
+    if (Input.pressed('perfHud')) perfHud.toggle();
     acc += dtReal;
     let steps2 = 0;
     const tSim = performance.now();
@@ -118,9 +129,12 @@ async function boot() {
     const tR = performance.now();
     renderNow(acc * 60);
     perf.mark('render', performance.now() - tR);
-    hud.update(dtReal);
+    const tU = performance.now();
+    hud.update(dtReal); perfHud.update(dtReal);
+    perf.mark('ui', performance.now() - tU);
     Input.endFrame();
     perf.endFrame(now, rend.renderer.info);
+    governor.sample(dtReal * 1000);
     prevFrameMs = perf.frameMs.mean || 16;
   }
 
@@ -157,12 +171,8 @@ async function boot() {
   };
   H.setTime = (h) => { clock.setHour(h); game.env.timeOfDay = clock.hourFloat; };
   H.setWeather = (type, intensity) => { game.env.weather.type = type; game.env.weather.intensity = intensity; bus.emit('env:weather', { type, intensity }); };
-  H.setQuality = (preset) => {
-    const g = settings.graphics;
-    if (typeof preset === 'string') { const t = { low: [0.7, 1], medium: [0.85, 1.25], high: [1, 1.5], ultra: [1, 2] }[preset]; if (t) { g.preset = preset; g.resolutionScale = t[0]; g.maxPixelRatio = t[1]; } }
-    else Object.assign(g, preset);
-    perf.quality.preset = g.preset; perf.quality.resolutionScale = g.resolutionScale; resize();
-  };
+  H.setQuality = (preset) => { if (typeof preset === 'string') quality.applyPreset(preset); else quality.apply(preset); syncPerfQuality(); resize(); return quality.get().graphics; };
+  H.quality = quality; H.governor = governor; H.perfHud = perfHud;
   H.camera = {
     set({ pos, target, fov }) { const c = game.camera; c.fixed = true; c.mode = 'fixed'; c.pos = pos.slice(); c.target = target.slice(); if (fov) c.fov = fov; },
     release() { game.camera.fixed = false; },
@@ -181,10 +191,18 @@ async function boot() {
       s.draw.calls = rend.renderer.info.render.calls; s.draw.triangles = rend.renderer.info.render.triangles; s.counts.programs = rend.renderer.info.programs ? rend.renderer.info.programs.length : 0;
       s.mem.geometryBytes = MemTracker.geometryBytes; s.blockoutFallbacks = Builders.blockoutIds().length; s.boot = marks; s.sun = game.env.sunDir.slice();
       s.farTris = rend.far.terrain.visibleTris + rend.far.masses.visibleTris; s.chunkTris = rend.chunks.counts.loadedTris;
+      s.quality = { preset: settings.graphics.preset, autoResolved: settings.graphics.autoResolved || null, resolutionScale: quality.effective().resolutionScale, governorLevel: quality.governorLevel, adaptive: settings.graphics.adaptive };
+      const as = Audio.stats ? Audio.stats() : null; if (as) { s.counts.voices = as.voices; s.mem.audioBufferBytes = as.bufferBytes; s.cpu.audio = perf.cpu.audio; }
       return s;
     },
     cpuOnly(on) { rend.cpuOnly = !!on; perf.cpuOnly = !!on; },
     reset() { Streaming.stats.sliceOverruns = 0; Streaming.stats.maxPumpMs = 0; },
+    /** allocation per frame over N rendered frames (Annex G 2.2): mean positive heap delta, GC frames skipped */
+    async allocPerFrame(frames = 600) {
+      const m = createAllocMeter(); m.reset();
+      for (let i = 0; i < frames; i++) { renderNow(1); m.sample(); if (i % 30 === 29) await tick(); }
+      const r = m.result(); perf.allocPerFrame = r.bytesPerFrame; return { ...r, supported: m.supported };
+    },
   };
   /** renders now and measures the canvas (same task, so the drawing buffer is still valid): non-blank check for visual tests */
   H.pixelStats = () => {
