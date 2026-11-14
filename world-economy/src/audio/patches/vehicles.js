@@ -14,7 +14,7 @@ const horn = (c, o, t, f1, f2, d, lp = 2500, g = 0.25) => Math.max(tone(c, o, t,
 function crash(c, o, t, x, heavy) {
   const r = rnd(x);
   const modes = heavy ? [[230, 0.5, 0.25], [470, 0.4, 0.2], [810, 0.35, 0.18], [1290, 0.3, 0.15], [2140, 0.25, 0.12], [3400, 0.2, 0.08]] : [[310, 0.25, 0.25], [720, 0.2, 0.2], [1210, 0.15, 0.15], [2080, 0.12, 0.1]];
-  let end = Math.max(knock(c, o, t, modes, heavy ? 0.7 : 0.6, 0.6, 1500), burst(c, o, t, { type: 'white', f: 1200, q: 0.6, d: heavy ? 0.35 : 0.15, g: heavy ? 0.5 : 0.35, rng: r }), knock(c, o, t, [[60, heavy ? 0.4 : 0.2, 0.6]], 0.8, 0));
+  let end = Math.max(knock(c, o, t, modes, heavy ? 0.55 : 0.6, 0.6, 1500), burst(c, o, t, { type: 'white', f: 1200, q: 0.6, d: heavy ? 0.35 : 0.15, g: heavy ? 0.5 : 0.35, rng: r }), knock(c, o, t, [[60, heavy ? 0.4 : 0.2, 0.6]], 0.8, 0));
   if (heavy) end = Math.max(end, grains(c, o, t + 0.05, { n: 30, span: 0.9, f: [4000, 8000], q: 6, gain: 0.2, dur: [0.02, 0.08], rng: r, ramp: 1.6 }));
   return end;
 }
@@ -54,7 +54,7 @@ export const VEHICLES = {
   'sfx.veh.fuel_cap': (c, o, t) => knock(c, o, t, [[900, 0.05, 0.3], [2100, 0.04, 0.2]], 0.8, 0.5, 2500),
   'sfx.veh.fuel_done': (c, o, t) => knock(c, o, t, [[300, 0.1, 0.5], [800, 0.06, 0.25]], 0.8, 0.3, 1200),
   'sfx.veh.air_brake': (c, o, t, x) => sweep(c, o, t, { type: 'pink', pts: [[0, 3500], [1, 700]], q: 0.7, dur: 1.0, g: 0.9, peakAt: 0.05, rng: rnd(x) }),
-  'sfx.veh.taxi_meter': (c, o, t) => knock(c, o, t, [[2500, 0.03, 0.3], [4100, 0.02, 0.2]], 0.8, 0.5, 4000),
+  'sfx.veh.taxi_meter': (c, o, t) => knock(c, o, t, [[2500, 0.03, 0.3], [4100, 0.02, 0.2]], 0.8, 0.5, 3000),
   'sfx.veh.passenger_in': (c, o, t, x) => Math.max(seal(c, o, t + 0.3, x), burst(c, o, t, { type: 'pink', f: 600, d: 0.3, a: 0.1, g: 0.2, rng: rnd(x) })),
   'sfx.veh.passenger_out': (c, o, t, x) => Math.max(seal(c, o, t, x), burst(c, o, t + 0.15, { type: 'pink', f: 600, d: 0.3, a: 0.1, g: 0.2, rng: rnd(x) })),
   'sfx.veh.pallet_set': (c, o, t) => knock(c, o, t, [[120, 0.2, 0.5], [260, 0.12, 0.3], [600, 0.06, 0.15]], 0.8, 0.3, 1200),

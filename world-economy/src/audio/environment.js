@@ -79,6 +79,7 @@ export function schedulerRates(env) {
  */
 export function createAmbienceManager(deps) {
   const beds = new Map(); // id -> {h, g, target}
+  const pending = [];
   let targets = {}, rates = {}, lastEnv = null;
   const listener = [0, 0, 0];
   const M = {
@@ -88,14 +89,8 @@ export function createAmbienceManager(deps) {
       const ctx = deps.ctx, at = ctx.currentTime;
       for (const [id, lvl] of Object.entries(targets)) {
         if (lvl <= 0.01) continue;
-        let b = beds.get(id);
-        if (!b || b.dying) {
-          if (b) { try { b.h.stop(at, 0.1); } catch (e) { /* gone */ } }
-          const g = ctx.createGain(); g.gain.value = 0; g.connect(deps.out('ambience'));
-          const h = deps.startLoop(id, g, {});
-          if (!h) continue;
-          b = { h, g, dying: false }; beds.set(id, b);
-        }
+        const b = beds.get(id);
+        if (!b || b.dying) { if (!pending.includes(id)) pending.push(id); continue; } // started by update(), one per frame
         b.g.gain.setTargetAtTime(lvl, at, 1.0); // ~3 s to settle
       }
       for (const [id, b] of beds) if (!(targets[id] > 0.01) && !b.dying) { b.dying = true; b.dieAt = at + 3.5; b.g.gain.setTargetAtTime(0, at, 1.0); }
@@ -104,6 +99,17 @@ export function createAmbienceManager(deps) {
     setListener(p) { listener[0] = p[0]; listener[1] = p[1]; listener[2] = p[2]; },
     update(dt) {
       const ctx = deps.ctx, now = ctx.currentTime;
+      // time-sliced bed start: building a bed graph costs a few ms, so at most one per update
+      while (pending.length) {
+        const id = pending.shift(), lvl = targets[id];
+        if (!(lvl > 0.01)) continue;
+        const old = beds.get(id); if (old && !old.dying) continue;
+        if (old) { try { old.h.stop(now, 0.1); } catch (e) { /* gone */ } beds.delete(id); }
+        const g = ctx.createGain(); g.gain.value = 0; g.connect(deps.out('ambience'));
+        const h = deps.startLoop(id, g, {});
+        if (h) { beds.set(id, { h, g, dying: false }); g.gain.setTargetAtTime(lvl, now, 1.0); }
+        break;
+      }
       for (const [id, b] of beds) {
         if (b.dying && now >= b.dieAt) { b.h.stop(now, 0.05); b.g.disconnect(); beds.delete(id); continue; }
         if (b.h.schedule) b.h.schedule(now, now + 0.3);

@@ -9,7 +9,9 @@ import { createPanner, setPos, distanceGain } from './spatial.js';
 import { createAmbienceManager, reverbFor, busFilters, ambienceTargets } from './environment.js';
 import { createSequencer } from './music/sequencer.js';
 import { createRenderCache } from './synth/render.js';
-import { ctxCache, mulberry } from './synth/noise.js';
+import { ctxCache, mulberry, noiseBuffer, reseed } from './synth/noise.js';
+import { textureBuffer, textureData } from './synth/grain.js';
+import { noiseData } from './synth/noise.js';
 import { SUITES, STINGS } from './music/suites.js';
 import { log } from '../core/log.js';
 
@@ -32,6 +34,11 @@ let hrtfInUse = 0, voiceLimit = 32, envState = { region: 'city', district: '', i
 let music = { cur: null, old: [], key: '', ctxReq: { mode: 'silent' } };
 const emitters = new Map(); let emitterSeq = 1, emitterAcc = 0;
 let deps = { getVehicle: null, getPlayerPos: null, getTime: null };
+// warm-up: noise and texture buffers generated one per update after init, so the first bed or weather change does not hitch
+const warm = [];
+// texture loops used by the patches: [kind, density, seed]
+const TEXTURES = [['ticks', 350, 3], ['ticks', 350, 7], ['ticks', 1600, 3], ['ticks', 1600, 7], ['crackle', 700, 5], ['crackle', 60, 9], ['crackle', 900, 5], ['crackle', 500, 5], ['crunch', 200, 5], ['crunch', 400, 5], ['crunch', 60, 5]];
+const upMax = { ambience: 0, emitters: 0, music: 0, prerender: 0 }; // worst single-update cost per part (ms)
 let player = { eng: null, tyre: null, wind: null, wake: null, vehId: null, lastSpeed: 0, acc: 0 };
 
 function warnOnce(id, why) { if (warned.has(id)) return; warned.add(id); log.info(`[audio] ${id}: ${why}`); }
@@ -163,7 +170,7 @@ function updateEmitters(dt) {
   for (const e of emitters.values()) {
     const rec = SOUND_BY_ID[e.id]; if (!rec) continue;
     const d = dist3(listener.pos, e.pos);
-    if (!e.h && d < rec.maxDistance) e.h = Audio.loop(e.id, { pos: e.pos });
+    if (!e.h && d < rec.maxDistance) { e.h = Audio.loop(e.id, { pos: e.pos }); emitterAcc = 0.45; return; } // one graph build per update (hitch rule)
     else if (e.h && d > rec.maxDistance * 1.1) { e.h.stop(1); e.h = null; }
   }
 }
@@ -178,6 +185,8 @@ export const Audio = {
       try { ctx = new AC({ latencyHint: 'interactive', sampleRate: SR }); } catch (e) { try { ctx = new AC(); } catch (e2) { warnOnce('init', 'AudioContext failed'); resolve(false); return; } }
       mixer = createMixer(ctx, { reverb: settings ? settings.audio.reverb : true });
       amb = createAmbienceManager({ ctx, out: (b) => mixer.input(b), startLoop: startLoopRaw, play: (id, o) => Audio.play(id, o) });
+      for (const t of ['brown', 'pink', 'white']) warm.push(() => noiseBuffer(ctx, t));
+      for (const [k, d, sd] of TEXTURES) warm.push(() => textureBuffer(ctx, k, d, 4, sd));
       ready = true;
       pool.setLimit(voiceLimit);
       applySettings();
@@ -199,6 +208,13 @@ export const Audio = {
       });
     });
     return initP;
+  },
+  /** generates noise and texture sample data (no AudioContext needed): call at boot behind the loading screen. Returns ms. */
+  prewarm() {
+    const P = typeof performance !== 'undefined' ? performance : Date, t = P.now();
+    for (const ty of ['brown', 'pink', 'white']) noiseData(ty, SR);
+    for (const [k, d, sd] of TEXTURES) textureData(k, d, 4, sd, SR);
+    return P.now() - t;
   },
   /** wires bus events and game read-only accessors: { bus, settings, getVehicle(), getPlayerPos(), getTime() } */
   attach({ bus: b, settings: s, getVehicle = null, getPlayerPos = null, getTime = null }) {
@@ -300,18 +316,20 @@ export const Audio = {
   /** per frame (main loop): voices, ducks, ambience beds/schedulers, emitters, music lookahead, player vehicle params, pre-render queue */
   update(dt) {
     if (!ready || ctx.state !== 'running') return;
-    const now = ctx.currentTime;
+    const now = ctx.currentTime, P = typeof performance !== 'undefined' ? performance : Date;
+    if (warm.length) { warm.shift()(); return; } // startup frames: one buffer per frame, nothing else yet
+    let t0 = P.now(), t1;
     pool.expire(now, freeSlot);
     mixer.update(now);
-    amb.update(dt);
-    updateEmitters(dt);
-    updatePlayerVehicle(dt);
+    amb.update(dt); t1 = P.now(); if (t1 - t0 > upMax.ambience) upMax.ambience = t1 - t0; t0 = t1;
+    updateEmitters(dt); updatePlayerVehicle(dt); t1 = P.now(); if (t1 - t0 > upMax.emitters) upMax.emitters = t1 - t0; t0 = t1;
     if (music.cur) music.cur.schedule(now, now + 0.2);
     for (let i = music.old.length - 1; i >= 0; i--) { const o = music.old[i]; if (now > o.until) { o.seq.stop(now); music.old.splice(i, 1); } else o.seq.schedule(now, Math.min(o.until, now + 0.2)); }
-    cache.pump();
+    t1 = P.now(); if (t1 - t0 > upMax.music) upMax.music = t1 - t0; t0 = t1;
+    cache.pump(); t1 = P.now(); if (t1 - t0 > upMax.prerender) upMax.prerender = t1 - t0;
   },
   stats() {
-    return { ready, state: ctx ? ctx.state : 'none', voices: pool.count, voiceLimit: pool.limit, bufferBytes: cache.bytes + (ctx ? ctxCache(ctx).bytes : 0), cachedOneShots: cache.size, prerenderQueue: cache.queued, beds: amb ? amb.beds.size : 0, music: music.key, reverb: mixer ? mixer.reverb : null, emitters: emitters.size };
+    return { ready, state: ctx ? ctx.state : 'none', voices: pool.count, voiceLimit: pool.limit, bufferBytes: cache.bytes + (ctx ? ctxCache(ctx).bytes : 0), cachedOneShots: cache.size, prerenderQueue: cache.queued, beds: amb ? amb.beds.size : 0, music: music.key, reverb: mixer ? mixer.reverb : null, emitters: emitters.size, updateMaxMs: { ...upMax } };
   },
   get context() { return ctx; },
   get ready() { return ready; },
@@ -322,6 +340,7 @@ export const Audio = {
     const n = Math.max(1, Math.ceil(seconds * SR));
     const off = new OfflineAudioContext(2, n, SR);
     let notes = null;
+    let h = 7; for (let i = 0; i < soundId.length; i++) h = (h * 31 + soundId.charCodeAt(i)) >>> 0; reseed(h); // reproducible renders
     if (soundId.startsWith('mus.')) {
       const seq = createSequencer(off, off.destination, soundId, { seed: (params && params.seed) || 1, loopPieces: false, start: 0, night: soundId.includes('.night') });
       seq.schedule(0, seconds); notes = seq.notes;

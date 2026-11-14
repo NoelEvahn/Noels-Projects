@@ -78,6 +78,8 @@ async function boot() {
     getVehicle: () => { const v = game.activeVehicle(); if (!v) return null; const sm = v.sim; return { archetype: sm.archetype, speed: sm.speed, rpm: sm.rpm != null ? sm.rpm : Math.abs(sm.throttle || 0), throttle: sm.throttle != null ? Math.max(0, sm.throttle) : undefined }; },
   });
   marks.gameMs = Math.round(performance.now() - t0);
+  setStatus('Synthesising sound textures...', 0.75); await tick();
+  marks.audioPrewarmMs = Math.round(Audio.prewarm()); // S3A hook: audio sample data generated behind the loading screen
 
   // initial near ring is built without a frame budget so the first frame is playable
   setStatus('Building the first chunks...', 0.8);

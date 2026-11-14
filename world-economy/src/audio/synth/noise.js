@@ -5,6 +5,10 @@ export function mulberry(seed) {
   return () => { s = (s + 0x6D2B79F5) >>> 0; let t = Math.imul(s ^ (s >>> 15), 1 | s); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
 }
 const cache = new WeakMap();
+// default randomness for noise offsets and grains: a seeded stream (cosmetic variation live; reproducible offline renders)
+let defaultRng = mulberry(12345);
+export function reseed(seed) { defaultRng = mulberry(seed >>> 0); }
+export const rand = () => defaultRng();
 export function ctxCache(ctx) { let c = cache.get(ctx); if (!c) { c = { buffers: {}, waves: {}, curves: {}, bytes: 0 }; cache.set(ctx, c); } return c; }
 
 /** Fills `out` (length n) with seamless noise of the given colour, RMS-normalised to 0.3. */
@@ -31,18 +35,27 @@ export function fillNoise(out, type, seed, sr) {
   return out;
 }
 
+// sample data is context-independent: generated once (at boot via Audio.prewarm, behind the loading screen) and copied
+// into an AudioBuffer per context, which is fast
+const dataCache = new Map();
+export function noiseData(type, sr, seconds = 2) {
+  const key = type + ':' + sr + ':' + seconds;
+  let d = dataCache.get(key);
+  if (!d) { d = fillNoise(new Float32Array(Math.round(sr * seconds)), type, type === 'white' ? 11 : type === 'pink' ? 23 : 37, sr); dataCache.set(key, d); }
+  return d;
+}
 export function noiseBuffer(ctx, type = 'white', seconds = 2) {
   const c = ctxCache(ctx), key = 'n:' + type + seconds;
   if (c.buffers[key]) return c.buffers[key];
-  const sr = ctx.sampleRate, n = Math.round(sr * seconds);
-  const buf = ctx.createBuffer(1, n, sr);
-  fillNoise(buf.getChannelData(0), type, type === 'white' ? 11 : type === 'pink' ? 23 : 37, sr);
-  c.bytes += n * 4;
+  const sr = ctx.sampleRate, d = noiseData(type, sr, seconds);
+  const buf = ctx.createBuffer(1, d.length, sr);
+  buf.copyToChannel(d, 0);
+  c.bytes += d.length * 4;
   return (c.buffers[key] = buf);
 }
 
 /** Looping noise source started at t (random start offset decorrelates layers). */
-export function noiseSrc(ctx, type, t, { loop = true, offset = null, rate = 1, rng = Math.random } = {}) {
+export function noiseSrc(ctx, type, t, { loop = true, offset = null, rate = 1, rng = rand } = {}) {
   const s = ctx.createBufferSource();
   s.buffer = noiseBuffer(ctx, type);
   s.loop = loop; s.playbackRate.value = rate;
