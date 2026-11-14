@@ -5,6 +5,7 @@
 import { h01 } from '../kit/geo.js';
 
 /** the 4 faces of a w x d footprint centred at the origin; face-local frame: x along the face, outward -Z, y up */
+const CELL = [0, 0];
 export function rectFaces(w, d) {
   return [
     { i: 0, ox: -w / 2, oz: -d / 2, yaw: 0, L: w, front: true },
@@ -19,13 +20,13 @@ export const enterFace = (g, f) => g.push().translate(f.ox, 0, f.oz).rotY(f.yaw)
 export function windowRecess(g, x0, y0, x1, y1, r, o, cell) {
   const L = g.L, tile = g.tile, T = g.T;
   // reveals (wall layer)
-  g.quad([x0, y0, r], [x0, y0, 0], [x0, y1, 0], [x0, y1, r]);
-  g.quad([x1, y0, 0], [x1, y0, r], [x1, y1, r], [x1, y1, 0]);
-  g.quad([x0, y1, 0], [x1, y1, 0], [x1, y1, r], [x0, y1, r]);
-  g.quad([x0, y0, r], [x1, y0, r], [x1, y0, 0], [x0, y0, 0]);
+  g.quadS(x0, y0, r, x0, y0, 0, x0, y1, 0, x0, y1, r);
+  g.quadS(x1, y0, 0, x1, y0, r, x1, y1, r, x1, y1, 0);
+  g.quadS(x0, y1, 0, x1, y1, 0, x1, y1, r, x0, y1, r);
+  g.quadS(x0, y0, r, x1, y0, r, x1, y0, 0, x0, y0, 0);
   // glass
   g.mat('tex.glass_window', o.glassTint || 0xffffff); g.emit(o.emit || 0);
-  g.quadUV([x1, y0, r], [x0, y0, r], [x0, y1, r], [x1, y1, r], cell[0] + 0.08, cell[1] + 0.08, cell[0] + 0.92, cell[1] + 0.92);
+  g.quadUVS(x1, y0, r, x0, y0, r, x0, y1, r, x1, y1, r, cell[0] + 0.08, cell[1] + 0.08, cell[0] + 0.92, cell[1] + 0.92);
   g.emit(0);
   // frame / sash bars
   if (o.bars) {
@@ -79,7 +80,7 @@ export function faceWindows(g, f, yStart, floors, s, seed, extras) {
       g.mat(s.wallTex, s.wallTint);
       g.wall(xPrev, wy0, x0, wy1, 0, uO);
       const ci = f.i * 100 + (n - 1 - i);
-      windowRecess(g, x0, wy0, x1, wy1, s.recess, s, [ci, fl + Math.round(yStart / s.st)]);
+      CELL[0] = ci; CELL[1] = fl + Math.round(yStart / s.st); windowRecess(g, x0, wy0, x1, wy1, s.recess, s, CELL);
       xPrev = x1;
       if (extras) extras(i, fl, cx, wy0, wy1, x0, x1, n);
     }

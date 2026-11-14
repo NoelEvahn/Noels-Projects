@@ -6,7 +6,7 @@ export const Streaming = (() => {
   let stepEst = 0; // recent worst step duration: a step is not started when it would likely overshoot the budget
   const now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
   const api = {
-    stats,
+    stats, phase: '',
     get size() { return jobs.length; },
     has(key) { return jobs.some((j) => j.key === key); },
     add(key, gen, priority = 0, onDone) { jobs.push({ key, gen, priority, onDone }); dirty = true; },
@@ -27,7 +27,7 @@ export const Streaming = (() => {
         const sd = now() - s0;
         stepEst = Math.max(stepEst * 0.995, sd);
         j.n = (j.n || 0) + 1;
-        if (sd > stats.maxStepMs) { stats.maxStepMs = sd; stats.maxStepKey = j.key; stats.maxStepIndex = j.n; }
+        if (sd > stats.maxStepMs) { stats.maxStepMs = sd; stats.maxStepKey = j.key; stats.maxStepIndex = j.n; stats.maxStepPhase = api.phase; }
         stats.steps++;
         if (r.done) { jobs.shift(); stats.completed++; if (j.onDone) j.onDone(r.value); }
       }

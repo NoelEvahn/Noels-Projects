@@ -313,7 +313,7 @@ async function boot() {
       stat.frames++; stat.distance += ds;
       if (performance.now() - lastYield > 30) { await tick(); lastYield = performance.now(); }
     }
-    stat.overruns = Streaming.stats.sliceOverruns; stat.maxPump = Streaming.stats.maxPumpMs; stat.maxStep = Streaming.stats.maxStepMs; stat.maxStepAt = Streaming.stats.maxStepKey + '#' + Streaming.stats.maxStepIndex; stat.completed = Streaming.stats.completed - stat.completedStart;
+    stat.overruns = Streaming.stats.sliceOverruns; stat.maxPump = Streaming.stats.maxPumpMs; stat.maxStep = Streaming.stats.maxStepMs; stat.maxStepAt = Streaming.stats.maxStepKey + '#' + Streaming.stats.maxStepIndex + ':' + Streaming.stats.maxStepPhase; stat.completed = Streaming.stats.completed - stat.completedStart;
     stat.programsEnd = rend.renderer.info.programs ? rend.renderer.info.programs.length : 0; stat.queueEnd = Streaming.size;
     rend.cpuOnly = prevCpu; game.camera.fixed = false; frozen = false;
     return stat;

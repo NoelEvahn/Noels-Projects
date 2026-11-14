@@ -74,46 +74,48 @@ export class GB {
   tri(a, b, c) { this.idx[this.in++] = a; this.idx[this.in++] = b; this.idx[this.in++] = c; }
   // ---- primitives (sizes in metres; UVs in tiles of the current layer) -------------------------------------------------------
   /** planar quad p0..p3 (CCW from the front). u runs p0->p1, v runs p0->p3, in metres / tile. */
-  quad(p0, p1, p2, p3, uvScale = 1) {
+  quad(p0, p1, p2, p3, uvScale = 1) { this.quadS(p0[0], p0[1], p0[2], p1[0], p1[1], p1[2], p2[0], p2[1], p2[2], p3[0], p3[1], p3[2], uvScale); }
+  /** scalar quad (no array allocation): corners a, b, c, d */
+  quadS(ax, ay, az, bx, by, bz, cx, cy, cz, dx, dy, dz, uvScale = 1) {
     this._grow(4, 6);
-    const ux = p1[0] - p0[0], uy = p1[1] - p0[1], uz = p1[2] - p0[2], vx = p3[0] - p0[0], vy = p3[1] - p0[1], vz = p3[2] - p0[2];
+    const ux = bx - ax, uy = by - ay, uz = bz - az, vx = dx - ax, vy = dy - ay, vz = dz - az;
     let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
     const l = Math.hypot(nx, ny, nz) || 1; nx /= l; ny /= l; nz /= l;
     const t = uvScale / this.tile, U = Math.hypot(ux, uy, uz) * t, V = Math.hypot(vx, vy, vz) * t;
-    const a = this.vert(p0[0], p0[1], p0[2], nx, ny, nz, 0, 0), b = this.vert(p1[0], p1[1], p1[2], nx, ny, nz, U, 0);
-    const c = this.vert(p2[0], p2[1], p2[2], nx, ny, nz, U, V), d = this.vert(p3[0], p3[1], p3[2], nx, ny, nz, 0, V);
+    const a = this.vert(ax, ay, az, nx, ny, nz, 0, 0), b = this.vert(bx, by, bz, nx, ny, nz, U, 0);
+    const c = this.vert(cx, cy, cz, nx, ny, nz, U, V), d = this.vert(dx, dy, dz, nx, ny, nz, 0, V);
     this.tri(a, b, c); this.tri(a, c, d);
   }
   /** quad with explicit uv rectangle (u0,v0 at p0; u1 along p0->p1; v1 along p0->p3) */
-  quadUV(p0, p1, p2, p3, u0, v0, u1, v1) {
+  quadUV(p0, p1, p2, p3, u0, v0, u1, v1) { this.quadUVS(p0[0], p0[1], p0[2], p1[0], p1[1], p1[2], p2[0], p2[1], p2[2], p3[0], p3[1], p3[2], u0, v0, u1, v1); }
+  quadUVS(ax, ay, az, bx, by, bz, cx, cy, cz, dx, dy, dz, u0, v0, u1, v1) {
     this._grow(4, 6);
-    const ux = p1[0] - p0[0], uy = p1[1] - p0[1], uz = p1[2] - p0[2], vx = p3[0] - p0[0], vy = p3[1] - p0[1], vz = p3[2] - p0[2];
+    const ux = bx - ax, uy = by - ay, uz = bz - az, vx = dx - ax, vy = dy - ay, vz = dz - az;
     let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
     const l = Math.hypot(nx, ny, nz) || 1; nx /= l; ny /= l; nz /= l;
     const o = this.uvOff, s0 = o[0], s1 = o[1]; o[0] = 0; o[1] = 0;
-    const a = this.vert(p0[0], p0[1], p0[2], nx, ny, nz, u0, v0), b = this.vert(p1[0], p1[1], p1[2], nx, ny, nz, u1, v0);
-    const c = this.vert(p2[0], p2[1], p2[2], nx, ny, nz, u1, v1), d = this.vert(p3[0], p3[1], p3[2], nx, ny, nz, u0, v1);
+    const a = this.vert(ax, ay, az, nx, ny, nz, u0, v0), b = this.vert(bx, by, bz, nx, ny, nz, u1, v0);
+    const c = this.vert(cx, cy, cz, nx, ny, nz, u1, v1), d = this.vert(dx, dy, dz, nx, ny, nz, u0, v1);
     o[0] = s0; o[1] = s1;
     this.tri(a, b, c); this.tri(a, c, d);
   }
   /** wall rectangle in the face plane z (outward -Z), x0<x1, y0<y1; uv in metres/tile from face coords (+ offset u0) */
   wall(x0, y0, x1, y1, z = 0, uOff = 0) {
     const t = 1 / this.tile;
-    this.quadUV([x1, y0, z], [x0, y0, z], [x0, y1, z], [x1, y1, z], (uOff - x1) * t, y0 * t, (uOff - x0) * t, y1 * t);
+    this.quadUVS(x1, y0, z, x0, y0, z, x0, y1, z, x1, y1, z, (uOff - x1) * t, y0 * t, (uOff - x0) * t, y1 * t);
   }
   /** axis-aligned (in the current transform) rectangle in a plane: face 'x+','x-','y+','y-','z+','z-' centred at c with size (a,b) */
   face(dir, cx, cy, cz, a, b, uo = 0, vo = 0) {
-    const ha = a / 2, hb = b / 2; let P;
-    switch (dir) {
-      case 'z+': P = [[cx - ha, cy - hb, cz], [cx + ha, cy - hb, cz], [cx + ha, cy + hb, cz], [cx - ha, cy + hb, cz]]; break;
-      case 'z-': P = [[cx + ha, cy - hb, cz], [cx - ha, cy - hb, cz], [cx - ha, cy + hb, cz], [cx + ha, cy + hb, cz]]; break;
-      case 'x+': P = [[cx, cy - hb, cz + ha], [cx, cy - hb, cz - ha], [cx, cy + hb, cz - ha], [cx, cy + hb, cz + ha]]; break;
-      case 'x-': P = [[cx, cy - hb, cz - ha], [cx, cy - hb, cz + ha], [cx, cy + hb, cz + ha], [cx, cy + hb, cz - ha]]; break;
-      case 'y+': P = [[cx - ha, cy, cz + hb], [cx + ha, cy, cz + hb], [cx + ha, cy, cz - hb], [cx - ha, cy, cz - hb]]; break;
-      default: P = [[cx - ha, cy, cz - hb], [cx + ha, cy, cz - hb], [cx + ha, cy, cz + hb], [cx - ha, cy, cz + hb]];
-    }
+    const ha = a / 2, hb = b / 2;
     const o = this.uvOff; const s0 = o[0], s1 = o[1]; o[0] = s0 + uo; o[1] = s1 + vo;
-    this.quad(P[0], P[1], P[2], P[3]);
+    switch (dir) {
+      case 'z+': this.quadS(cx - ha, cy - hb, cz, cx + ha, cy - hb, cz, cx + ha, cy + hb, cz, cx - ha, cy + hb, cz); break;
+      case 'z-': this.quadS(cx + ha, cy - hb, cz, cx - ha, cy - hb, cz, cx - ha, cy + hb, cz, cx + ha, cy + hb, cz); break;
+      case 'x+': this.quadS(cx, cy - hb, cz + ha, cx, cy - hb, cz - ha, cx, cy + hb, cz - ha, cx, cy + hb, cz + ha); break;
+      case 'x-': this.quadS(cx, cy - hb, cz - ha, cx, cy - hb, cz + ha, cx, cy + hb, cz + ha, cx, cy + hb, cz - ha); break;
+      case 'y+': this.quadS(cx - ha, cy, cz + hb, cx + ha, cy, cz + hb, cx + ha, cy, cz - hb, cx - ha, cy, cz - hb); break;
+      default: this.quadS(cx - ha, cy, cz - hb, cx + ha, cy, cz - hb, cx + ha, cy, cz + hb, cx - ha, cy, cz + hb);
+    }
     o[0] = s0; o[1] = s1;
   }
   /** box centred at (cx,cy,cz), size sx,sy,sz in the current transform. o: {noBottom, noTop, faces:'xyz...' skip set, world:true uses positional uv offsets} */
