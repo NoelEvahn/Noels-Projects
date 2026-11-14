@@ -20,7 +20,7 @@ export function makeLayerProps() {
   for (let i = 0; i < 256; i++) { d[i * 4 + 1] = 128; d[i * 4 + 2] = 255; }
   const wet = ['tex.asphalt', 'tex.asphalt_worn', 'tex.cobble', 'tex.concrete_cast', 'tex.paver', 'tex.curb_stone', 'tex.metal_painted', 'tex.roof_metal_red', 'tex.roof_shingle', 'tex.roof_tile', 'tex.wood_planks', 'tex.wood_weathered_dark', 'tex.stone_fieldstone', 'tex.rock_granite', 'tex.rock_dark', 'tex.mud', 'tex.dirt_track', 'tex.carpaint_flake'];
   for (const id of wet) d[LAYERS[id].index * 4] = 255;
-  for (const id of ['tex.glass_window', 'tex.glass_curtain', 'tex.carpaint_flake', 'tex.metal_aluminium']) { d[LAYERS[id].index * 4 + 2] = 40; d[LAYERS[id].index * 4 + 3] = 255; }
+  for (const id of ['tex.glass_window', 'tex.glass_curtain', 'tex.carpaint_flake', 'tex.metal_aluminium', 'tex.facade_office', 'tex.facade_shop']) { d[LAYERS[id].index * 4 + 2] = 40; d[LAYERS[id].index * 4 + 3] = 255; }
   for (const id of ['tex.flat', 'tex.fabric_cloth', 'tex.plastic']) d[LAYERS[id].index * 4 + 2] = 90;
   const t = new THREE.DataTexture(d, 256, 1, THREE.RGBAFormat, THREE.UnsignedByteType);
   t.needsUpdate = true; t.minFilter = t.magFilter = THREE.NearestFilter;
@@ -133,8 +133,9 @@ const AO_MAIN = `
 `;
 const EMIT_MAIN = `
   if (vAux.w > 0.5){
-    if (vAux.w < 127.5){ float hw = hashW(vAux.w); if (hw < uWinLit) totalEmissiveRadiance += vec3(1.0, 0.72, 0.42) * (0.55 + 0.9 * fract(hw * 13.7)) * uWinGain; }
-    else totalEmissiveRadiance += vec3(1.0, 0.84, 0.6) * ((vAux.w - 128.0) / 127.0) * uLampGain;
+    // windows: one random lit state per uv cell (window / facade module), masked by the glass channel (metal 0.9)
+    if (vAux.w < 127.5){ float hw = hashW(vAux.w + dot(floor(tuv + 0.002), vec2(7.13, 3.71))); float gm = smoothstep(0.86, 0.89, sA.a); if (hw < uWinLit) totalEmissiveRadiance += vec3(1.0, 0.72, 0.42) * (0.55 + 0.9 * fract(hw * 13.7)) * uWinGain * gm; }
+    else { vec3 lc = vTint.rgb / max(max(vTint.r, vTint.g), max(vTint.b, 1e-3)); totalEmissiveRadiance += lc * vec3(1.0, 0.84, 0.6) * ((vAux.w - 128.0) / 127.0) * max(uLampGain, 0.35 * step(250.5, vAux.w)); }
   }
 `;
 const WIND_V = `

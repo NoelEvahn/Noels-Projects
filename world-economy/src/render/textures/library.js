@@ -255,6 +255,41 @@ def('tex.noise_shared', 0.0, 0.0, /* glsl */`
 def('tex.flat', 0.0, 0.0, /* glsl */`
   float n = vnoise(uv * 64.0, vec2(64.0)); a = vec3(0.8) * (0.97 + 0.04 * n); h = n * 0.2; r = 0.7; m = 0.0;`);
 
+// ---- facade modules: uv = one bay x one storey; glass panes carry metal 0.9 (window mask for night emission) ---------------------------
+const facade = (wall, o) => /* glsl */`
+  vec3 wa; float wh, wr;
+  ${wall}
+  vec2 c = vec2(0.5, ${o.cy}); vec2 hs = vec2(${o.hw}, ${o.hh});
+  vec2 d = abs(uv - c) - hs; float inW = step(max(d.x, d.y), 0.0);
+  float fr = ${o.frame}; vec2 di = d + fr; float pane = step(max(di.x, di.y), 0.0);
+  float bar = ${o.bars};
+  float glass = pane * (1.0 - bar);
+  float reveal = inW * (1.0 - pane);
+  float sill = step(abs(uv.y - (c.y - hs.y - 0.018)), 0.018) * step(abs(uv.x - 0.5), hs.x + 0.035);
+  float lintel = ${o.lintel ? 'step(abs(uv.y - (c.y + hs.y + 0.03)), 0.03) * step(abs(uv.x - 0.5), hs.x + 0.03)' : '0.0'};
+  float gy = (uv.y - (c.y - hs.y)) / (2.0 * hs.y);
+  vec3 gcol = mix(C(1c2630), C(4a5a68), smoothstep(0.1, 1.0, gy)) * (0.8 + 0.4 * fbm(uv * 3.0 + 0.2, 4.0, 3));
+  float curtain = step(0.55, hash12(floor(uv * 3.0) + 2.0)) * smoothstep(0.75, 0.6, gy);
+  gcol = mix(gcol, C(6a5a48), curtain * 0.35);
+  vec3 fcol = ${o.frameCol};
+  a = wa; a = mix(a, fcol, reveal); a = mix(a, gcol, glass); a = mix(a, fcol * 0.9, bar * pane);
+  a = mix(a, C(bdb6aa), max(sill, lintel) * ${o.sillMix});
+  h = wh * (1.0 - inW) + 0.2 * reveal * (1.0 - smoothstep(0.0, fr, min(-d.x, -d.y))) + 0.05 * glass + 0.12 * bar * pane + 0.25 * max(sill, lintel);
+  r = mix(wr, 0.6, reveal); r = mix(r, 0.06, glass); m = glass * 0.9;`;
+def('tex.facade_brick', 0.03, 1.4, facade(`vec4 b = bricks(uv, 6.0, 22.0, 0.16); float n = fbm(uv, 4.0, 4);
+  wa = mix(mix(C(8e4636), C(a35c44), b.y) * (0.82 + 0.3 * n), C(9a958a) * 0.8, 1.0 - b.x); wh = 0.7 + 0.2 * b.x; wr = 0.85;`,
+  { cy: '0.56', hw: '0.24', hh: '0.27', frame: '0.025', bars: 'step(abs(uv.y - 0.6), 0.008) + step(abs(uv.x - 0.5), 0.006) * step(0.6, uv.y)', lintel: true, sillMix: '1.0', frameCol: 'C(e4e0d6)' }));
+def('tex.facade_concrete', 0.02, 1.2, facade(`float n = fbm(uv, 4.0, 4); float st = streaks(uv, 8.0); wa = C(a8a59c) * (0.85 + 0.2 * n) * (1.0 - 0.2 * st); wh = 0.7 + 0.1 * n; wr = 0.88;`,
+  { cy: '0.55', hw: '0.36', hh: '0.25', frame: '0.018', bars: 'step(abs(uv.x - 0.5), 0.006)', lintel: false, sillMix: '0.6', frameCol: 'C(4a4e52)' }));
+def('tex.facade_panel', 0.02, 1.2, facade(`float n = fbm(uv, 4.0, 4); float j = step(0.985, fract(uv.y)) + step(0.99, fract(uv.x)); wa = C(cfcbc2) * (0.9 + 0.12 * n) * (1.0 - 0.3 * j) * (1.0 - 0.15 * streaks(uv, 6.0)); wh = 0.7 - 0.3 * j; wr = 0.82;`,
+  { cy: '0.55', hw: '0.3', hh: '0.24', frame: '0.02', bars: 'step(abs(uv.x - 0.42), 0.006)', lintel: false, sillMix: '0.5', frameCol: 'C(e8e8e4)' }));
+def('tex.facade_stucco', 0.015, 1.0, facade(`float n = fbm(uv, 6.0, 4); wa = C(dccfb4) * (0.9 + 0.12 * fbm(uv, 2.0, 3)) * (1.0 - 0.2 * streaks(uv, 6.0)); wh = 0.6 + 0.1 * n; wr = 0.9;`,
+  { cy: '0.55', hw: '0.2', hh: '0.27', frame: '0.025', bars: 'step(abs(uv.x - 0.5), 0.007) + step(abs(uv.y - 0.62), 0.007)', lintel: false, sillMix: '0.8', frameCol: 'C(f0ece2)' }));
+def('tex.facade_office', 0.012, 0.8, facade(`float n = fbm(uv, 4.0, 3); wa = C(8e9296) * (0.88 + 0.16 * n); wh = 0.75; wr = 0.7;`,
+  { cy: '0.55', hw: '0.49', hh: '0.33', frame: '0.012', bars: 'step(abs(fract(uv.x * 2.0) - 0.5), 0.012)', lintel: false, sillMix: '0.0', frameCol: 'C(30363c)' }));
+def('tex.facade_shop', 0.012, 0.8, facade(`float n = fbm(uv, 4.0, 3); wa = C(3a3e42) * (0.9 + 0.2 * n); wh = 0.75; wr = 0.5;`,
+  { cy: '0.48', hw: '0.46', hh: '0.4', frame: '0.015', bars: 'step(abs(uv.y - 0.78), 0.01)', lintel: false, sillMix: '0.0', frameCol: 'C(2a2c2e)' }));
+
 /** returns the full list of recipes in layer order (missing recipes fall back to tex.flat and fail the texture test) */
 export const RECIPES = R;
 export function recipeFor(id) { return R[id] || R['tex.flat']; }

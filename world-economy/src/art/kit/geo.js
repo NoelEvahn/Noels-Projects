@@ -82,6 +82,23 @@ export class GB {
     const c = this.vert(p2[0], p2[1], p2[2], nx, ny, nz, U, V), d = this.vert(p3[0], p3[1], p3[2], nx, ny, nz, 0, V);
     this.tri(a, b, c); this.tri(a, c, d);
   }
+  /** quad with explicit uv rectangle (u0,v0 at p0; u1 along p0->p1; v1 along p0->p3) */
+  quadUV(p0, p1, p2, p3, u0, v0, u1, v1) {
+    this._grow(4, 6);
+    const ux = p1[0] - p0[0], uy = p1[1] - p0[1], uz = p1[2] - p0[2], vx = p3[0] - p0[0], vy = p3[1] - p0[1], vz = p3[2] - p0[2];
+    let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+    const l = Math.hypot(nx, ny, nz) || 1; nx /= l; ny /= l; nz /= l;
+    const o = this.uvOff, s0 = o[0], s1 = o[1]; o[0] = 0; o[1] = 0;
+    const a = this.vert(p0[0], p0[1], p0[2], nx, ny, nz, u0, v0), b = this.vert(p1[0], p1[1], p1[2], nx, ny, nz, u1, v0);
+    const c = this.vert(p2[0], p2[1], p2[2], nx, ny, nz, u1, v1), d = this.vert(p3[0], p3[1], p3[2], nx, ny, nz, u0, v1);
+    o[0] = s0; o[1] = s1;
+    this.tri(a, b, c); this.tri(a, c, d);
+  }
+  /** wall rectangle in the face plane z (outward -Z), x0<x1, y0<y1; uv in metres/tile from face coords (+ offset u0) */
+  wall(x0, y0, x1, y1, z = 0, uOff = 0) {
+    const t = 1 / this.tile;
+    this.quadUV([x1, y0, z], [x0, y0, z], [x0, y1, z], [x1, y1, z], (uOff - x1) * t, y0 * t, (uOff - x0) * t, y1 * t);
+  }
   /** axis-aligned (in the current transform) rectangle in a plane: face 'x+','x-','y+','y-','z+','z-' centred at c with size (a,b) */
   face(dir, cx, cy, cz, a, b, uo = 0, vo = 0) {
     const ha = a / 2, hb = b / 2; let P;

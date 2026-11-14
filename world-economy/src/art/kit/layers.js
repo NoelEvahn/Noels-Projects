@@ -14,6 +14,9 @@ const S = [
   ['tex.bark_oak', 1, 0x4e4438], ['tex.dirt_track', 4, 0x7d6a50], ['tex.mud', 4, 0x4e4234], ['tex.gravel', 3, 0x8e887c],
   ['tex.rock_dark', 4, 0x3e3c3a], ['tex.stone_fieldstone', 2, 0x7a746a], ['tex.roof_shingle', 2, 0x4a4442], ['tex.roof_metal_red', 2, 0x9a3e2c],
   ['tex.roof_tile', 2, 0xa85a3a], ['tex.water_normal_a', 8, 0x8080ff], ['tex.water_normal_b', 23, 0x8080ff], ['tex.cloud_noise', 1, 0x808080],
+  // facade modules (one tile = one bay x one storey; UVs are set in bays/storeys): LOD1/LOD2 walls and far skyline
+  ['tex.facade_brick', 1, 0x7a4a3a], ['tex.facade_concrete', 1, 0x9a9890], ['tex.facade_panel', 1, 0xc0bcb2], ['tex.facade_stucco', 1, 0xd0c4ac],
+  ['tex.facade_office', 1, 0x5a6670], ['tex.facade_shop', 1, 0x4a525a],
 ];
 const D = [
   ['tex.curb_stone', 1, 0x9a9890], ['tex.glass_window', 1, 0x3a4652], ['tex.metal_checker', 0.5, 0x8a8c8e], ['tex.metal_aluminium', 1, 0xb8bcc0],
