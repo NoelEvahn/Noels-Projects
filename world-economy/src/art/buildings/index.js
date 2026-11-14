@@ -7,9 +7,18 @@ import { Builders } from '../../render/builders.js';
 import { ARCHETYPES } from '../../world/archetypes.js';
 import { rectFaces, enterFace, faceWindows, faceFlat, storefront, awning, cornice, parapet, flatRoof, plinth, roofClutter, fireEscape } from './facade.js';
 
-const G0 = new GB(1 << 15), DS = new GB(2048);
-function begin() { const g = G0.reset(); g.ds = DS.reset(); return g; }
+// pooled writers: a generator build may be interleaved with another chunk job, so every build takes its own GB pair
+const POOL = [];
+function take() { const g = POOL.pop() || new GB(1 << 14); g.reset(); g.ds = (g.ds || new GB(1024)).reset(); return g; }
+function give(g) { POOL.push(g); }
 function finish(g) { return out({ 'mat.world': g, 'mat.world_ds': g.ds }); }
+/** register a generator builder (yields between faces so the chunk pump stays inside its slice) plus its plain form */
+function regGen(id, gen) {
+  const run = (pl, ctx) => { const it = genWrap(pl, ctx); let r; do r = it.next(); while (!r.done); return r.value; };
+  function* genWrap(pl, ctx) { const g = take(); try { yield* gen(pl, ctx, g); return finish(g); } finally { give(g); } }
+  run.gen = genWrap;
+  Builders.register(id, run, { stage: 3 });
+}
 const pick = (R, arr) => arr[Math.floor(R() * arr.length) % arr.length];
 function dims(pl) {
   const A = ARCHETYPES[pl.archetype], p = pl.params || {};
@@ -20,9 +29,8 @@ function dims(pl) {
 // ---- generic multi-storey block --------------------------------------------------------------------------------------------
 /** S: { wall:[tex, tints[]], facade, bay, win:[w,h,sill], recess, bars, sill, lintel, ground:'shop'|'lobby'|'plain', shopAll,
  *       awnings, striped, cornice:'corbel'|'slab'|null, parapet, roof, fireEscape, ac, waterTower, balconies, ribbon, pilasters } */
-function block(pl, ctx, S) {
+function* block(pl, ctx, S, g) {
   const { w, d, H, F, st } = dims(pl), R = srng(pl.seed), lod = ctx.lod;
-  const g = begin();
   const wallTint = pick(R, S.wall[1]);
   const s = { wallTex: S.wall[0], wallTint, st, bay: S.bay, win: S.win, recess: S.recess || 0.18, bars: S.bars || 0, sill: S.sill !== false, lintel: !!S.lintel,
     emit: 1 + (pl.seed % 120), uOff: R() * 20, ribbon: !!S.ribbon, frameTint: S.frameTint, glassTint: S.glassTint, doorBay: S.ground === 'plain' ? Math.floor(Math.max(1, Math.round(w / S.bay)) / 2) : -1, doorTint: S.doorTint };
@@ -39,16 +47,16 @@ function block(pl, ctx, S) {
         y0 = st; fl = F - 1;
       }
       const acP = S.ac || 0, R2 = srng(pl.seed + f.i * 7);
-      if (fl > 0) faceWindows(g, f, y0, fl, s, pl.seed, (i, flr, cx, wy0, wy1, x0, x1) => {
+      if (fl > 0) for (let k = 0; k < fl; k++) { if (k && k % 2 === 0) yield; faceWindows(g, f, y0 + k * st, 1, s, pl.seed, (i, flr, cx, wy0, wy1, x0, x1) => {
         if (acP && R2() < acP) { g.mat('tex.metal_galvanized', 0xd8d8d0); g.box(cx + (R2() - 0.5) * 0.4, wy0 - 0.35, -0.3, 0.75, 0.48, 0.55); g.mat(s.wallTex, s.wallTint); }
         if (S.balconies && !f.front === false && flr % 1 === 0 && h01(pl.seed + i, flr) < S.balconies) {
           g.mat('tex.concrete_cast', 0xc8c4bc); g.box(cx, wy0 - s.win[2] + 0.1, -0.7, x1 - x0 + 1.2, 0.18, 1.4);
           g.mat('tex.metal_galvanized', 0xe0e0e0); g.box(cx, wy0 - s.win[2] + 0.65, -1.38, x1 - x0 + 1.2, 0.9, 0.05); g.mat(s.wallTex, s.wallTint);
         }
-      });
+      }); }
       if (S.pilasters) { g.mat(s.wallTex, s.wallTint); const n = Math.max(1, Math.round(f.L / s.bay)); for (let i = 0; i <= n; i += 2) g.box(Math.min(f.L - 0.3, Math.max(0.3, (i * f.L) / n)), (st + H) / 2, -0.1, 0.6, H - st, 0.2, { noBottom: true }); }
       if (S.fireEscape && !f.front && f.i !== 2 && h01(pl.seed, f.i + 3) < S.fireEscape && F >= 3) fireEscape(g, f.L * (0.3 + 0.4 * h01(pl.seed, 9)), st, F - 1, st);
-      g.pop();
+      g.pop(); yield;
     }
   } else {
     for (const f of faces) {
@@ -58,6 +66,7 @@ function block(pl, ctx, S) {
       g.pop();
     }
   }
+  yield;
   // crown
   if (S.cornice === 'corbel') { cornice(g, w, d, H - 0.9, 0.5, 0.25, s.wallTex, wallTint); cornice(g, w, d, H - 0.4, 0.55, 0.45, 'tex.concrete_cast', 0xc8c0b0); }
   else if (S.cornice === 'slab') cornice(g, w, d, H - 0.3, 0.4, 0.3, 'tex.concrete_cast', 0xbab6ae);
@@ -65,7 +74,6 @@ function block(pl, ctx, S) {
   flatRoof(g, w - 0.4, d - 0.4, H + 0.05, 'tex.gravel', 0x8a8682);
   if (lod <= 1) roofClutter(g, w, d, H, R, { waterTower: S.waterTower && R() < S.waterTower, wallTex: s.wallTex, wallTint, mast: F > 12 ? [w * 0.2, d * 0.2, 6 + F * 0.3] : null });
   if (S.after) S.after(g, { w, d, H, F, st, lod, R, s, pl });
-  return finish(g);
 }
 
 const BRICK_TINTS = [0xffffff, 0xf0e0d8, 0xd8c8c0, 0xffe8dc, 0xc8b0a8];
@@ -80,7 +88,7 @@ const STYLES = {
   'bld.bank': { wall: ['tex.concrete_cast', [0xf4ece0, 0xe8e0d0]], facade: 'tex.facade_concrete', bay: 4.2, win: [1.6, 2.6, 1.0], recess: 0.3, bars: 1, ground: 'plain', cornice: 'slab', after: bankPortico },
   'bld.port_town_house': { wall: ['tex.stucco', [0xfff4e0, 0xf8e0c8, 0xe0ecf0, 0xf0d8d0, 0xe8f0d8]], facade: 'tex.facade_stucco', bay: 3.0, win: [1.0, 1.5, 0.9], recess: 0.15, bars: 2, ground: 'plain', parapet: false, cornice: null, after: tileRoofHouse },
 };
-for (const id in STYLES) Builders.register(id, (pl, ctx) => block(pl, ctx, STYLES[id]), { stage: 3 });
+for (const id in STYLES) regGen(id, (pl, ctx, g) => block(pl, ctx, STYLES[id], g));
 
 function bankPortico(g, { w, d, H, F, st, lod, pl }) {
   // columns, steps and pediment on the front face
@@ -109,8 +117,8 @@ function tileRoofHouse(g, { w, d, H, lod, R }) {
 }
 
 // ---- glass tower and podium -----------------------------------------------------------------------------------------------------------------
-function glassTower(pl, ctx) {
-  const { w, d, H, F } = dims(pl), R = srng(pl.seed), lod = ctx.lod, g = begin();
+function* glassTower(pl, ctx, g) {
+  const { w, d, H, F } = dims(pl), R = srng(pl.seed), lod = ctx.lod;
   const pod = 9, tw = w * (0.78 + R() * 0.12), td = d * (0.78 + R() * 0.12), emit = 1 + (pl.seed % 120);
   plinth(g, w, d);
   // podium: lobby glazing + stone
@@ -128,11 +136,10 @@ function glassTower(pl, ctx) {
   g.mat('tex.metal_painted', 0x2e3640); g.box(0, H + 1.5, 0, tw * 0.6, 3, td * 0.6);
   flatRoof(g, tw, td, H, 'tex.gravel', 0x6a6864); parapet(g, tw, td, H, 1.2, 0.3, 'tex.metal_painted', 0x2e3640);
   if (lod <= 1) { g.mat('tex.metal_galvanized', 0xd0d0d0); g.cyl(tw * 0.15, H + 3, 0, 0.5, 0.1, 8 + F * 0.4, 6); g.mat('tex.flat', 0xff2010); g.emit(200); g.box(tw * 0.15, H + 11 + F * 0.4, 0, 0.4, 0.4, 0.4); g.emit(0); }
-  return finish(g);
 }
-Builders.register('bld.glass_tower', glassTower, { stage: 3 });
-function podiumMall(pl, ctx) {
-  const { w, d, H } = dims(pl), lod = ctx.lod, g = begin(), emit = 1 + (pl.seed % 120);
+regGen('bld.glass_tower', glassTower);
+function* podiumMall(pl, ctx, g) {
+  const { w, d, H } = dims(pl), lod = ctx.lod, emit = 1 + (pl.seed % 120);
   plinth(g, w, d);
   const s = { wallTex: 'tex.concrete_cast', wallTint: 0x8a8a8a, st: 4.5, bay: 4.5, emit, uOff: 0 };
   for (const f of rectFaces(w, d)) {
@@ -144,13 +151,12 @@ function podiumMall(pl, ctx) {
   }
   flatRoof(g, w, d, H, 'tex.paver', 0xa8a49c); parapet(g, w, d, H, 1.1, 0.25, 'tex.glass_curtain', 0x9ab0c8);
   if (lod <= 1) { g.mat('tex.concrete_cast', 0x8a8478); for (let k = 0; k < 6; k++) g.box(-w * 0.3 + (k % 3) * w * 0.3, H + 0.4, (k < 3 ? -1 : 1) * d * 0.2, 3, 0.8, 1.4); g.mat('tex.metal_painted', 0xe0e0e0); g.box(0, 5.2, -d / 2 - 2.5, w * 0.4, 0.3, 5); }
-  return finish(g);
 }
-Builders.register('bld.podium_mall', podiumMall, { stage: 3 });
+regGen('bld.podium_mall', podiumMall);
 
 // ---- houses, cabins, small timber buildings ---------------------------------------------------------------------------------------------
-function smallBuilding(pl, ctx, o) {
-  const { w, d, H, F } = dims(pl), R = srng(pl.seed), lod = ctx.lod, g = begin();
+function* smallBuilding(pl, ctx, o, g) {
+  const { w, d, H, F } = dims(pl), R = srng(pl.seed), lod = ctx.lod;
   const wallH = Math.max(2.8, o.wallH ? o.wallH(H, F) : Math.min(H, F * 3.0));
   const st = wallH / Math.max(1, F), emit = 1 + (pl.seed % 120);
   const wallTint = pick(R, o.tints);
@@ -165,7 +171,6 @@ function smallBuilding(pl, ctx, o) {
   g.mat(o.roof, pick(R, o.roofTints || [0xffffff]));
   g.push().translate(0, wallH + 0.2, 0); g.gable(w, d, 0, rise, { alongX: w >= d, over: o.over || 0.5, wall: o.wall, wallTint }); g.pop();
   if (o.extra) o.extra(g, { w, d, H, F, wallH: wallH + 0.2, rise, lod, R, s, pl });
-  return finish(g);
 }
 function porch(g, w, d, y, R, o = {}) {
   const pw = Math.min(w * 0.7, 6), pd = 2.0;
@@ -197,11 +202,11 @@ const SMALL = {
   'bld.fishing_hut': { wall: 'tex.wood_weathered_dark', tints: [0xffffff], roof: 'tex.roof_metal_red', roofTints: [0xd0c0b0], bay: 2.8, win: [1.4, 0.9, 1.1], wallH: () => 2.6,
     extra: (g, { w, d }) => { g.mat('tex.wood_weathered_dark', 0xffffff); for (const sx of [-1, 1]) for (const sz of [-1, 1]) g.cyl(sx * (w / 2 - 0.2), -2.5, sz * (d / 2 - 0.2), 0.16, 0.16, 2.6, 6); g.mat('tex.wood_planks', 0xc8b8a0); g.box(0, 1.0, -d / 2 - 0.35, 2.0, 0.08, 0.6); g.mat('tex.wood_weathered_dark', 0xffffff); g.box(w / 2 + 0.8, 1.0, 0, 0.08, 2.0, 2.2); for (let k = 0; k < 3; k++) g.box(w / 2 + 0.8, 0.6 + k * 0.6, 0, 0.5, 0.05, 2.2); } },
 };
-for (const id in SMALL) Builders.register(id, (pl, ctx) => smallBuilding(pl, ctx, SMALL[id]), { stage: 3 });
+for (const id in SMALL) regGen(id, (pl, ctx, g) => smallBuilding(pl, ctx, SMALL[id], g));
 
 // ---- industrial and commercial sheds ---------------------------------------------------------------------------------------------------------------
-function shed(pl, ctx, o) {
-  const { w, d, H, variant } = dims(pl), R = srng(pl.seed), lod = ctx.lod, g = begin();
+function* shed(pl, ctx, o, g) {
+  const { w, d, H, variant } = dims(pl), R = srng(pl.seed), lod = ctx.lod;
   const wallH = o.wallH ? o.wallH(H) : H * 0.8, emit = 1 + (pl.seed % 120);
   const wallTint = pick(R, o.tints);
   plinth(g, w, d);
@@ -221,6 +226,7 @@ function shed(pl, ctx, o) {
     }
     g.pop();
   }
+  yield;
   // roof
   if (o.roofType === 'sawtooth') {
     const n = Math.max(2, Math.round(w / 9)), tw = w / n;
@@ -246,7 +252,6 @@ function shed(pl, ctx, o) {
   }
   if (lod <= 1 && o.vents) { g.mat('tex.metal_galvanized', 0xd0d0d0); for (let k = 0; k < o.vents; k++) g.cyl(-w * 0.35 + (k * w * 0.7) / Math.max(1, o.vents - 1), wallH + 1.5, 0, 0.45, 0.45, 1.0, 8); }
   if (o.extra) o.extra(g, { w, d, H, wallH, lod, R, variant, emit, pl });
-  return finish(g);
 }
 function signBoard(g, x, y, z, w, h, tint, emit = 160) { g.mat('tex.metal_painted', tint); g.box(x, y, z, w, h, 0.2); g.mat('tex.flat', 0xf0f0e8); g.emit(emit); g.box(x, y, z - 0.11, w * 0.8, h * 0.45, 0.02); g.emit(0); }
 const SHEDS = {
@@ -262,10 +267,10 @@ const SHEDS = {
   'bld.supermarket': { wall: 'tex.concrete_panel', tints: [0xffffff, 0xe8e4dc], roof: 'tex.metal_corrugated', roofType: 'flat', wallH: (H) => H, vents: 5,
     extra: (g, { w, d, wallH, emit }) => { g.mat('tex.glass_window', 0xffffff); g.emit(emit); g.quadUV([w * 0.1, 0.2, -d / 2 - 0.05], [-w * 0.45, 0.2, -d / 2 - 0.05], [-w * 0.45, 3.6, -d / 2 - 0.05], [w * 0.1, 3.6, -d / 2 - 0.05], 0.1, 0.1, 8.9, 0.9); g.emit(0); g.mat('tex.metal_painted', 0xc82020); g.box(-w * 0.18, 4.2, -d / 2 - 1.6, w * 0.6, 0.4, 3.2); signBoard(g, w * 0.25, wallH - 1.2, -d / 2 - 0.15, 12, 1.8, 0xc82020); for (let k = 0; k < 4; k++) { g.mat('tex.metal_galvanized', 0xd0d0d0); g.box(w * 0.3 + k * 2.4, 1.0, -d / 2 - 6, 0.06, 1.0, 4); } } },
 };
-for (const id in SHEDS) Builders.register(id, (pl, ctx) => shed(pl, ctx, SHEDS[id]), { stage: 3 });
+for (const id in SHEDS) regGen(id, (pl, ctx, g) => shed(pl, ctx, SHEDS[id], g));
 
 // ---- special structures ---------------------------------------------------------------------------------------------------------------------------
-function reg(id, fn) { Builders.register(id, (pl, ctx) => { const g = begin(); const D = dims(pl); fn(g, D, ctx.lod, srng(pl.seed), pl); return finish(g); }, { stage: 3 }); }
+function reg(id, fn) { regGen(id, function* (pl, ctx, g) { fn(g, dims(pl), ctx.lod, srng(pl.seed), pl); }); }
 
 reg('bld.gas_station', (g, { w, d }, lod, R, pl) => {
   const emit = 1 + (pl.seed % 120);
@@ -470,9 +475,12 @@ const HOSTS = {
 const IG = new GB(1 << 14);
 for (const id in HOSTS) {
   const base = Builders.get(id);
-  Builders.register(id, (pl, ctx) => {
-    const r = base(pl, ctx);
-    if ((ctx.lod || 0) === 0) { const D = dims(pl), [iid, w, d, h, y0] = HOSTS[id](D); const g = IG.reset(); addInterior(g, iid, w, d, h, y0, pl.seed); r.batches.push({ geometry: g.toArrays(), materialId: 'mat.world' }); }
+  function* gen(pl, ctx) {
+    const r = base.gen ? yield* base.gen(pl, ctx) : base(pl, ctx);
+    if ((ctx.lod || 0) === 0) { yield; const D = dims(pl), [iid, w, d, h, y0] = HOSTS[id](D); const g = IG.reset(); addInterior(g, iid, w, d, h, y0, pl.seed); r.batches.push({ geometry: g.toArrays(), materialId: 'mat.world' }); }
     return r;
-  }, { stage: 3 });
+  }
+  const run = (pl, ctx) => { const it = gen(pl, ctx); let r; do r = it.next(); while (!r.done); return r.value; };
+  run.gen = gen;
+  Builders.register(id, run, { stage: 3 });
 }

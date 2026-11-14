@@ -73,7 +73,7 @@ export const MatLib = {
   },
   has(matId) { return !!MAKERS[matId]; },
   /** CSM instance changed (cascade count, on/off): re-run the patch chain on every lit material (recompile behind "Applying...") */
-  setCsm(next) { csm = next; for (const m of lit) applyCsm(m); },
+  setCsm(next) { csm = next; for (const m of lit) { m.dispose(); applyCsm(m); } },
   textureSet() { return null; },
   ensure() { return Promise.resolve(); },
   release() {},
@@ -86,7 +86,7 @@ export const MatLib = {
       if (!m.userData.patchFlags || !m.userData.patchFlags.arr) continue;
       m.defines = m.defines || {};
       if (low) m.defines.LOE_LOW = ''; else delete m.defines.LOE_LOW;
-      m.needsUpdate = true;
+      m.dispose(); m.needsUpdate = true; // dispose releases the old program (program count stays within budget, O10)
     }
     return true;
   },

@@ -13,17 +13,18 @@ export function h01(a, b = 0) { let h = (Math.imul(a | 0, 374761393) + Math.imul
 /** small seeded rng for builders */
 export function srng(seed) { let s = (seed >>> 0) || 1; return () => { s = (s + 0x6d2b79f5) | 0; let t = Math.imul(s ^ (s >>> 15), 1 | s); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 
+const ID12 = [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0];
 export class GB {
   constructor(cap = 1024) {
     this.vcap = cap; this.icap = cap * 2;
     this.pos = new Float32Array(cap * 3); this.nrm = new Int8Array(cap * 4); this.uv = new Float32Array(cap * 2);
     this.tint = new Uint8Array(cap * 4); this.aux = new Uint8Array(cap * 4); this.idx = new Uint32Array(this.icap);
     this.vn = 0; this.in = 0;
-    this.M = new Float64Array([1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]); this.stack = [];
+    this.M = new Float64Array([1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]); this.stack = []; this.spool = []; this._r = new Float64Array(12); this._a = new Float64Array(12);
     this.resetState();
   }
   resetState() { this.L = LAYERS['tex.flat'].index; this.tile = 1; this.T = [255, 255, 255]; this.ao = 1; this.E = 0; this.groundAO = true; this.uvOff = [0, 0]; return this; }
-  reset() { this.vn = 0; this.in = 0; this.M.set([1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]); this.stack.length = 0; return this.resetState(); }
+  reset() { this.vn = 0; this.in = 0; this.M.set(ID12); while (this.stack.length) this.spool.push(this.stack.pop()); return this.resetState(); }
   get empty() { return this.in === 0; }
   _grow(v, i) {
     if (this.vn + v > this.vcap) {
@@ -39,21 +40,22 @@ export class GB {
   color(tint, m = 1) { this.T = tintBytes(tint, m); return this; }
   emit(code) { this.E = code | 0; return this; }
   // ---- transform stack ------------------------------------------------------------------------------------------------
-  push() { this.stack.push(this.M.slice()); return this; }
-  pop() { this.M.set(this.stack.pop()); return this; }
+  push() { const t = this.spool.pop() || new Float64Array(12); t.set(this.M); this.stack.push(t); return this; }
+  pop() { const t = this.stack.pop(); this.M.set(t); this.spool.push(t); return this; }
+  _m(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11) { const a = this._a; a[0] = a0; a[1] = a1; a[2] = a2; a[3] = a3; a[4] = a4; a[5] = a5; a[6] = a6; a[7] = a7; a[8] = a8; a[9] = a9; a[10] = a10; a[11] = a11; return this._mul(a); }
   _mul(a) { // M = M * a (a: 3x4 row-major [r00 r01 r02 r10 r11 r12 r20 r21 r22 tx ty tz])
-    const m = this.M, r = new Float64Array(12);
+    const m = this.M, r = this._r;
     for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) r[i * 3 + j] = m[i * 3] * a[j] + m[i * 3 + 1] * a[3 + j] + m[i * 3 + 2] * a[6 + j];
     for (let i = 0; i < 3; i++) r[9 + i] = m[i * 3] * a[9] + m[i * 3 + 1] * a[10] + m[i * 3 + 2] * a[11] + m[9 + i];
     this.M.set(r); return this;
   }
-  translate(x, y, z) { return this._mul([1, 0, 0, 0, 1, 0, 0, 0, 1, x, y, z]); }
+  translate(x, y, z) { return this._m(1, 0, 0, 0, 1, 0, 0, 0, 1, x, y, z); }
   /** project yaw convention: rotate about +Y so that local -Z (forward) turns toward +X for positive yaw */
-  rotY(a) { const c = Math.cos(a), s = Math.sin(a); return this._mul([c, 0, -s, 0, 1, 0, s, 0, c, 0, 0, 0]); }
+  rotY(a) { const c = Math.cos(a), s = Math.sin(a); return this._m(c, 0, -s, 0, 1, 0, s, 0, c, 0, 0, 0); }
   /** pitch: positive tilts local forward (-Z) upward */
-  rotX(a) { const c = Math.cos(a), s = Math.sin(a); return this._mul([1, 0, 0, 0, c, -s, 0, s, c, 0, 0, 0]); }
-  rotZ(a) { const c = Math.cos(a), s = Math.sin(a); return this._mul([c, s, 0, -s, c, 0, 0, 0, 1, 0, 0, 0]); }
-  scale(x, y = x, z = x) { return this._mul([x, 0, 0, 0, y, 0, 0, 0, z, 0, 0, 0]); }
+  rotX(a) { const c = Math.cos(a), s = Math.sin(a); return this._m(1, 0, 0, 0, c, -s, 0, s, c, 0, 0, 0); }
+  rotZ(a) { const c = Math.cos(a), s = Math.sin(a); return this._m(c, s, 0, -s, c, 0, 0, 0, 1, 0, 0, 0); }
+  scale(x, y = x, z = x) { return this._m(x, 0, 0, 0, y, 0, 0, 0, z, 0, 0, 0); }
   // ---- raw vertex -----------------------------------------------------------------------------------------------------
   vert(x, y, z, nx, ny, nz, u, v) {
     const m = this.M, k = this.vn;

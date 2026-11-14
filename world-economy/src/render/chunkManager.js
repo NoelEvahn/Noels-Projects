@@ -69,16 +69,32 @@ export function createChunkManager({ scene, far, getRadii }) {
       const b = Builders.get(pl.archetype);
       if (b) {
         ctx.seed = pl.seed;
-        const r = b(pl, ctx);
+        const r = b.gen ? yield* b.gen(pl, ctx) : b(pl, ctx);
+        if (b.gen) yield;
         for (const batch of r.batches) {
           const mid = batch.geometry.art && MatLib.has(batch.materialId) ? batch.materialId : 'mat.world';
           if (r.worldSpace) appendBatch(gbFor(mid), batch.geometry, 0, 0, 0, 0);
           else appendBatch(gbFor(mid), batch.geometry, pl.x, pl.y, pl.z, pl.rotY);
         }
       }
-      if (++n % 4 === 0) yield;
+      if (lod === 0 || ++n % 4 === 0) yield;
     }
     yield;
+    // shadow proxy for the detail ring (O7): LOD1 building shells + infrastructure cast instead of LOD0 detail (layer 1 is seen
+    // only by the shadow cameras); small props, decor and interiors never cast
+    if (lod === 0) {
+      const gs = gbFor('#shadow');
+      for (const pl of cont.placements) {
+        const b = Builders.get(pl.archetype); if (!b || pl.archetype.startsWith('veg.')) continue;
+        ctx.lod = 1; ctx.seed = pl.seed;
+        const r = b(pl, ctx);
+        for (const batch of r.batches) if (batch.geometry.art) { if (r.worldSpace) appendBatch(gs, batch.geometry, 0, 0, 0, 0); else appendBatch(gs, batch.geometry, pl.x, pl.y, pl.z, pl.rotY); }
+        if (++n % 8 === 0) yield;
+      }
+      ctx.lod = 0;
+      for (const e of cont.parts) addPartDetailed(gs, e.part, 1);
+      yield;
+    }
     for (const e of cont.parts) addPartDetailed(gw, e.part, lod);
     yield;
     if (api.decor) { yield* api.decor(cx, cz, lod, gbFor); }
@@ -88,13 +104,14 @@ export function createChunkManager({ scene, far, getRadii }) {
     yield;
     const tg = artGeometry(ta); geoms.push(tg); tris += ta.triangles;
     const tm = new THREE.Mesh(tg, MatLib.get('mat.terrain'));
-    tm.name = `terrain.${cx}.${cz}`; tm.receiveShadow = true; tm.castShadow = lod <= 1; meshes.push(tm);
+    tm.name = `terrain.${cx}.${cz}`; tm.receiveShadow = true; tm.castShadow = lod === 0; meshes.push(tm);
     for (const [id, g] of gbs) {
       if (g.empty) continue;
       const a = g.toArrays(); tris += a.triangles;
       const geo = artGeometry(a); geoms.push(geo);
+      if (id === '#shadow') { const m = new THREE.Mesh(geo, MatLib.get('mat.world')); m.name = `chunk.${cx}.${cz}.shadow`; m.layers.set(1); m.castShadow = true; m.receiveShadow = false; meshes.push(m); yield; continue; }
       const m = new THREE.Mesh(geo, MatLib.get(id));
-      m.name = `chunk.${cx}.${cz}.L${lod}.${id}`; m.receiveShadow = true; m.castShadow = lod <= 1 && id !== 'mat.glass';
+      m.name = `chunk.${cx}.${cz}.L${lod}.${id}`; m.receiveShadow = true; m.castShadow = lod === 1 && id !== 'mat.glass';
       meshes.push(m);
       yield;
     }

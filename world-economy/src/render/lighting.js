@@ -29,7 +29,7 @@ const DENS_SCALE = 0.42;
 
 export function createLighting({ scene, camera, renderer }) {
   const hemi = new THREE.HemisphereLight(0xcfe0f2, 0x6a6458, 0.35); hemi.name = 'hemi'; scene.add(hemi);
-  const plain = new THREE.DirectionalLight(0xffffff, 3); plain.name = 'key'; scene.add(plain); scene.add(plain.target);
+  const plain = new THREE.DirectionalLight(0xffffff, 3); plain.name = 'key'; plain.shadow.camera.layers.enable(1); scene.add(plain); scene.add(plain.target);
   scene.fog = new THREE.FogExp2(0xcfc6b4, 0.0007);
   let csm = null, shadowCfg = null;
   const sunCol = new THREE.Color(), keyDir = new THREE.Vector3(), tmpC = new THREE.Color(), fogTarget = new THREE.Color();
@@ -47,7 +47,7 @@ export function createLighting({ scene, camera, renderer }) {
     if (cfg.enabled) {
       csm = new CSM({ maxFar: cfg.maxFar, cascades: cfg.cascades, mode: 'practical', parent: scene, shadowMapSize: cfg.mapSize, lightDirection: new THREE.Vector3(-1, -1, -1).normalize(), camera, lightIntensity: 3, lightMargin: 120, shadowBias: -0.0004 });
       csm.fade = true;
-      for (const l of csm.lights) { l.shadow.normalBias = 0.04; l.shadow.radius = cfg.pcf >= 16 ? 3 : 2; MemTracker.addRenderTarget(l.shadow, cfg.mapSize, cfg.mapSize, 4); }
+      for (const l of csm.lights) { l.shadow.camera.layers.enable(1); l.shadow.normalBias = 0.04; l.shadow.radius = cfg.pcf >= 16 ? 3 : 2; MemTracker.addRenderTarget(l.shadow, cfg.mapSize, cfg.mapSize, 4); }
       plain.visible = false;
     } else plain.visible = true;
     MatLib.setCsm(csm);

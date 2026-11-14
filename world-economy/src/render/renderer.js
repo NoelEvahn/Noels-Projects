@@ -85,7 +85,8 @@ export function createRenderer({ canvas, settings, perf, quality, onRendererStri
       const prev = derived; derived = d;
       const all = changed.includes('*');
       if (w) api.resize(w, h);
-      lighting.setShadows(d.shadows);
+      const shadowChanged = lighting.setShadows(d.shadows);
+      if (shadowChanged) { for (const m of water.materials) m.dispose(); MatLib.forEach((m) => m.dispose()); } // release programs compiled for the old shadow setup
       MatLib.setShaderTier(d.textures.tier === 'low' ? 'low' : 'full');
       sky.envMode = d.reflections.mode === 'off' ? 'off' : 'env';
       camera.fov = d.camera.fov; camera.far = Math.max(2500, d.farClip); camera.updateProjectionMatrix();
