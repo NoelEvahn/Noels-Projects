@@ -3,7 +3,7 @@ Orchestrator/QA: Sonnet 5.5 High (main) | Planner: Fable 5.2 High | Visual/UI/Fi
 
 ## Status
 - Stage 1 (master spec, Fable): COMPLETE; spec and the 8 default decisions approved by the user.
-- Stage 2 (S2a scaffold + S2 world blockout, Sonnet): COMPLETE, see "Stage 2 report" below. Tag `checkpoint/stage2-blockout`.
+- Stage 2 (S2a scaffold + S2 world blockout, Sonnet): COMPLETE, see "Stage 2 report" below. Checkpoint commit `a1e8d26` (tag `checkpoint/stage2-blockout` exists locally only: the git proxy returns 403 on tag pushes, so the commit hash is the reference). Orchestrator re-verified: `npm test` 33/33, e2e smoke all pass, screenshots reviewed.
 - Next: Stage 3 visual production (Opus) and Stage 4 gameplay (Sonnet); they touch disjoint folders (MASTER_SPEC 9.8).
 - Spec: docs/MASTER_SPEC.md + docs/spec/A-G. Build: `npm run build` OK (dist/life.html 0.645 MB). Tests: 33 unit/sim pass, e2e smoke pass, perf spec pass.
 
