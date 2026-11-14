@@ -48,7 +48,9 @@ export function createChunkManager({ scene, far, getRadii }) {
 
   function* buildChunk(cx, cz, lod) {
     const tw = takeT(); const gbs = new Map();
-    const gbFor = (id) => { let g = gbs.get(id); if (!g) { g = takeG(); gbs.set(id, g); } return g; };
+    // one writer per material; a writer is split at 24k vertices so each mesh finalises inside one slice and uploads < 1 MB
+    let split = 0;
+    const gbFor = (id) => { let g = gbs.get(id); if (g && g.vn > 24000) { gbs.set(id + '#' + (++split), g); g = null; } if (!g) { g = takeG(); gbs.set(id, g); } return g; };
     try { return yield* buildInner(tw, gbFor, gbs, cx, cz, lod); }
     finally { tPool.push(tw); for (const g of gbs.values()) gPool.push(g); }
   }
@@ -109,9 +111,10 @@ export function createChunkManager({ scene, far, getRadii }) {
       if (g.empty) continue;
       Streaming.phase = 'final:' + id + ':' + g.vn; const a = g.toArrays(); tris += a.triangles;
       const geo = artGeometry(a); geoms.push(geo);
-      if (id === '#shadow') { const m = new THREE.Mesh(geo, MatLib.get('mat.world')); m.name = `chunk.${cx}.${cz}.shadow`; m.layers.set(1); m.castShadow = true; m.receiveShadow = false; meshes.push(m); yield; continue; }
-      const m = new THREE.Mesh(geo, MatLib.get(id));
-      m.name = `chunk.${cx}.${cz}.L${lod}.${id}`; m.receiveShadow = true; m.castShadow = lod === 1 && id !== 'mat.glass';
+      const mid = id.split('#')[0] || id;
+      if (id.startsWith('#shadow')) { const m = new THREE.Mesh(geo, MatLib.get('mat.world')); m.name = `chunk.${cx}.${cz}.shadow`; m.layers.set(1); m.castShadow = true; m.receiveShadow = false; meshes.push(m); yield; continue; }
+      const m = new THREE.Mesh(geo, MatLib.get(mid));
+      m.name = `chunk.${cx}.${cz}.L${lod}.${id}`; m.receiveShadow = true; m.castShadow = lod === 1 && mid !== 'mat.glass';
       meshes.push(m);
       yield;
     }
