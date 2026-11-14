@@ -35,7 +35,7 @@ export function terrainWeights(x, z, h, slope, w, inWorld = true) {
   }
   if (h < LAKE.level + 0.1 && h > LAKE.level - 20 && x < -700 && x > -1700 && z < -700 && z > -1500 && waterBodyAt(x, z)) { w[4] = 0.6; w[5] = 0.4; return TINT.lakebed; }
   if (reg === 'forest') {
-    if (h > 170) { w[0] = 0.55 + 0.3 * n1; w[2] = 0.45 - 0.3 * n1; }
+    if (h > 170) { w[1] = 0.5 + 0.25 * n1; w[0] = 0.3 - 0.2 * n1; w[2] = 0.2 + 0.1 * n2; }
     else { w[1] = 0.7 + 0.3 * n1; w[0] = 0.3 * (1 - n1) * sm(0.3, 0.7, n2); }
     const dy = Math.hypot(x - TIMBER[0], z - TIMBER[1]);
     if (dy < 75) { const k = sm(75, 40, dy); w[5] += 0.7 * k * (0.6 + 0.4 * n2); w[4] += 0.4 * k; w[1] *= 1 - k; }

@@ -106,7 +106,7 @@ export function createLighting({ scene, camera, renderer }) {
       G.uNight.value = st.night; G.uLampGain.value = 7 * st.night;
       const h = ((hour % 24) + 24) % 24;
       G.uWinLit.value = h >= 19 && h < 23 ? 0.62 : h >= 23 || h < 1 ? 0.4 : h < 5 ? 0.1 : h < 7 ? 0.3 : h < 17 ? 0.08 : 0.3 + (h - 17) * 0.15;
-      G.uWinGain.value = 0.3 + 2.4 * st.night;
+      G.uWinGain.value = 0.03 + 2.6 * st.night;
       // sky
       if (sky) {
         const u = sky.uniforms;

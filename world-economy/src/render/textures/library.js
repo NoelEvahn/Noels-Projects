@@ -56,10 +56,10 @@ def('tex.curb_stone', 0.004, 0.5, /* glsl */`
 const asphalt = (worn) => /* glsl */`
   vec3 w = worley(uv, 180.0); float agg = smoothstep(0.1, 0.45, w.x); float n = fbm(uv, 8.0, 5);
   float crack = smoothstep(${worn ? '0.9' : '0.95'}, 0.99, ridged(uv, 5.0, 4)) * smoothstep(0.4, 0.6, fbm(uv, 3.0, 2));
-  float patchm = smoothstep(0.62, 0.66, fbm(uv + 0.37, 2.0, 3));
+  float patchm = smoothstep(0.7, 0.73, fbm(uv + 0.37, 2.0, 3));
   float oil = smoothstep(0.7, 0.85, fbm(uv + 0.11, 4.0, 3));
   a = mix(C(5c5d60), C(36383a), agg) * (0.85 + 0.3 * n) * ${worn ? '1.12' : '1.0'};
-  a = mix(a, C(2a2b2d), patchm * 0.7); a *= 1.0 - oil * 0.25; a *= 1.0 - crack * 0.6;
+  a = mix(a, C(3a3b3d), patchm * 0.45); a *= 1.0 - oil * 0.15; a *= 1.0 - crack * 0.6;
   h = 0.6 - 0.25 * agg + 0.1 * n - crack * 0.6 - patchm * 0.05;
   r = 0.92 - 0.08 * agg - 0.25 * oil + 0.05 * crack; m = 0.0;`;
 def('tex.asphalt', 0.004, 0.9, asphalt(false));

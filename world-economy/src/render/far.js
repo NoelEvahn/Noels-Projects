@@ -45,10 +45,14 @@ export function skirtHeight(x, z) {
   const d = Math.max(Math.abs(x - cx), Math.abs(z - cz));
   const base = terrainPre(cx, cz);
   let h;
+  // coastal edge (south of z = 500, i.e. the ocean side): low headlands that sink into the sea instead of a mountain wall
+  const coast = Math.min(1, Math.max(0, (cz - 500) / 600)), cs = coast * coast * (3 - 2 * coast);
   if (base > 0) {
-    const ring = Math.min(1, d / 1400);
-    const mount = (180 + 520 * ridged(x / 1300, z / 1300, 41)) * ring * ring * (3 - 2 * ring);
-    h = base + 0.12 * d + mount + 25 * fbm(x / 300, z / 300, 3, 7) * Math.min(1, d / 200);
+    const ring = Math.min(1, d / 2200);
+    const mount = (140 + 460 * ridged(x / 1300, z / 1300, 41)) * ring * ring * (3 - 2 * ring);
+    const land = base + 0.05 * d + mount + 25 * fbm(x / 300, z / 300, 3, 7) * Math.min(1, d / 200);
+    const head = base + 18 * fbm(x / 400, z / 400, 3, 9) * Math.min(1, d / 150) - 0.03 * d;
+    h = land * (1 - cs) + head * cs;
   } else h = base - 0.004 * d - 6 * Math.min(1, d / 300);
   const sx = x - 300, sz = z + 3600, ds = Math.hypot(sx, sz);
   const sable = 1150 * Math.pow(Math.max(0, 1 - ds / 2500), 1.6) * (0.9 + 0.2 * ridged(x / 700, z / 700, 5));

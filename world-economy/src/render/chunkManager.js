@@ -22,6 +22,18 @@ export function createChunkManager({ scene, far, getRadii }) {
   const coveredMask = new Uint8Array(NC * NC);
   let farDirty = false;
   const api = { chunks, group, counts: { near: 0, mid: 0, detail: 0, pending: 0, loadedTris: 0 }, onLoaded: null, decor: null };
+  // decoration placements (world/layout/decor.js): street furniture etc., merged into the chunk batches (O1); not in the mid ring
+  const dctx = { lod: 0, seed: 0 };
+  api.decor = function* (cx, cz, lod, gbFor) {
+    const D = World.data.decor; if (!D || lod >= 2) return;
+    let n = 0; dctx.lod = lod;
+    for (const it of D.byChunk[cz * NC + cx]) {
+      const b = Builders.get(it.archetype); if (!b) continue;
+      dctx.seed = it.seed;
+      for (const batch of b(it, dctx).batches) appendBatch(gbFor(batch.geometry.art && MatLib.has(batch.materialId) ? batch.materialId : 'mat.world'), batch.geometry, it.x, it.y, it.z, it.rotY);
+      if (++n % 16 === 0) yield;
+    }
+  };
 
   function disposeRec(rec) {
     group.remove(rec.group);

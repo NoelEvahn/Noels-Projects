@@ -65,7 +65,7 @@ void main(){
     col = mix(col, cc, dens * mix(0.85, 1.0, uCover));
   }
   // horizon haze: blend into the fog colour so far terrain and sky meet without a line
-  float hz = 1.0 - smoothstep(-0.02, 0.22 + 0.15 * uCover, dir.y);
+  float hz = 1.0 - smoothstep(-0.02, 0.1 + 0.18 * uCover, dir.y);
   col = mix(col, uFog, clamp(hz * 0.95 + uStorm * 0.3, 0.0, 1.0));
   if (dir.y < 0.0) col = uFog;
   gl_FragColor = vec4(col, 1.0);

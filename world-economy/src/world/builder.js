@@ -15,6 +15,7 @@ import { yawOf } from '../core/math.js';
 import { waterBodyAt, LAKE, lakeR, PONDS, riverX, shoreD } from './layout/water.js';
 import { regionAt, districtAt } from './layout/regions.js';
 import { ARCHETYPES } from './archetypes.js';
+import { generateDecor } from './layout/decor.js';
 
 const PI = Math.PI;
 
@@ -311,6 +312,8 @@ export function* buildWorld(seed = 1) {
   W.plByChunk = plByChunk; W.partsByChunk = partsByChunk; W.roadsByChunk = roadsByChunk;
   W.edgeById = new Map(edges.map((e) => [e.id, e]));
   W.poiById = new Map(poiDefs.map((p) => [p.id, p]));
+  // S3B decoration placements + light definitions (MASTER_SPEC 9.1): visual only, no colliders
+  W.decor = generateDecor({ edges, nodes, placements: placer.placements, pois: poiDefs, heightAt, infra, seed });
   yield 'done';
   return W;
 }
