@@ -42,16 +42,19 @@ const check = (name, ok, detail = '') => { if (!ok) failures++; console.log(`${o
       const t = Date.now();
       await p.evaluate((id) => window.__LOE.viewpoint(id, { hour: 8 }), id);
       const s = await p.evaluate(() => { window.__LOE.renderNow(); window.__LOE.renderNow(); return window.__LOE.perf.snapshot(); });
-      const row = { calls: s.draw.calls, tris: s.draw.triangles, shadowCalls: s.draw.shadowCalls, shadowTris: s.draw.shadowTriangles, libMB: +(s.mem.libraryTextureBytes / MB).toFixed(1), gpuMB: +(s.mem.gpuEstimateBytes / MB).toFixed(1), geoMB: +(s.mem.geometryBytes / MB).toFixed(1), programs: s.counts.programs, lights: s.counts.lights, chunksNear: s.counts.chunksNear, chunksMid: s.counts.chunksMid, ms: Date.now() - t };
+      // JS cost of a frame's render submission (culling, LOD, sorting, uniforms, GL command encoding; no raster wait): mean of 10
+      const cpu = await p.evaluate(() => { const t = performance.now(); for (let i = 0; i < 10; i++) window.__LOE.renderNow(); return (performance.now() - t) / 10; });
+      const row = { calls: s.draw.calls, tris: s.draw.triangles, shadowCalls: s.draw.shadowCalls, shadowTris: s.draw.shadowTriangles, libMB: +(s.mem.libraryTextureBytes / MB).toFixed(1), gpuMB: +(s.mem.gpuEstimateBytes / MB).toFixed(1), geoMB: +(s.mem.geometryBytes / MB).toFixed(1), programs: s.counts.programs, lights: s.counts.lights, cpuMs: +cpu.toFixed(2), chunksNear: s.counts.chunksNear, chunksMid: s.counts.chunksMid, ms: Date.now() - t };
       out.presets[preset][id] = row;
       const over = Object.keys(B).filter((k) => row[k] > B[k]);
+      if (preset === 'high' && row.cpuMs > 5) over.push('cpuMs>5');
       let baseNote = '';
       if (useBase && base.presets[preset] && base.presets[preset][id]) {
         const r0 = base.presets[preset][id];
         for (const k of ['calls', 'tris', 'shadowCalls', 'shadowTris', 'geoMB']) if (row[k] > r0[k] * 1.1 + (k.endsWith('MB') ? 0.2 : 4)) over.push(k + '>base');
         baseNote = ' and baseline x1.10';
       }
-      check(`${preset} ${id} within budgets${baseNote}`, over.length === 0, `draws ${row.calls}/${B.calls} shadow ${row.shadowCalls}/${B.shadowCalls} tris ${(row.tris / 1e3).toFixed(0)}k/${B.tris / 1e3}k shTris ${(row.shadowTris / 1e3).toFixed(0)}k/${B.shadowTris / 1e3}k tex ${row.libMB}/${B.libMB} gpu ${row.gpuMB}/${B.gpuMB} geo ${row.geoMB}/${B.geoMB} prog ${row.programs}/${B.programs} lights ${row.lights}${over.length ? '  OVER: ' + over.join(',') : ''}`);
+      check(`${preset} ${id} within budgets${baseNote}`, over.length === 0, `draws ${row.calls}/${B.calls} shadow ${row.shadowCalls}/${B.shadowCalls} tris ${(row.tris / 1e3).toFixed(0)}k/${B.tris / 1e3}k shTris ${(row.shadowTris / 1e3).toFixed(0)}k/${B.shadowTris / 1e3}k tex ${row.libMB}/${B.libMB} gpu ${row.gpuMB}/${B.gpuMB} geo ${row.geoMB}/${B.geoMB} prog ${row.programs}/${B.programs} lights ${row.lights} cpu ${row.cpuMs} ms${over.length ? '  OVER: ' + over.join(',') : ''}`);
     }
   }
   const outPath = path.resolve(root, opt('out', 'test-results/perf.json'));
