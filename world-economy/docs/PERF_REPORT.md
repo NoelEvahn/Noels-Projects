@@ -268,8 +268,7 @@ Persistence: `loe.settings`, per-field validation, round-trip across a reload ve
 - Governor behaviour against real frame times (only synthetic sequences here; software GL frames are ~0.5–1.6 fps).
 
 ## 11. Visual checklist results (Annex G §7.3)
-The full screenshot matrix (16 viewpoints × 08:00 / 18:30 / 22:00, rain V01/V13, mist V08/V16, overcast V15, storm V10, H1, H2;
-High, 960×540) is in `test/screenshots/` (`V01_0800.png` …, `shots.json` with non-blank stats and counters). Per the user's
+Screenshots (High, 960×540) in `test/screenshots/`: V01–V16 at 08:00 and 18:30 and V01–V03 at 22:00 (`V01_0800.png` …). The remaining 22:00 shots, the weather shots and H1/H2 were not captured (stopped by user decision; re-shoot after the Sonnet fixes with `node test/visual/shots.cjs --set=matrix`). Per the user's
 decision the row-by-row checklist review is done by the Sonnet QA pass; 3B's own spot checks found: rows 1 (no magenta/black
 or blockout), 9 (lamps glow, windows lit at night) and 13 (no cracks between chunks) pass in the reviewed shots; rows 3/10
 (haze/exposure) were weak (washed-out views toward a low sun, pale ocean) and were tuned once; rows 5/8/11/14 need the QA review.
