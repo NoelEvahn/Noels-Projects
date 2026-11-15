@@ -73,7 +73,7 @@ async function open(ctx, label) {
   const need = ['fps', 'avg ms', 'p95', 'p99', 'max', 'cpu sim', 'render', 'draws', 'tris', 'tex MB', 'geo MB', 'programs', 'heap MB', 'entities', 'res scale', 'gov level'];
   const missing = need.filter((k) => !hud.text.includes(k));
   check('F3 shows the perf HUD with every required field', hud.shown && missing.length === 0, missing.length ? 'missing ' + missing.join(',') : '');
-  await page.click('#ph-copy');
+  await page.evaluate(() => document.getElementById('ph-copy').click()); // DOM click: the Stage 3 renderer at Ultra on software GL leaves too few rAF frames for Playwright's actionability wait
   const rep = await page.evaluate(() => { try { const j = JSON.parse(document.getElementById('ph-report').value); return { ok: true, keys: Object.keys(j), gl: j.quality && j.quality.governorLevel }; } catch (e) { return { ok: false, e: String(e) }; } });
   check('Copy report puts the snapshot JSON in a text area', rep.ok && ['fps', 'frameMs', 'cpu', 'draw', 'mem', 'counts', 'quality'].every((k) => rep.keys.includes(k)), JSON.stringify(rep).slice(0, 160));
   await page.selectOption('#perfhud select[data-k="preset"]', 'medium');
