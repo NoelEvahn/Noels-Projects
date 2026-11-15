@@ -50,7 +50,8 @@ vec3 applyFog(vec3 col){
   return col;
 #endif
 }`;
-const FOG_F = `gl_FragColor.rgb = applyFog(gl_FragColor.rgb);`;
+const FOG_F = `gl_FragColor.rgb = applyFog(gl_FragColor.rgb);
+  if (any(isnan(gl_FragColor.rgb)) || any(isinf(gl_FragColor.rgb))) gl_FragColor.rgb = vec3(0.0); // one bad texel would otherwise smear through the bloom chain`;
 
 const ARR_PARS = `
 uniform sampler2DArray tHA, tHD, tSA, tSD, tDA, tDD; uniform sampler2D tProps;

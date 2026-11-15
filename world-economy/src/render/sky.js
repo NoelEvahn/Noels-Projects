@@ -65,7 +65,7 @@ void main(){
   // horizon haze: blend into the fog colour so far terrain and sky meet without a line
   float hz = 1.0 - smoothstep(-0.02, 0.1 + 0.18 * uCover, dir.y);
   col = mix(col, uFog, clamp(hz * 0.95 + uStorm * 0.3, 0.0, 1.0));
-  if (dir.y < 0.0) col = mix(uFog, uGround, uEnv * smoothstep(0.0, -0.25, dir.y));
+  if (dir.y < 0.0) col = mix(uFog, uGround, uEnv * (1.0 - smoothstep(-0.25, 0.0, dir.y)));
   // environment capture only: the visible dome is bright, but the light it casts on the world is scaled so sun:sky stays ~5:1
   col *= mix(1.0, mix(1.0, 0.62, uEnv), uDayAmt);
   gl_FragColor = vec4(col, 1.0);

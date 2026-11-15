@@ -263,7 +263,7 @@ export function createVegetation({ scene, renderer }) {
           else if (flowerP > 0.62 && h3 < 0.3) type = 3;
           else if (h3 < 0.8 * wts[0] * (0.35 + clump)) type = h2 < 0.12 ? 5 : 0;
           else if (h3 > 0.992) type = 6;
-        } else if (wts[3] > 0.6 && h2 < 0.06) type = 0;
+        } else if (wts[3] > 0.6 && h2 < 0.012) type = 0;
         else if (wts[2] > 0.4 && h3 > 0.93) type = 6; // rocky ground: pebbles
         if (type < 0) continue;
         out.push(x, y, z, type, (type === 6 ? 0.5 : 0.7) + (type === 6 ? 1.6 : 0.6) * h1, h2 * 6.28);

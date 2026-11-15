@@ -55,7 +55,7 @@ void main(){
 }`;
 const PREFILTER_FS = /* glsl */`
 varying vec2 vUv; uniform sampler2D tSrc; uniform vec2 uTexel; uniform float uThreshold;
-vec3 q(vec2 uv){ vec3 c = texture2D(tSrc, uv).rgb; float l = max(c.r, max(c.g, c.b)); return c * max(l - uThreshold, 0.0) / max(l, 1e-4) / (1.0 + l * 0.05); }
+vec3 q(vec2 uv){ vec3 c = texture2D(tSrc, uv).rgb; if (any(isnan(c)) || any(isinf(c))) c = vec3(0.0); float l = max(c.r, max(c.g, c.b)); return c * max(l - uThreshold, 0.0) / max(l, 1e-4) / (1.0 + l * 0.05); }
 void main(){ vec3 c = q(vUv + uTexel * vec2(-1, -1)) + q(vUv + uTexel * vec2(1, -1)) + q(vUv + uTexel * vec2(-1, 1)) + q(vUv + uTexel * vec2(1, 1)); gl_FragColor = vec4(c * 0.25, 1.0); }`;
 const DOWN_FS = /* glsl */`
 varying vec2 vUv; uniform sampler2D tSrc; uniform vec2 uTexel;
@@ -74,6 +74,7 @@ float lin(float d){ float z = d * 2.0 - 1.0; return 2.0 * uNearC * uFarC / (uFar
 vec3 toSRGB(vec3 c){ return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, c)); }
 void main(){
   vec3 col = texture2D(tColor, vUv).rgb;
+  if (any(isnan(col)) || any(isinf(col))) col = vec3(0.0);
   if (uSharpen > 0.0){ vec3 n = texture2D(tColor, vUv + vec2(uTexel.x, 0.0)).rgb + texture2D(tColor, vUv - vec2(uTexel.x, 0.0)).rgb + texture2D(tColor, vUv + vec2(0.0, uTexel.y)).rgb + texture2D(tColor, vUv - vec2(0.0, uTexel.y)).rgb; col = max(col + (col * 4.0 - n) * 0.25 * uSharpen, 0.0); }
   if (uAOOn > 0.5){
     // depth-aware 4-tap upsample of the half-res AO

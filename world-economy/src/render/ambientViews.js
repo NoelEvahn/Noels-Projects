@@ -82,7 +82,7 @@ export function createAmbientViews({ scene, ambient }) {
   function updateBirds(set, poses, scale, cam, maxD) {
     for (const p of poses) p.n = 0;
     for (let i = 0; i < set.n; i++) {
-      const dx = set.x[i] - cam.x, dz = set.z[i] - cam.z; if (dx * dx + dz * dz > maxD * maxD) continue;
+      const dx = set.x[i] - cam.x, dz = set.z[i] - cam.z, dd = dx * dx + dz * dz; if (dd > maxD * maxD || (dd < 900 && Math.abs(set.y[i] - cam.y) < 40)) continue; // never fly through the lens (within 30 m)
       const f = set.flap[i], p = poses[f > 0.35 ? 0 : f < -0.35 ? 2 : 1];
       if (p.n >= p.mesh.instanceMatrix.count) continue;
       tmpA.makeRotationY(-set.yaw[i]); tmpB.makeRotationZ(set.bank[i] + f * 0.04); tmpA.multiply(tmpB);
