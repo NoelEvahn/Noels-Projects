@@ -76,7 +76,7 @@ async function open(ctx, label) {
   await page.evaluate(() => document.getElementById('ph-copy').click()); // DOM click: the Stage 3 renderer at Ultra on software GL leaves too few rAF frames for Playwright's actionability wait
   const rep = await page.evaluate(() => { try { const j = JSON.parse(document.getElementById('ph-report').value); return { ok: true, keys: Object.keys(j), gl: j.quality && j.quality.governorLevel }; } catch (e) { return { ok: false, e: String(e) }; } });
   check('Copy report puts the snapshot JSON in a text area', rep.ok && ['fps', 'frameMs', 'cpu', 'draw', 'mem', 'counts', 'quality'].every((k) => rep.keys.includes(k)), JSON.stringify(rep).slice(0, 160));
-  await page.selectOption('#perfhud select[data-k="preset"]', 'medium');
+  await page.evaluate(() => { const s = document.querySelector('#perfhud select[data-k="preset"]'); s.value = 'medium'; s.dispatchEvent(new Event('change', { bubbles: true })); }); // DOM events: few rAF frames on software GL
   check('HUD preset selector applies a preset', (await page.evaluate(() => window.__LOE.quality.get('graphics.preset'))) === 'medium');
   await page.evaluate(() => document.activeElement && document.activeElement.blur()); // keys typed into the report text area are not game input
   await page.keyboard.press('F3');
