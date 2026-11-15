@@ -37,9 +37,11 @@ export function createRenderer({ canvas, settings, perf, quality, onRendererStri
   // ---- texture library (boot bake) and canvas atlases ----------------------------------------------------------------------------------
   const t0 = performance.now();
   const baker = createTexBaker(renderer);
-  const texSizes = (d) => ({ H: d.textures.H.slice(), S: d.textures.S, D: d.textures.D, anisotropy: d.textures.anisotropy });
+  // Medium: standard-tier data maps (normal/roughness/AO) at half size to stay inside the 120 MB library budget (DECISIONS.md)
+  const texSizes = (d) => ({ H: d.textures.H.slice(), S: d.textures.S, Sd: d.textures.tier === 'medium' ? d.textures.S / 2 : d.textures.S, D: d.textures.D, anisotropy: d.textures.anisotropy });
   baker.onPublish = () => { const u = baker.uniforms; for (const k of ['tHA', 'tHD', 'tSA', 'tSD', 'tDA', 'tDD']) MatLib.G[k].value = u[k].value; };
   baker.start(texSizes(derived0));
+  baker.onStep = () => { Streaming.phase = 'textureBake'; };
   const bakeMs = baker.bakeAll();
   const atlasN = derived0.textures.atlas;
   const leaf = makeLeafAtlas(Math.min(1024, atlasN)), particles = makeParticleAtlas(512), decals = makeDecalAtlas(512);

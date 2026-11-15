@@ -59,6 +59,7 @@ const check = (name, ok, detail = '') => { if (!ok) failures++; console.log(`${o
   if (!useBase && PRESETS.length === 4 && VIEWS.length === 16) { fs.writeFileSync(basePath, JSON.stringify(out, null, 1)); console.log('baseline.json written'); }
   // fly-through (High preset, cpuOnly): streaming slices and program count
   await p.evaluate(() => window.__LOE.setQuality('high'));
+  await p.evaluate(() => window.__LOE.settle(600000)); // a preset change re-bakes textures behind 'Applying...' (excluded from hitch rules)
   const nat = await p.evaluate(() => window.__LOE.flythrough({ speed: 30, cpuOnly: true }));
   console.log('fly-through (natural GC, gating):', JSON.stringify(nat));
   check('fly-through: Streaming.pump never exceeds its budget by more than 2 ms (overruns = 0)', nat.overruns === 0, `overruns ${nat.overruns}, max pump ${nat.maxPump.toFixed(2)} ms, max single step ${nat.maxStep.toFixed(2)} ms at ${nat.maxStepAt}`);

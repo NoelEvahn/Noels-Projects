@@ -76,7 +76,7 @@ export function createTexBaker(renderer) {
     return {
       sizes,
       H: { alb: makeArray(sizes.H[0], TIER_COUNT.H, true, a), dat: makeArray(sizes.H[1], TIER_COUNT.H, false, a) },
-      S: { alb: makeArray(sizes.S, TIER_COUNT.S, true, a), dat: makeArray(sizes.S, TIER_COUNT.S, false, a) },
+      S: { alb: makeArray(sizes.S, TIER_COUNT.S, true, a), dat: makeArray(sizes.Sd || sizes.S, TIER_COUNT.S, false, a) },
       D: { alb: makeArray(sizes.D, TIER_COUNT.D, true, a), dat: makeArray(sizes.D, TIER_COUNT.D, false, a) },
       done: { H: 0, S: 0, D: 0 },
     };
@@ -153,6 +153,7 @@ export function createTexBaker(renderer) {
     /** bake one layer; returns true while more work remains */
     step() {
       if (!building) return false;
+      if (api.onStep) api.onStep();
       const e = queue.shift();
       if (e) bakeLayer(building, e);
       stats.pending = queue.length;
@@ -166,7 +167,7 @@ export function createTexBaker(renderer) {
     },
     bakeAll() { const t0 = performance.now(); while (api.step()); return performance.now() - t0; },
     /** time-sliced job for Streaming.pump: one layer per yield */
-    *job() { while (api.step()) yield; },
+    *job() { while (api.step()) { yield; } },
     /** test/debug: read one layer back as RGBA8 (map 'alb' | 'dat') at its stored size */
     read(texId, map = 'alb') {
       const e = LAYER_LIST.find((l) => l.id === texId);

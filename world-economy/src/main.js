@@ -266,10 +266,10 @@ async function boot() {
     const g = World.groundAt(v.x, 1000, v.z);
     const wa = World.waterAt(v.x, v.z, 0);
     const y = Math.max(g.y, wa ? wa.height : -1e9);
-    const pos = [v.x, y + v.h, v.z];
+    const pos = [v.x, v.y != null ? v.y : y + v.h, v.z];
     game.teleport([v.x, y, v.z], 0);
     const gt = World.groundAt(v.t[0], 1000, v.t[1]);
-    const ty = v.t[2] > 100 ? v.t[2] : gt.y + v.t[2];
+    const ty = v.t[2] > 30 && v.y != null ? v.t[2] : v.t[2] > 100 ? v.t[2] : gt.y + v.t[2];
     H.camera.set({ pos, target: [v.t[0], ty, v.t[1]], fov: 60 });
     return settle(settleMs, 2);
   };
