@@ -65,6 +65,10 @@ vec2 tiles(vec2 uv, float n, float grout){
   return vec2(smoothstep(grout, grout + 0.02, e), hash12(mod(c, vec2(n))));
 }
 // weathering: vertical streaks (drips) and blotches
-float streaks(vec2 uv, float f){ return fbm(vec2(uv.x, uv.y * 0.08), f, 3) * smoothstep(0.2, 0.9, fbm(uv * vec2(1.0, 0.25), 4.0, 2)); }
+// vertical drips: stretched along y but still periodic (integer periods on both axes)
+float streaks(vec2 uv, float f){
+  float a = 0.5 * vnoise(vec2(uv.x * f, uv.y * 2.0), vec2(f, 2.0)) + 0.25 * vnoise(vec2(uv.x * f * 2.0, uv.y * 4.0) + 7.0, vec2(f * 2.0, 4.0)) + 0.125 * vnoise(vec2(uv.x * f * 4.0, uv.y * 8.0) + 3.0, vec2(f * 4.0, 8.0));
+  return a / 0.875 * smoothstep(0.2, 0.9, vnoise(vec2(uv.x * 4.0, uv.y * 2.0) + 11.0, vec2(4.0, 2.0)));
+}
 float blotch(vec2 uv, float f, float th){ return smoothstep(th, th + 0.15, fbm(uv, f, 4)); }
 `;

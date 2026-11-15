@@ -27,13 +27,14 @@ const check = (name, ok, detail = '') => { if (!ok) failures++; console.log(`${o
       for (const map of ['alb', 'dat']) {
         const r = baker.read(id, map); if (!r) { row[map] = null; continue; }
         const { size, data } = r, lum = (i) => data[i] * 0.3 + data[i + 1] * 0.59 + data[i + 2] * 0.11;
-        let s = 0, s2 = 0, n = 0, inner = 0, ni = 0, seam = 0, ns = 0;
+        let s = 0, s2 = 0, n = 0, seam = 0;
         for (let y = 0; y < size; y += 2) for (let x = 0; x < size; x += 2) { const v = lum((y * size + x) * 4); s += v; s2 += v * v; n++; }
-        for (let y = 0; y < size; y++) {
-          seam += Math.abs(lum((y * size + size - 1) * 4) - lum((y * size) * 4)); ns++;
-          const xm = size >> 1; inner += Math.abs(lum((y * size + xm) * 4) - lum((y * size + xm - 1) * 4)); ni++;
-        }
-        for (let x = 0; x < size; x++) { seam += Math.abs(lum(((size - 1) * size + x) * 4) - lum(x * 4)); ns++; const ym = size >> 1; inner += Math.abs(lum((ym * size + x) * 4) - lum(((ym - 1) * size + x) * 4)); ni++; }
+        // tileable = the wrap seam is not an outlier: its mean difference is within the largest interior column/row difference
+        const colD = new Float32Array(size), rowD = new Float32Array(size);
+        for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) { const xp = (x + size - 1) % size, yp = (y + size - 1) % size, v = lum((y * size + x) * 4); colD[x] += Math.abs(v - lum((y * size + xp) * 4)) / size; rowD[y] += Math.abs(v - lum((yp * size + x) * 4)) / size; }
+        let inner = 0; for (let k = 1; k < size; k++) inner = Math.max(inner, colD[k], rowD[k]);
+        seam = Math.max(colD[0], rowD[0]);
+        const ns = 1, ni = 1;
         const mean = s / n;
         row[map] = { size, variance: +(s2 / n - mean * mean).toFixed(2), seam: +(seam / ns).toFixed(2), inner: +(inner / ni).toFixed(2) };
       }
@@ -46,7 +47,7 @@ const check = (name, ok, detail = '') => { if (!ok) failures++; console.log(`${o
   for (const r of res.rows) {
     const a = r.alb, d = r.dat;
     const nonFlat = FLAT_OK.has(r.id) || (a && a.variance > 1.5) || (d && d.variance > 1.5);
-    const tile = (m) => !m || m.seam <= Math.max(6, m.inner * 3 + 3);
+    const tile = (m) => !m || m.seam <= m.inner * 1.6 + 1; // a periodic map has its seam inside the range of its own column-to-column jumps
     check(`${r.id} bakes, non-flat, tileable`, r.glError === 0 && nonFlat && tile(a) && tile(d), `bake ${r.ms} ms  alb ${a && a.size}px var ${a && a.variance} seam ${a && a.seam}/${a && a.inner}  dat var ${d && d.variance} seam ${d && d.seam}/${d && d.inner}`);
   }
   console.log(`library ${res.rows.length} layers, ${res.libMB} MB tracked at ${preset}`, JSON.stringify(res.sizes));

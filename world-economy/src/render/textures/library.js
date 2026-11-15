@@ -33,7 +33,7 @@ def('tex.concrete_cast', 0.006, 0.8, /* glsl */`
   a *= mix(0.75, 1.0, joint) * (1.0 - 0.25 * tie);
   h = 0.5 + 0.2 * n - 0.3 * (1.0 - joint) - 0.2 * p - 0.3 * tie; r = 0.86 + 0.08 * n; m = 0.0;`);
 def('tex.concrete_panel', 0.008, 0.8, /* glsl */`
-  float n = fbm(uv, 8.0, 4); vec2 pf = fract(uv * vec2(1.0, 1.0));
+  float n = fbm(uv, 8.0, 4); vec2 pf = fract(uv + 0.5);
   float joint = smoothstep(0.0, 0.01, min(pf.x, 1.0 - pf.x)) * smoothstep(0.0, 0.01, min(pf.y, 1.0 - pf.y));
   float st = streaks(uv, 20.0);
   a = C(c8c4ba) * (0.9 + 0.14 * n) * (1.0 - 0.22 * st) * mix(0.6, 1.0, joint);
@@ -141,7 +141,7 @@ def('tex.metal_galvanized', 0.002, 0.4, /* glsl */`
   a = mix(C(a8acb0), C(8a8e92), w.z) * (0.9 + 0.15 * n); a = mix(a, C(6a6a62), smoothstep(0.6, 0.85, fbm(uv, 3.0, 3)) * 0.3); h = w.z * 0.3; r = 0.45 + 0.2 * w.z; m = 0.85;`);
 def('tex.metal_corrugated', 0.035, 1.0, /* glsl */`
   float prof = sin(uv.x * 6.2832 * 26.0) * 0.5 + 0.5; float n = fbm(uv, 6.0, 4);
-  float rust = smoothstep(0.55, 0.75, streaks(vec2(floor(uv.x * 26.0) / 26.0 + uv.x * 0.1, uv.y), 12.0) + 0.25 * smoothstep(0.85, 1.0, fract(uv.y * 4.0) ));
+  float rust = smoothstep(0.55, 0.75, streaks(vec2(floor(uv.x * 26.0) / 26.0, uv.y), 12.0) + 0.25 * smoothstep(0.85, 1.0, fract(uv.y * 4.0) ));
   a = mix(C(a2a6a8) * (0.85 + 0.2 * n), C(7a4a2a), rust * 0.8); h = prof; r = mix(0.5, 0.85, rust); m = mix(0.75, 0.1, rust);`);
 def('tex.metal_checker', 0.004, 0.6, /* glsl */`
   vec2 p = uv * 10.0; vec2 c = floor(p), f = fract(p) - 0.5; float odd = mod(c.x + c.y, 2.0);
@@ -198,7 +198,7 @@ def('tex.bark_pine', 0.05, 1.6, /* glsl */`
   vec3 w = worleyS(uv, vec2(5.0, 10.0)); float plate = smoothstep(0.0, 0.25, w.y - w.x); float n = fbm(uv, 8.0, 4);
   a = mix(C(2a1e16), mix(C(6a4a34), C(8a6448), w.z) * (0.8 + 0.3 * n), plate); h = plate * (0.7 + 0.3 * n); r = 0.92; m = 0.0;`);
 def('tex.bark_oak', 0.06, 1.8, /* glsl */`
-  float f = ridged(vec2(uv.x, uv.y * 0.25), 8.0, 4); float n = fbm(uv, 10.0, 4); float moss = smoothstep(0.55, 0.75, fbm(uv + 0.2, 4.0, 3));
+  float r1 = 1.0 - abs(vnoise(vec2(uv.x * 8.0, uv.y * 2.0), vec2(8.0, 2.0)) * 2.0 - 1.0), r2 = 1.0 - abs(vnoise(vec2(uv.x * 16.0, uv.y * 4.0) + 5.0, vec2(16.0, 4.0)) * 2.0 - 1.0); float f = (r1 * r1 * 0.66 + r2 * r2 * 0.34); float n = fbm(uv, 10.0, 4); float moss = smoothstep(0.55, 0.75, fbm(uv + 0.2, 4.0, 3));
   a = mix(C(2e2820), C(645a4a), f) * (0.8 + 0.3 * n); a = mix(a, C(4e6a2a), moss * 0.6); h = f * 0.8 + n * 0.2; r = 0.93; m = 0.0;`);
 def('tex.bark_palm', 0.03, 1.2, /* glsl */`
   float ring = fract(uv.y * 6.0 + 0.1 * fbm(uv, 4.0, 2)); float sc = smoothstep(0.0, 0.15, ring) * smoothstep(1.0, 0.7, ring); float n = fbm(uv, 8.0, 4);
