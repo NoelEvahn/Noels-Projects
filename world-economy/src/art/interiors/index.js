@@ -45,7 +45,7 @@ export const INTERIORS = {
     g.mat('tex.stone_fieldstone', 0xffffff); g.box(fx, y0 + 0.6, 0, 1.0, 1.2, 2.2); g.box(fx + 0.15, y0 + 1.2 + (h - 1.5) / 2, 0, 0.7, h - 1.5, 1.4); g.box(fx - 0.05, y0 + 1.25, 0, 1.15, 0.12, 2.4);
     g.mat('tex.flat', 0x0a0806); g.box(fx - 0.51, y0 + 0.55, 0, 0.02, 0.75, 0.9);
     g.mat('tex.log_round', 0x6a4a30); for (let k = 0; k < 3; k++) g.tube([fx - 0.4, y0 + 0.22 + k * 0.06, -0.3 + k * 0.1], [fx - 0.2, y0 + 0.25, 0.3 - k * 0.1], 0.07, 0.07, 6);
-    g.mat('tex.flat', 0xff7a20); g.emit(255); g.cyl(fx - 0.32, y0 + 0.25, 0, 0.22, 0.02, 0.45, 6); g.emit(0);
+    g.mat('tex.flat', 0xff7a20); g.emit(255); g.cyl(fx - 0.32, y0 + 0.22, 0, 0.32, 0.03, 0.62, 7); g.mat('tex.flat', 0xffc040); g.cyl(fx - 0.34, y0 + 0.22, 0.12, 0.18, 0.02, 0.45, 5); g.cyl(fx - 0.3, y0 + 0.22, -0.15, 0.16, 0.02, 0.4, 5); g.emit(0);
     // workbench, stump stools, anvil, bed, table, wall torch
     table(g, -w / 2 + 1.2, y0, d / 2 - 1.0, 1.8, 0.8, 'tex.wood_planks', 0x9a7048);
     g.mat('tex.bark_oak', 0xffffff); for (const [x, z] of [[-0.3, 0.6], [0.6, -0.4]]) { g.cyl(x, y0, z, 0.25, 0.22, 0.45, 8, { noTop: true }); g.mat('tex.log_round', 0xd8b890); g.cyl(x, y0 + 0.45, z, 0.22, 0.22, 0.01, 8, { noBottom: true }); g.mat('tex.bark_oak', 0xffffff); }

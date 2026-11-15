@@ -10,9 +10,9 @@ import { MemTracker } from './perf.js';
 const C = (hex) => new THREE.Color(hex);
 /** Annex A 3 per-region grade (temperature %, saturation, contrast, fog tint by day, fog density base) */
 export const REGION_GRADE = {
-  city: { temp: 0.06, sat: 0.95, con: 1.05, fog: C(0xcfc6b4), dens: 0.0016 },
+  city: { temp: 0.06, sat: 0.97, con: 1.06, fog: C(0xc4bcac), dens: 0.0014 },
   lake: { temp: 0.0, sat: 0.92, con: 1.02, fog: C(0xb9c8cf), dens: 0.0022 },
-  ocean: { temp: 0.03, sat: 1.05, con: 1.0, fog: C(0xd6e3e8), dens: 0.0012 },
+  ocean: { temp: 0.03, sat: 1.08, con: 1.04, fog: C(0xb4cadb), dens: 0.0010 },
   forest: { temp: -0.04, sat: 0.88, con: 1.06, fog: C(0xaebcb2), dens: 0.004 },
 };
 /** Annex A 4.5 weather visuals */
@@ -113,7 +113,7 @@ export function createLighting({ scene, camera, renderer }) {
         u.uSun.value.set(sunDir[0], sunDir[1], sunDir[2]); u.uMoon.value.set(-sunDir[0], Math.abs(sunDir[1]) * 0.8 + 0.25, -sunDir[2]).normalize();
         u.uFog.value.copy(st.fogCol); u.uSunCol.value.copy(sunCol).multiplyScalar(day); u.uCover.value = cover; u.uStorm.value = storm;
         u.uNight.value = st.night; u.uDayAmt.value = day * (1 - 0.55 * storm); u.uTime.value = time;
-        u.uTurb.value = 4 + 6 * cover + 4 * golden; u.uRay.value = 1.2 + 1.0 * day;
+        u.uTurb.value = 2.2 + 7 * cover + 3 * golden; u.uRay.value = 1.6 + 1.4 * day;
         u.uZenith.value.setRGB(0.35, 0.45, 0.6).multiplyScalar(0.2 + 0.8 * day);
       }
       // exposure (approximation of 1.5 s auto exposure: driven by the key light and interior state)
