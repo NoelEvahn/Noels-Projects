@@ -42,8 +42,10 @@ vec3 applyFog(vec3 col){
   float kd = clamp(uFogFall * fv.y, -30.0, 30.0);
   float t = abs(kd) > 1e-3 ? (1.0 - exp(-kd)) / kd : 1.0;
   float amt = 1.0 - exp(-fogDensity * exp(-uFogFall * y0) * t * max(fd - uFogStart, 0.0));
-  float sun = pow(max(dot(fdir, uSunDir), 0.0), 8.0);
-  return mix(col, mix(fogColor, uSunFog, sun * 0.6), clamp(amt, 0.0, 1.0));
+  // in-scatter: warm toward the sun (broad lobe + tight core), cool blue haze away from it
+  float cs = max(dot(fdir, uSunDir), 0.0); float sun = pow(cs, 3.0) * 0.55 + pow(cs, 18.0) * 0.55;
+  vec3 fc = mix(fogColor, uSunFog, clamp(sun, 0.0, 0.85));
+  return mix(col, fc, clamp(amt, 0.0, 1.0));
 #else
   return col;
 #endif
@@ -106,7 +108,8 @@ ${splat ? `
   vec4 mn2 = texture(tDA, vec3(vWPos.xz * 0.0021 + 0.37, uNoiseL));
 #endif
   float macro = (mn.r * 0.6 + mn2.r * 0.4 - 0.5) * lp.b * uMacro;
-  vec3 albedo = sA.rgb * vTint.rgb * ${splat ? '1.28' : '1.0'} * (1.0 + 0.16 * macro);
+  vec3 albedo = sA.rgb * vTint.rgb * ${splat ? '1.06' : '1.0'} * (1.0 + ${splat ? '0.55' : '0.16'} * macro);
+${splat ? '  albedo *= vec3(1.0 + 0.16 * macro, 1.0, 1.0 - 0.2 * macro);' : ''}
   float rough = clamp(sD.z * (1.0 + 0.2 * macro), 0.02, 1.0);
   float wetAmt = uWet * lp.r;
   float puddle = wetAmt * smoothstep(0.55, 0.62, mn2.a * 0.5 + mn.a * 0.5);
@@ -140,7 +143,7 @@ const AO_MAIN = `
 const EMIT_MAIN = `
   if (vAux.w > 0.5){
     // windows: one random lit state per uv cell (window / facade module), masked by the glass channel (metal 0.9)
-    if (vAux.w < 127.5){ float hw = hashW(vAux.w + dot(floor(tuv + 0.002), vec2(7.13, 3.71))); float gm = smoothstep(0.86, 0.89, sA.a); if (hw < uWinLit) totalEmissiveRadiance += vec3(1.0, 0.72, 0.42) * (0.55 + 0.9 * fract(hw * 13.7)) * uWinGain * gm; }
+    if (vAux.w < 127.5){ float hw = hashW(vAux.w + dot(floor(tuv + 0.002), vec2(7.13, 3.71))); float gm = smoothstep(0.86, 0.89, sA.a); if (hw < uWinLit){ float wk = fract(hw * 29.3); vec3 wcol = wk < 0.62 ? vec3(1.0, 0.68, 0.36) : wk < 0.82 ? vec3(1.0, 0.88, 0.66) : wk < 0.94 ? vec3(0.5, 0.74, 1.0) : vec3(0.85, 0.5, 1.0); totalEmissiveRadiance += wcol * (0.55 + 0.9 * fract(hw * 13.7)) * uWinGain * gm; } }
     else { vec3 lc = vTint.rgb / max(max(vTint.r, vTint.g), max(vTint.b, 1e-3)); totalEmissiveRadiance += lc * vec3(1.0, 0.84, 0.6) * ((vAux.w - 128.0) / 127.0) * max(uLampGain, 0.35 * step(250.5, vAux.w)); }
   }
 `;

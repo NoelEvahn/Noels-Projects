@@ -9,6 +9,7 @@ import { MatLib } from './materials/matlib.js';
 import { patchMaterial, G } from './materials/patches.js';
 import { MemTracker } from './perf.js';
 import { LAYERS } from '../art/kit/layers.js';
+import { SKY_FUNCS } from './sky.js';
 
 function heightTexture() {
   const D = World.data, grid = D.grid, N = grid.N;
@@ -22,18 +23,19 @@ function heightTexture() {
 }
 const WAVES = GERSTNER.dirsDeg.map((d, i) => new THREE.Vector4(Math.cos(d * Math.PI / 180), Math.sin(d * Math.PI / 180), (2 * Math.PI) / GERSTNER.wavelengths[i], GERSTNER.amplitudes[i]));
 
-function waterMaterial(profile, hTex) {
+function waterMaterial(profile, hTex, skyU) {
   const P = {
-    ocean: { sh: 0x3fd0c0, mid: 0x0f6a8a, deep: 0x0a3350, waves: 1 },
-    lake: { sh: 0x5a6a46, mid: 0x2a3a2e, deep: 0x11201c, waves: 0 },
+    ocean: { sh: 0x4fe0cc, mid: 0x0f7f9a, deep: 0x082f55, waves: 1 },
+    lake: { sh: 0x4f7a5c, mid: 0x1c4a4a, deep: 0x082630, waves: 0 },
   }[profile];
   const lin = (h) => new THREE.Color(h).convertSRGBToLinear();
   const U = {
-    tHeight: { value: hTex }, uShallow: { value: lin(P.sh) }, uMid: { value: lin(P.mid) }, uDeep: { value: lin(P.deep) }, uRiver: { value: lin(0x445548) },
+    tHeight: { value: hTex }, uShallow: { value: lin(P.sh) }, uMid: { value: lin(P.mid) }, uDeep: { value: lin(P.deep) }, uRiver: { value: lin(0x3d6672) },
     uWaves: { value: WAVES }, uWaveF: { value: P.waves }, uLevel: { value: profile === 'lake' ? LAKE.level : 0 },
     uNA: { value: LAYERS['tex.water_normal_a'].index - 64 }, uNB: { value: LAYERS['tex.water_normal_b'].index - 64 }, uFoamL: { value: LAYERS['tex.foam'].index - 128 },
+    uSun: skyU.uSun, uMoon: skyU.uMoon, uFog: skyU.uFog, uZenith: skyU.uZenith, uSunCol: skyU.uSunCol, uCover: skyU.uCover, uStorm: skyU.uStorm, uDayAmt: skyU.uDayAmt, uEnv: skyU.uEnv, uCloudL: skyU.uCloudL,
   };
-  const m = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.04, metalness: 0.0, transparent: true, depthWrite: false, envMapIntensity: 1.0 });
+  const m = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.04, metalness: 0.0, transparent: true, depthWrite: false, envMapIntensity: 0.0 });
   patchMaterial(m, {
     key: ':water' + profile,
     extra(vs, fs, shader) {
@@ -53,24 +55,62 @@ float calmF(vec2 p){ float h = smoothstep(-1140.0, -1100.0, p.x) * smoothstep(-6
         .replace('#include <begin_vertex>', '#include <begin_vertex>\n  transformed.y += hh;');
       fs = fs.replace('#include <common>', `#include <common>
 uniform sampler2D tHeight; uniform vec3 uShallow, uMid, uDeep, uRiver; uniform float uLevel, uNA, uNB, uFoamL, uTime, uWet, uNight, uWaveF;
+uniform vec3 uSun, uMoon, uFog, uZenith, uSunCol; uniform float uCover, uStorm, uDayAmt, uEnv, uCloudL;
 uniform sampler2DArray tSA, tSD, tDA; varying vec3 vWave;
+${SKY_FUNCS}
 float depthAt(vec2 p){ vec2 uv = (p + 2000.0) / 4000.0; if (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0 || uv.y > 1.0) return 40.0; return uLevel - texture2D(tHeight, uv).r; }`)
         .replace('#include <map_fragment>', `
   float dep = max(depthAt(vWPos.xz), 0.0);
   float river = smoothstep(1110.0, 1060.0, vWPos.z) * step(-1900.0, vWPos.x) * step(vWPos.x, -150.0) * uWaveF;
-  vec3 wc = mix(uShallow, uMid, smoothstep(0.0, 3.0, dep)); wc = mix(wc, uDeep, smoothstep(3.0, 18.0, dep));
+  vec3 wc = mix(uShallow, uMid, smoothstep(0.0, 3.5, dep)); wc = mix(wc, uDeep, smoothstep(3.0, 20.0, dep));
   wc = mix(wc, uRiver, river);
   vec2 sp = vWPos.xz; float t = uTime;
-  vec4 nA = texture(tSD, vec3(sp / 8.0 + vec2(t * 0.021, t * 0.013), uNA)); vec4 nB = texture(tSD, vec3(sp / 23.0 + vec2(-t * 0.011, t * 0.017), uNB));
-  vec2 dn = (nA.xy * 2.0 - 1.0) * 0.6 + (nB.xy * 2.0 - 1.0) * 0.9;
+  float camD = length(vWPos.xz - cameraPosition.xz);
+  // four scrolling normal octaves (wind from the west-south-west), fading to calm with distance so the horizon does not shimmer
+  vec4 nA = texture(tSD, vec3(sp / 7.0 + vec2(t * 0.040, t * 0.016), uNA));
+  vec4 nB = texture(tSD, vec3(sp / 21.0 + vec2(t * 0.020, -t * 0.012), uNB));
+  vec4 nC = texture(tSD, vec3(sp / 2.3 + vec2(t * 0.075, t * 0.030), uNA));
+  vec4 nD = texture(tSD, vec3(sp / 0.9 + vec2(-t * 0.05, t * 0.09), uNB));
+  float nf = 1.0 - smoothstep(120.0, 700.0, camD);
+  vec2 dn = ((nA.xy * 2.0 - 1.0) * 0.9 + (nB.xy * 2.0 - 1.0) * 1.2 + (nC.xy * 2.0 - 1.0) * 0.7 * nf + (nD.xy * 2.0 - 1.0) * 0.45 * nf) * (0.55 + 0.35 * uStorm + 0.3 * uWaveF);
   float foamN = texture(tDA, vec3(sp / 4.0 + vec2(t * 0.02, 0.0), uFoamL)).r;
-  float shore = smoothstep(0.7, 0.0, dep) * (0.55 + 0.45 * sin(t * 1.3 - dep * 9.0 + foamN * 3.0));
-  float crest = smoothstep(0.25, 0.45, vWave.z) * uWaveF * (1.0 - river);
-  float foam = clamp((shore + crest) * foamN * 1.6, 0.0, 1.0);
-  diffuseColor.rgb = mix(wc, vec3(0.92, 0.95, 0.96), foam);
-  diffuseColor.a = mix(smoothstep(0.0, 0.5, dep) * mix(0.62, 0.96, smoothstep(0.5, 8.0, dep)), 1.0, foam);`)
-        .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = mix(0.035 + 0.04 * uWet, 0.5, foam);')
-        .replace('#include <normal_fragment_maps>', 'normal = normalize(normal + mat3(viewMatrix) * vec3(dn.x, 0.0, dn.y) * 0.16);');
+  float foamN2 = texture(tDA, vec3(sp / 1.6 + vec2(0.0, -t * 0.03), uFoamL)).r;
+  float shoreW = smoothstep(1.5, 0.0, dep);
+  float lines = smoothstep(0.55, 0.95, 0.5 + 0.5 * sin(t * 0.9 - dep * 5.5 + foamN * 2.0)) * smoothstep(0.0, 0.25, dep) * smoothstep(3.2, 0.6, dep);
+  float shore = shoreW * (0.45 + 0.55 * sin(t * 1.3 - dep * 9.0 + foamN * 3.0)) * foamN * 1.4 + lines * 0.55 * (0.4 + foamN2);
+  float crest = smoothstep(0.22, 0.42, vWave.z + 0.1 * (foamN - 0.5)) * uWaveF * (1.0 - river) * foamN * 1.3;
+  float foam = clamp(shore * (1.0 - river * 0.8) + crest, 0.0, 1.0);
+  float alphaBody = smoothstep(0.0, 0.45, dep) * mix(0.55, 0.97, smoothstep(0.4, 6.0, dep));
+  diffuseColor.rgb = wc; diffuseColor.a = alphaBody;`)
+        .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = 0.05;')
+        .replace('#include <normal_fragment_maps>', 'normal = normalize(normal + mat3(viewMatrix) * vec3(dn.x, 0.0, dn.y) * 0.2);')
+        .replace('#include <opaque_fragment>', `
+  vec3 Vw = normalize(cameraPosition - vWPos);
+  vec3 Nw = normalize(inverseTransformDirection(normal, viewMatrix));
+  float nv = clamp(dot(Nw, Vw), 0.0, 1.0);
+  float F = 0.02 + 0.98 * pow(1.0 - nv, 5.0);
+  F = clamp(F * (1.0 - 0.25 * smoothstep(0.0, 0.5, dep) * 0.0), 0.0, 1.0);
+  // mirror of the sky (gradient + clouds), blended into the haze at the horizon exactly like the dome
+  vec3 Rv = reflect(-Vw, Nw); Rv.y = max(Rv.y, 0.012);
+  vec3 refl = skyCloud(Rv, skyDay(Rv) * uDayAmt);
+  refl += vec3(0.010, 0.016, 0.034) * uNight;
+  float hzr = 1.0 - smoothstep(-0.02, 0.1 + 0.18 * uCover, Rv.y);
+  refl = mix(refl, uFog, clamp(hzr * 0.95 + uStorm * 0.3, 0.0, 1.0));
+  // body colour: lit by sky haze + sun, darker when the sun is low or it is night
+  float sunUp = clamp(uSun.y * 1.6, 0.0, 1.0);
+  vec3 body = wc * (uFog * 0.62 + uSunCol * (0.30 + 0.5 * sunUp) + vec3(0.018, 0.026, 0.05) * uNight);
+  // sun / moon glitter on the fine normals
+  float sp1 = texture(tDA, vec3(vWPos.xz / 1.3 + vec2(uTime * 0.08, uTime * 0.03), uFoamL)).r;
+  vec3 Hs = normalize(uSun + Vw); float nh = max(dot(Nw, Hs), 0.0);
+  float glit = (pow(nh, 1400.0) * 90.0 * (0.25 + 1.4 * sp1) + pow(nh, 120.0) * 0.9 + pow(nh, 14.0) * 0.12) * (1.0 - 0.85 * uCover) * (1.0 - 0.6 * uStorm);
+  vec3 spec = uSunCol * glit * smoothstep(0.0, 0.08, uSun.y);
+  vec3 Hm = normalize(uMoon + Vw); float nm = max(dot(Nw, Hm), 0.0);
+  spec += vec3(0.55, 0.7, 1.0) * (pow(nm, 600.0) * 14.0 * (0.3 + sp1) + pow(nm, 60.0) * 0.1) * uNight * (1.0 - 0.7 * uCover);
+  vec3 foamCol = vec3(0.93, 0.96, 0.98) * (uSunCol * 0.85 + uFog * 0.55 + vec3(0.02, 0.03, 0.05) * uNight);
+  vec3 wcol = mix(body, refl, F) + spec;
+  wcol = mix(wcol, foamCol, foam);
+  float aOut = mix(max(diffuseColor.a, F * 0.96), 1.0, foam);
+  gl_FragColor = vec4(wcol, aOut);`);
       return [vs, fs];
     },
   });
@@ -87,10 +127,10 @@ function flatMesh(pos, idx, mat, name) {
   return m;
 }
 
-export function buildWater(scene) {
+export function buildWater(scene, skyU) {
   const group = new THREE.Group(); group.name = 'water';
   const hTex = heightTexture();
-  const ocean = waterMaterial('ocean', hTex), lake = waterMaterial('lake', hTex);
+  const ocean = waterMaterial('ocean', hTex, skyU), lake = waterMaterial('lake', hTex, skyU);
   // ocean radial grid: 72 spokes x 52 rings, ring radius grows geometrically from 1.5 m to 7000 m
   {
     const S = 72, R = 52, pos = [], idx = [];

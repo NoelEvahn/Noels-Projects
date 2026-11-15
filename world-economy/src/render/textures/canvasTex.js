@@ -13,13 +13,13 @@ function tex(c, n, srgb = true, mips = true) {
   MemTracker.addTexture(t, n, n, 4, true, mips);
   return t;
 }
-/** leaf atlas cells: 4 x 2 grid. index -> [u0, v0, u1, v1] (v up) */
-export const LEAF_CELLS = ['pine', 'spruce', 'broad', 'maple', 'palm', 'fern', 'grass', 'reeds'];
-export function leafCell(name) { const i = LEAF_CELLS.indexOf(name); const cx = i % 4, cy = Math.floor(i / 4); return [cx / 4, 1 - (cy + 1) / 2, (cx + 1) / 4, 1 - cy / 2]; }
+/** leaf atlas cells: 4 x 3 grid. index -> [u0, v0, u1, v1] (v up) */
+export const LEAF_CELLS = ['pine', 'spruce', 'broad', 'maple', 'palm', 'fern', 'grass', 'reeds', 'flowers', 'litter', 'clover', 'shrub'];
+export function leafCell(name) { const i = LEAF_CELLS.indexOf(name); const cx = i % 4, cy = Math.floor(i / 4); return [cx / 4, 1 - (cy + 1) / 3, (cx + 1) / 4, 1 - cy / 3]; }
 
 export function makeLeafAtlas(size = 1024) {
   const c = canvas(size), g = c.getContext('2d'), R = srng(77);
-  const cw = size / 4, ch = size / 2;
+  const cw = size / 4, ch = size / 3;
   g.clearRect(0, 0, size, size);
   const cell = (i) => [(i % 4) * cw, Math.floor(i / 4) * ch];
   const col = (r, gg, b, v = 0.12) => { const k = 1 - v / 2 + R() * v; return `rgb(${Math.round(r * k)},${Math.round(gg * k)},${Math.round(b * k)})`; };
@@ -76,6 +76,27 @@ export function makeLeafAtlas(size = 1024) {
       if (R() < 0.3) { g.fillStyle = 'rgb(96,70,44)'; g.fillRect(bx + lean - 2, ch - h, 4, ch * 0.06); } }
     for (let k = 0; k < 18; k++) { g.fillStyle = ['#e8d86a', '#f0f0f0', '#c86ab0'][k % 3]; g.beginPath(); g.arc(x * 0 + cw * (0.1 + 0.8 * R()), ch * (0.55 + 0.4 * R()), 4, 0, Math.PI * 2); g.fill(); }
     g.restore(); }
+  // 8 wildflowers on thin stems (base at bottom): yellow, white, violet, red, blue heads over small leaves
+  { const [x, y] = cell(8); g.save(); g.translate(x, y);
+    for (let k = 0; k < 90; k++) { const bx = cw * (0.06 + 0.88 * R()), h = ch * (0.25 + 0.55 * R()), lean = (R() - 0.5) * cw * 0.14;
+      g.strokeStyle = col(70, 110, 46, 0.3); g.lineWidth = 1.6; g.beginPath(); g.moveTo(bx, ch); g.quadraticCurveTo(bx + lean * 0.2, ch - h * 0.6, bx + lean, ch - h); g.stroke(); }
+    for (let k = 0; k < 40; k++) { const bx = cw * (0.08 + 0.84 * R()), by = ch * (0.18 + 0.5 * R()), r = cw * (0.025 + 0.025 * R()), c = ['#f4e24a', '#ffffff', '#c85ab8', '#e8503a', '#7a8ae8', '#f4e24a'][k % 6];
+      g.strokeStyle = col(70, 110, 46, 0.2); g.lineWidth = 1.4; g.beginPath(); g.moveTo(bx, by); g.lineTo(bx + (R() - 0.5) * 4, ch); g.stroke();
+      g.fillStyle = c; for (let q = 0; q < 5; q++) { const a = q / 5 * 6.28; g.beginPath(); g.ellipse(bx + Math.cos(a) * r * 0.9, by + Math.sin(a) * r * 0.9, r * 0.75, r * 0.5, a, 0, 6.28); g.fill(); }
+      g.fillStyle = '#d89a20'; g.beginPath(); g.arc(bx, by, r * 0.45, 0, 6.28); g.fill(); }
+    g.restore(); }
+  // 9 forest litter: needles, small leaves, twigs scattered flat (ground-lying card, mostly opaque brown with holes)
+  { const [x, y] = cell(9); g.save(); g.translate(x, y);
+    for (let k = 0; k < 900; k++) { const px = cw * (0.02 + 0.96 * R()), py = ch * (0.02 + 0.96 * R()), a = R() * 6.28;
+      const tone = R(); g.strokeStyle = tone < 0.5 ? col(120, 84, 50, 0.4) : tone < 0.8 ? col(88, 60, 36, 0.4) : col(150, 120, 60, 0.4); g.lineWidth = 1 + R() * 1.4;
+      g.beginPath(); g.moveTo(px, py); g.lineTo(px + Math.cos(a) * cw * 0.07, py + Math.sin(a) * cw * 0.07); g.stroke(); }
+    for (let k = 0; k < 60; k++) { const px = cw * (0.05 + 0.9 * R()), py = ch * (0.05 + 0.9 * R()); g.fillStyle = col(R() < 0.5 ? 150 : 110, R() < 0.5 ? 100 : 84, 40, 0.4); g.save(); g.translate(px, py); g.rotate(R() * 6.28); g.beginPath(); g.ellipse(0, 0, cw * 0.035, cw * 0.018, 0, 0, 6.28); g.fill(); g.restore(); }
+    g.restore(); }
+  // 10 clover / low broadleaf plants and 11 shrub twig spray (small dark-green leaves on branching twigs)
+  { const [x, y] = cell(10); g.save(); g.translate(x, y); for (let k = 0; k < 140; k++) { const px = cw * (0.08 + 0.84 * R()), py = ch * (0.5 + 0.48 * R()); g.fillStyle = col(64, 112, 46, 0.4); g.beginPath(); g.ellipse(px, py, cw * 0.05, cw * 0.035, R() * 6.28, 0, 6.28); g.fill(); } g.restore(); }
+  { const [x, y] = cell(11); g.save(); g.translate(x, y); g.strokeStyle = 'rgb(80,60,40)'; g.lineWidth = 2;
+    for (let b = 0; b < 5; b++) { const bx = cw * (0.2 + 0.15 * b); g.beginPath(); g.moveTo(bx, ch); g.quadraticCurveTo(bx + (b - 2) * 10, ch * 0.5, bx + (b - 2) * 24, ch * 0.08); g.stroke(); }
+    for (let k = 0; k < 260; k++) { const px = cw * (0.05 + 0.9 * R()), py = ch * (0.05 + 0.9 * R()); g.fillStyle = col(52, 92, 40, 0.4); g.beginPath(); g.ellipse(px, py, cw * 0.04, cw * 0.022, R() * 6.28, 0, 6.28); g.fill(); } g.restore(); }
   return tex(c, size);
 }
 

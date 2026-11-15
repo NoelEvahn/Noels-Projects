@@ -63,14 +63,17 @@ function conifer(S, lod, R) {
   const H = S.H, r0 = H * 0.018 + 0.12;
   bark.cyl(0, -0.3, 0, r0 * 1.25, r0 * 0.12, H + 0.3, lod ? 5 : 8, { noBottom: true });
   const cell = leafCell(S.cell);
-  const whorls = lod ? 7 : S.whorls, per = lod ? 5 : S.per;
+  const whorls = lod ? 11 : Math.round(S.whorls * 1.7), per = lod ? 6 : S.per + 3;
   for (let w = 0; w < whorls; w++) {
     const t = w / (whorls - 1), y = H * (S.bare + (1 - S.bare) * t);
     const L = S.len * (1.15 - t * 0.95) * (lod ? 1.35 : 1) + 0.4, rot = R() * 6.28;
     for (let k = 0; k < per; k++) {
       const yaw = rot + (k / per) * Math.PI * 2 + (R() - 0.5) * 0.4, pitch = -0.15 - 0.25 * S.droop + R() * 0.15;
       frond(leaf, Math.sin(yaw) * r0 * 0.5, y, -Math.cos(yaw) * r0 * 0.5, yaw, pitch, L, L * (lod ? 0.85 : 0.55 + 0.15 * R()), cell, 0, L * 0.25 * S.droop);
-      if (!lod && R() < 0.6) frond(leaf, Math.sin(yaw) * r0 * 0.5, y + 0.15, -Math.cos(yaw) * r0 * 0.5, yaw + 0.2, pitch + 0.1, L * 0.8, L * 0.45, cell, 1.3, L * 0.2 * S.droop);
+      if (!lod) {
+        frond(leaf, Math.sin(yaw) * r0 * 0.5, y + 0.15, -Math.cos(yaw) * r0 * 0.5, yaw + 0.2, pitch + 0.1, L * 0.8, L * 0.45, cell, 1.3, L * 0.2 * S.droop);
+        if (k % 2 === 0) frond(leaf, Math.sin(yaw) * r0 * 0.5, y - 0.1, -Math.cos(yaw) * r0 * 0.5, yaw - 0.25, pitch - 0.12, L * 0.62, L * 0.4, cell, -0.9, L * 0.3 * S.droop); // lower drooping layer
+      }
     }
   }
   // leader tip
@@ -82,20 +85,23 @@ function broadleaf(S, lod, R) {
   const bark = new GB(256), leaf = new GB(1024);
   bark.mat(S.bark, 0xd0c8bc); bark.groundAO = false;
   const H = S.H, trunkH = H - S.crown[1] * 1.55, rt = S.trunk;
-  bark.cyl(0, -0.3, 0, rt * 1.2, rt * 0.75, trunkH + 0.3, lod ? 5 : 8, { noBottom: true });
+  bark.cyl(0, -0.3, 0, rt * 1.35, rt * 0.75, trunkH + 0.3, lod ? 6 : 10, { noBottom: true });
   const cy = trunkH + S.crown[1] * 0.9, cr = S.crown[0];
-  const limbs = lod ? 2 : 5;
+  const limbs = lod ? 3 : 8;
   for (let i = 0; i < limbs; i++) {
     const a = (i / limbs) * 6.28 + R(), up = 0.5 + R() * 0.5;
     const end = [Math.sin(a) * cr * 0.6, cy + up * S.crown[1] * 0.5, -Math.cos(a) * cr * 0.6];
-    bark.tube([0, trunkH * 0.95, 0], end, rt * 0.55, rt * 0.2, 5, { noTop: true, noBottom: true });
+    const mid = [end[0] * 0.55, trunkH * 0.95 + (end[1] - trunkH * 0.95) * 0.5, end[2] * 0.55];
+    bark.tube([0, trunkH * 0.95, 0], mid, rt * 0.55, rt * 0.34, lod ? 5 : 6, { noTop: true, noBottom: true });
+    bark.tube(mid, end, rt * 0.34, rt * 0.16, lod ? 4 : 5, { noTop: true, noBottom: true });
+    if (!lod) for (const sb of [-0.7, 0.8]) { const e2 = [mid[0] + Math.sin(a + sb) * cr * 0.35, mid[1] + S.crown[1] * (0.15 + 0.2 * R()), mid[2] - Math.cos(a + sb) * cr * 0.35]; bark.tube(mid, e2, rt * 0.2, rt * 0.08, 4, { noTop: true, noBottom: true }); }
   }
   const cell = leafCell(S.cell);
-  const n = lod ? 18 : S.clusters;
+  const n = lod ? 40 : Math.round(S.clusters * 2.6);
   for (let k = 0; k < n; k++) {
     const a = R() * 6.28, el = Math.acos(1 - 2 * Math.pow(R(), 0.8)) - 0.2, rr = 0.55 + 0.45 * Math.sqrt(R());
     const x = Math.sin(el) * Math.cos(a) * cr * rr, y = cy + Math.cos(el) * S.crown[1] * rr, z = Math.sin(el) * Math.sin(a) * cr * rr;
-    cluster(leaf, x, y, z, (lod ? 4.2 : 2.2) * (0.8 + 0.4 * R()) * (cr / 4.5 + 0.4), cell, R);
+    cluster(leaf, x, y, z, (lod ? 3.4 : 1.7) * (0.8 + 0.4 * R()) * (cr / 4.5 + 0.4), cell, R);
   }
   return { bark, leaf };
 }
@@ -107,7 +113,7 @@ function palm(S, lod, R) {
   const pt = (t) => [Math.sin(t * 1.4) * lean * H * 0.35 * t, t * H, 0];
   for (let i = 1; i <= segs; i++) { const p = pt(i / segs); bark.tube(prev, p, 0.24 - 0.06 * (i - 1) / segs, 0.24 - 0.06 * i / segs, lod ? 5 : 7, { noTop: i < segs, noBottom: true }); prev = p; }
   const top = pt(1), cell = leafCell('palm');
-  const nf = lod ? 7 : S.fronds;
+  const nf = lod ? 10 : Math.round(S.fronds * 1.5);
   for (let k = 0; k < nf; k++) {
     const yaw = (k / nf) * 6.28 + R() * 0.3, pitch = 0.5 - R() * 0.9, L = 4.2 + R() * 1.4;
     frond(leaf, top[0], top[1], top[2], yaw, pitch, L, 1.6, cell, 0.15, L * 0.55);
@@ -138,12 +144,14 @@ export function plantGeometry(id) {
   const C = (n) => leafCell(n);
   const crossed = (cell, w, h, n = 3) => { for (let k = 0; k < n; k++) { const yaw = (k / n) * Math.PI + R() * 0.3; leaf.card(0, h / 2, 0, w, h, yaw, cell[0], cell[1], cell[2], cell[3]); } };
   switch (id) {
-    case 'veg.bush_a': case 'veg.bush_b': for (let k = 0; k < (id === 'veg.bush_a' ? 12 : 9); k++) { const a = R() * 6.28, r = R() * 0.5; cluster(leaf, Math.cos(a) * r, 0.45 + R() * 0.5, Math.sin(a) * r, 1.0 + R() * 0.4, C('broad'), R); } break;
-    case 'veg.hedge': for (let k = 0; k < 16; k++) cluster(leaf, (R() - 0.5) * 2.6, 0.3 + R() * 0.8, (R() - 0.5) * 0.6, 0.9, C('broad'), R); break;
-    case 'veg.fern': for (let k = 0; k < 6; k++) { const yaw = (k / 6) * 6.28 + R() * 0.4; frond(leaf, 0, 0.05, 0, yaw, 0.55 + R() * 0.3, 0.75, 0.42, C('fern'), 0, 0.25); } break;
-    case 'veg.grass_tuft': crossed(C('grass'), 0.6, 0.5); break;
+    case 'veg.bush_a': case 'veg.bush_b': for (let k = 0; k < (id === 'veg.bush_a' ? 24 : 18); k++) { const a = R() * 6.28, r = R() * 0.5; cluster(leaf, Math.cos(a) * r, 0.45 + R() * 0.5, Math.sin(a) * r, 1.0 + R() * 0.4, C('broad'), R); } break;
+    case 'veg.hedge': for (let k = 0; k < 30; k++) cluster(leaf, (R() - 0.5) * 2.6, 0.3 + R() * 0.8, (R() - 0.5) * 0.6, 0.9, C('broad'), R); break;
+    case 'veg.fern': for (let k = 0; k < 9; k++) { const yaw = (k / 9) * 6.28 + R() * 0.4; frond(leaf, 0, 0.05, 0, yaw, 0.5 + R() * 0.35, 0.95, 0.55, C('fern'), 0, 0.3); } break;
+    case 'veg.grass_tuft': crossed(C('grass'), 0.85, 0.62, 4); break;
     case 'veg.reeds': crossed(C('reeds'), 1.0, 1.6); break;
-    case 'veg.flowers': crossed(C('reeds'), 0.6, 0.45, 2); break;
+    case 'veg.flowers': crossed(C('flowers'), 0.8, 0.6, 3); break;
+    case 'veg.litter': for (let k = 0; k < 3; k++) frond(leaf, 0, 0.015, 0, k * 2.1 + R(), 0.0, 0.9, 0.9, C('litter'), 0, 0); break;
+    case 'veg.clover': for (let k = 0; k < 3; k++) frond(leaf, 0, 0.02, 0, k * 2.1 + R(), 0.05, 0.7, 0.7, C('clover'), 0, 0.02); break;
     case 'veg.groundcover': for (let k = 0; k < 4; k++) frond(leaf, 0, 0.02, 0, k * 1.57 + R(), 0.12, 0.5, 0.5, C('grass'), 0, 0.05); break;
     default: leaf.card(0, 1.5, 0, 1, 3, 0, ...C('broad')); // ivy
   }

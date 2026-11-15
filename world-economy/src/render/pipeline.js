@@ -68,7 +68,7 @@ void main(){ vec3 c = vec3(0.0); vec2 o = uTexel;
   gl_FragColor = vec4(c / 12.0 + texture2D(tPrev, vUv).rgb, 1.0); }`;
 const COMPOSITE_FS = /* glsl */`
 varying vec2 vUv; uniform sampler2D tColor, tAO, tBloom, tRays, tDepthC; uniform vec2 uAOTexel;
-uniform float uExposure, uBloom, uAOOn, uRaysOn, uGradeOn, uGrain, uTime, uVignette, uSharpen; uniform vec3 uGrade; uniform vec2 uTexel; uniform float uNearC, uFarC;
+uniform float uExposure, uBloom, uAOOn, uRaysOn, uGradeOn, uGrain, uTime, uVignette, uSharpen; uniform vec3 uGrade, uTintLo, uTintHi; uniform vec2 uTexel; uniform float uNearC, uFarC;
 vec3 aces(vec3 x){ const float a = 2.51, b = 0.03, c = 2.43, d = 0.59, e = 0.14; return clamp((x * (a * x + b)) / (x * (c * x + d) + e), 0.0, 1.0); }
 float lin(float d){ float z = d * 2.0 - 1.0; return 2.0 * uNearC * uFarC / (uFarC + uNearC - z * (uFarC - uNearC)); }
 vec3 toSRGB(vec3 c){ return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, c)); }
@@ -86,13 +86,18 @@ void main(){
   col *= uExposure;
   col = aces(col);
   if (uGradeOn > 0.5){
-    // per-region grade: temperature, saturation, contrast (lerped on region change)
+    // per-region grade: temperature, saturation (with a mild vibrance boost), split tone (cool shadows, warm highlights)
     col *= vec3(1.0 + uGrade.x, 1.0 + uGrade.x * 0.2, 1.0 - uGrade.x);
-    float l = dot(col, vec3(0.2126, 0.7152, 0.0722)); col = mix(vec3(l), col, uGrade.y);
-    col = clamp((col - 0.5) * uGrade.z + 0.5, 0.0, 1.0);
+    float l = dot(col, vec3(0.2126, 0.7152, 0.0722));
+    col *= mix(uTintLo, uTintHi, smoothstep(0.04, 0.55, l));
+    l = dot(col, vec3(0.2126, 0.7152, 0.0722)); col = max(mix(vec3(l), col, uGrade.y * 1.08), 0.0);
     vec2 v = vUv - 0.5; col *= 1.0 - dot(v, v) * uVignette;
   }
   col = toSRGB(col);
+  if (uGradeOn > 0.5){ // filmic S-curve and contrast about perceptual mid grey (after encoding)
+    col = clamp(col, 0.0, 1.0); vec3 sc = col * col * (3.0 - 2.0 * col); col = mix(col, sc, 0.38);
+    col = clamp((col - 0.42) * uGrade.z + 0.42, 0.0, 1.0);
+  }
   float n = fract(sin(dot(gl_FragCoord.xy + uTime * 61.0, vec2(12.9898, 78.233))) * 43758.5453);
   col += (n - 0.5) * (1.0 / 255.0 + uGrain * 0.035);
   gl_FragColor = vec4(col, 1.0);
@@ -117,7 +122,7 @@ export function createPipeline(renderer, perf) {
   const whiteTex = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1); whiteTex.needsUpdate = true;
   const compMat = fsMat(COMPOSITE_FS, {
     tColor: U(null), tAO: U(whiteTex), tBloom: U(blackTex), tRays: U(blackTex), tDepthC: U(null), uAOTexel: U(new THREE.Vector2()), uTexel: U(new THREE.Vector2()),
-    uExposure: U(1), uBloom: U(0.06), uAOOn: U(0), uRaysOn: U(0), uGradeOn: U(1), uGrain: U(0), uTime: U(0), uVignette: U(0.55), uSharpen: U(0), uGrade: U(new THREE.Vector3(0, 1, 1)), uNearC: U(0.4), uFarC: U(9000),
+    uExposure: U(1), uBloom: U(0.06), uAOOn: U(0), uRaysOn: U(0), uGradeOn: U(1), uGrain: U(0), uTime: U(0), uVignette: U(0.55), uSharpen: U(0), uGrade: U(new THREE.Vector3(0, 1, 1)), uTintLo: U(new THREE.Color(1, 1, 1)), uTintHi: U(new THREE.Color(1, 1, 1)), uNearC: U(0.4), uFarC: U(9000),
   });
   const fxaaMat = new THREE.ShaderMaterial({ ...FXAAShader, uniforms: THREE.UniformsUtils.clone(FXAAShader.uniforms), depthTest: false, depthWrite: false });
   let smaa = null;
@@ -204,6 +209,7 @@ export function createPipeline(renderer, perf) {
       }
       compMat.uniforms.uExposure.value = st.exposure; compMat.uniforms.uTime.value = st.time % 100;
       compMat.uniforms.uGrade.value.set(st.grade.temp, st.grade.sat, st.grade.con);
+      if (st.tintLo) { compMat.uniforms.uTintLo.value.copy(st.tintLo); compMat.uniforms.uTintHi.value.copy(st.tintHi); }
       if (rtLDR) {
         pass(compMat, rtLDR, 'composite');
         if (cfg.antialiasing === 'smaa') { smaa.renderToScreen = true; smaa.render(renderer, null, rtLDR); }

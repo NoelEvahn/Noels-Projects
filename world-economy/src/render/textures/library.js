@@ -77,14 +77,14 @@ def('tex.paver', 0.012, 1.0, /* glsl */`
   a = mix(C(4e4a44), mix(C(a0948a), C(8c8076), hsh) * (0.88 + 0.2 * n), j); h = j * 0.8 + 0.1 * n; r = 0.85; m = 0.0;`);
 def('tex.grass_ground', 0.01, 0.8, /* glsl */`
   float n = fbm(uv, 6.0, 5), fine = vnoise(uv * vec2(420.0, 140.0), vec2(420.0, 140.0)), blades = vnoise(uv * vec2(160.0, 640.0), vec2(160.0, 640.0));
-  float clover = smoothstep(0.55, 0.75, fbm(uv + 0.3, 12.0, 3)); float dirt = smoothstep(0.6, 0.8, fbm(uv + 0.71, 4.0, 4));
-  vec3 g = mix(C(4a6a2c), C(6e8a3a), n) * (0.75 + 0.45 * blades); g = mix(g, C(3e6a32), clover * 0.5); g = mix(g, C(8a8a4a), smoothstep(0.6, 0.9, fine) * 0.3);
+  float clover = smoothstep(0.55, 0.75, fbm(uv + 0.3, 12.0, 3)); float dirt = smoothstep(0.52, 0.74, fbm(uv + 0.71, 4.0, 4));
+  vec3 g = mix(C(50662e), C(80883f), n) * (0.7 + 0.5 * blades); g = mix(g, C(3e6030), clover * 0.5); g = mix(g, C(94904e), smoothstep(0.55, 0.9, fine) * 0.4);
   a = mix(g, C(6a5a40) * (0.8 + 0.3 * fine), dirt * 0.8); h = 0.5 * blades + 0.3 * n - 0.2 * dirt; r = 0.95 - 0.05 * clover; m = 0.0;`);
 def('tex.forest_floor', 0.02, 1.2, /* glsl */`
   float n = fbm(uv, 5.0, 5); vec3 w = worley(uv, 50.0);
   float needles = vnoise(uv * vec2(600.0, 90.0), vec2(600.0, 90.0)) * vnoise(uv.yx * vec2(500.0, 80.0), vec2(500.0, 80.0));
   float moss = smoothstep(0.5, 0.7, fbm(uv + 0.5, 6.0, 4)); float stones = smoothstep(0.25, 0.1, w.x) * step(0.8, w.z);
-  vec3 c = mix(C(4a3a28), C(6a5236), needles * 1.6) * (0.75 + 0.4 * n); c = mix(c, C(4e6a2a) * (0.8 + 0.4 * n), moss * 0.85); c = mix(c, C(7a7468), stones);
+  vec3 c = mix(C(45351f), C(7a5a36), needles * 1.8) * (0.7 + 0.5 * n); c = mix(c, C(3a5424) * (0.8 + 0.4 * n), moss * 0.5); c = mix(c, C(8a5a2c), smoothstep(0.6, 0.8, fbm(uv + 0.2, 14.0, 3)) * 0.35); c = mix(c, C(7a7468), stones);
   a = c; h = 0.4 * n + 0.3 * needles + 0.2 * moss + 0.5 * stones; r = mix(0.95, 0.85, moss); m = 0.0;`);
 def('tex.moss', 0.01, 0.8, /* glsl */`
   float n = fbm(uv, 8.0, 5), c = vnoise(uv * 120.0, vec2(120.0)); a = mix(C(3e5a22), C(7a9a3a), n) * (0.8 + 0.3 * c); h = n * 0.7 + c * 0.3; r = 0.95; m = 0.0;`);

@@ -42,7 +42,8 @@ if (set === 'matrix' || set === 'weather') for (const [v, w, h] of [['V01', 'rai
       }, [j.custom, j.hour]);
       else await p.evaluate(([v, hour]) => window.__LOE.viewpoint(v, { hour }), [j.v, j.hour]);
       // let lerped state (weather 20 s, region grade 3 s, exposure 1.5 s) settle: render simulated seconds
-      await p.evaluate(() => { for (let i = 0; i < 30; i++) window.__LOE.rend.frame(window.__LOE.game, 1, 1); });
+      // (ground cover, vegetation blocks and ambient geometry are queued by the first frames: drain them, then frame again)
+      await p.evaluate(async () => { const L = window.__LOE; for (let i = 0; i < 12; i++) L.rend.frame(L.game, 1, 1); await L.settle(240000, 2); for (let i = 0; i < 12; i++) L.rend.frame(L.game, 1, 1); await L.settle(240000, 2); });
       const st = await p.evaluate(() => window.__LOE.pixelStats());
       const s = await p.evaluate(() => window.__LOE.perf.snapshot());
       await p.screenshot({ path: path.join(outDir, j.name + '.png') });

@@ -17,6 +17,8 @@ import { createChunkManager } from './chunkManager.js';
 import { createVegetation } from './vegetation.js';
 import { createEntityViews } from './entityViews.js';
 import { createEffects } from './effects.js';
+import { createAmbient } from '../game/ai/ambient.js';
+import { createAmbientViews } from './ambientViews.js';
 import { Streaming } from './streaming.js';
 import { MemTracker } from './perf.js';
 import { regionAt } from '../world/layout/regions.js';
@@ -55,7 +57,7 @@ export function createRenderer({ canvas, settings, perf, quality, onRendererStri
   const lighting = createLighting({ scene, camera, renderer });
   const sky = createSky(scene, renderer);
   let tf = performance.now();
-  const water = buildWater(scene);
+  const water = buildWater(scene, sky.uniforms);
   const far = buildFar(scene);
   marks.farMs = Math.round(performance.now() - tf);
   let derived = derived0;
@@ -63,6 +65,8 @@ export function createRenderer({ canvas, settings, perf, quality, onRendererStri
   const chunks = createChunkManager({ scene, far, getRadii: () => [Math.min(detailRadius(), derived.chunkRadii[0]), derived.chunkRadii[0], derived.chunkRadii[1]] });
   const veg = createVegetation({ scene, renderer });
   const views = createEntityViews(scene);
+  const ambient = createAmbient();
+  const ambientViews = createAmbientViews({ scene, ambient });
   const fx = createEffects({ scene, camera });
   const pipeline = createPipeline(renderer, perf);
 
@@ -71,8 +75,9 @@ export function createRenderer({ canvas, settings, perf, quality, onRendererStri
   const shadowCounter = { calls: 0, tris: 0 };
   sm.render = function (lights, sc, cam) { const c0 = renderer.info.render.calls, tr0 = renderer.info.render.triangles; smRender.call(sm, lights, sc, cam); shadowCounter.calls += renderer.info.render.calls - c0; shadowCounter.tris += renderer.info.render.triangles - tr0; };
 
+  { const origCompile = renderer.compile.bind(renderer); renderer.compile = (sc, cam, tgt) => { ambientViews.prewarm(true); const r = origCompile(sc, cam, tgt); ambientViews.prewarm(false); return r; }; }
   let w = 0, h = 0, applying = 0;
-  const api = { renderer, scene, camera, sky, water, far, chunks, views, veg, fx, lighting, pipeline, baker, info: renderer.info, cpuOnly: false, frozenCamera: false, marks, counters: { shadowCalls: 0, shadowTris: 0, mainCalls: 0, mainTris: 0, postCalls: 0 } };
+  const api = { renderer, scene, camera, sky, water, far, chunks, views, ambient, ambientViews, veg, fx, lighting, pipeline, baker, info: renderer.info, cpuOnly: false, frozenCamera: false, marks, counters: { shadowCalls: 0, shadowTris: 0, mainCalls: 0, mainTris: 0, postCalls: 0 } };
   api.resize = function (cssW, cssH) {
     const pr = derived.pixelRatio;
     renderer.setPixelRatio(pr);
@@ -95,6 +100,8 @@ export function createRenderer({ canvas, settings, perf, quality, onRendererStri
       veg.configure({ density: d.vegetation.density, treeCaps: d.vegetation.treeCaps, groundCoverRadius: d.vegetation.groundCoverRadius, lodBias: d.lodBias, mid: d.chunkRadii[1], shadows: d.shadows.enabled, atlasSize: Math.min(2048, d.textures.atlas) });
       fx.configure({ particles: d.particles.maxAlive, lightPool: d.lightPool, fogCards: d.fogCards });
       views.configure({ lodBias: d.lodBias, shadows: d.shadows.enabled });
+      ambient.configure({ traffic: d.trafficDensity, crowd: d.crowdDensity });
+      ambientViews.configure({ lodBias: d.lodBias, shadows: d.shadows.enabled });
       const texChanged = !all && prev && (JSON.stringify(prev.textures) !== JSON.stringify(d.textures));
       if (texChanged) { applying++; baker.start(texSizes(d)); Streaming.add('rebake', baker.job(), -1, () => { applying--; }); }
       if (!all && prev && (prev.lodBias !== d.lodBias || prev.chunkRadii.join() !== d.chunkRadii.join())) chunks.invalidate();
@@ -133,15 +140,16 @@ export function createRenderer({ canvas, settings, perf, quality, onRendererStri
     const sd = game.env.sunDir, hour = game.env.timeOfDay;
     lighting.update(sd, dt, hour, sky, camera.position, time);
     views.update(game.entities.all(), alpha, time, camera);
+    { const pp = game.playerPos(); ambient.update(dt, camera.position, hour, pp, time, lighting.state.weather.wet > 0.5 ? 1 : 0); ambientViews.update(camera); }
     sky.follow(camera.position);
     if (!api.cpuOnly) sky.updateEnv();
     camV.copy(camera.position);
     water.update(camV, 1);
     const L = lighting.state;
-    veg.update(camera, 0.25 + 0.9 * L.day * (1 - 0.5 * L.weather.cover) + 0.06 * L.night, scene.fog);
+    veg.update(camera, 0.25 + 0.9 * L.day * (1 - 0.5 * L.weather.cover) + 0.06 * L.night, scene.fog, L);
     fx.update(dt, camera, L, game);
     pst.exposure = L.exposure; pst.grade = L.grade; pst.sunDir = sd; pst.time = time;
-    pst.sunColor.setRGB(1, 0.85, 0.65).multiplyScalar(0.8 * L.day * (1 - L.weather.cover * 0.6));
+    pst.sunColor.copy(L.sunColor).multiplyScalar(0.9 * L.day * (1 - L.weather.cover * 0.6)); pst.tintLo = L.tintLo; pst.tintHi = L.tintHi;
     pst.fogHeavy = L.weather.fog > 2.5 || L.region === 'forest';
     pst.raysGain = L.region === 'forest' ? 1.6 : 1;
     if (!api.cpuOnly) pipeline.render(scene, camera, pst, shadowCounter);

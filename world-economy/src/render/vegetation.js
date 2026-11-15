@@ -16,6 +16,7 @@ import { terrainWeights } from './terrainMesh.js';
 import { leafCell } from './textures/canvasTex.js';
 import { valueNoise } from '../core/math.js';
 import { LAKE } from '../world/layout/water.js';
+import { GB } from '../art/kit/geo.js';
 
 const NC = 40, NS = TREE_TYPES.length, ATL = 8; // atlas: 8 species rows x 8 yaw columns
 const keepHash = (i) => { let h = Math.imul(i ^ 0x9e3779b9, 0x85ebca6b); h ^= h >>> 13; h = Math.imul(h, 0xc2b2ae35); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
@@ -48,7 +49,8 @@ void main(){
   vec3 fv = vWPos - cameraPosition; float fd = length(fv); vec3 fdir = fv / max(fd, 1e-3);
   float y0 = max(cameraPosition.y - uFogBase, -40.0); float kd = clamp(uFogFall * fv.y, -30.0, 30.0); float t = abs(kd) > 1e-3 ? (1.0 - exp(-kd)) / kd : 1.0;
   float amt = 1.0 - exp(-fogDensity * exp(-uFogFall * y0) * t * max(fd - uFogStart, 0.0));
-  col = mix(col, mix(fogColor, uSunFog, pow(max(dot(fdir, uSunDir), 0.0), 8.0) * 0.6), clamp(amt, 0.0, 1.0));
+  float cs = max(dot(fdir, uSunDir), 0.0); float sun = pow(cs, 3.0) * 0.55 + pow(cs, 18.0) * 0.55;
+  col = mix(col, mix(fogColor, uSunFog, clamp(sun, 0.0, 0.85)), clamp(amt, 0.0, 1.0));
   gl_FragColor = vec4(col, 1.0);
 }`;
 
@@ -218,39 +220,59 @@ export function createVegetation({ scene, renderer }) {
   }
 
   // ---- ground cover -------------------------------------------------------------------------------------------------------------------------------------
-  const GC_TYPES = ['veg.grass_tuft', 'veg.fern', 'veg.reeds', 'veg.flowers'];
+  // 0 grass tuft, 1 fern, 2 reeds, 3 wildflowers, 4 litter patch, 5 clover, 6 pebbles, 7 sticks (6 and 7 are small solid meshes)
+  const GC_TYPES = ['veg.grass_tuft', 'veg.fern', 'veg.reeds', 'veg.flowers', 'veg.litter', 'veg.clover'];
   const gcMat = MatLib.get('mat.groundcover');
-  const GC_CAP = 9000;
-  const gcMeshes = GC_TYPES.map((id) => { const m = new THREE.InstancedMesh(artGeometry(plantGeometry(id).leaf), gcMat, GC_CAP); m.count = 0; m.frustumCulled = false; m.castShadow = false; m.receiveShadow = true; m.matrixAutoUpdate = false; m.name = 'veg.gc.' + id; group.add(m); return m; });
+  const GC_CAP = 9000, NGC = 8;
+  function smallGeo(kind) {
+    const g = new GB(256); g.groundAO = false;
+    if (kind === 'rock') { g.mat('tex.rock_granite', 0xb8b2a8); g.push().scale(1, 0.62, 0.82); g.lathe([[0.001, -0.12], [0.12, -0.07], [0.16, 0.03], [0.11, 0.11], [0.001, 0.14]], 6); g.pop(); g.push().translate(0.2, 0, 0.1).scale(0.6, 0.5, 0.6); g.lathe([[0.001, -0.1], [0.11, -0.05], [0.12, 0.05], [0.001, 0.1]], 5); g.pop(); }
+    else { g.mat('tex.bark_pine', 0xb0a090); g.beam([-0.45, 0.03, 0.0], [0.4, 0.05, 0.08], 0.022, 0.016); g.beam([0.0, 0.04, 0.0], [0.18, 0.05, -0.32], 0.014, 0.01); }
+    return artGeometry(g.toArrays());
+  }
+  const gcMeshes = [];
+  for (let t = 0; t < NGC; t++) {
+    const geo = t < 6 ? artGeometry(plantGeometry(GC_TYPES[t]).leaf) : smallGeo(t === 6 ? 'rock' : 'stick');
+    const m = new THREE.InstancedMesh(geo, t < 6 ? gcMat : MatLib.get('mat.world'), t < 6 ? GC_CAP : 2500); m.count = 0; m.frustumCulled = false; m.castShadow = false; m.receiveShadow = true; m.matrixAutoUpdate = false; m.name = 'veg.gc.' + (t < 6 ? GC_TYPES[t] : t === 6 ? 'rock' : 'stick'); group.add(m); gcMeshes.push(m);
+  }
   const gcCache = new Map(); // chunk key -> Float32Array [x,y,z,type,scale,rot]*
   const gcPending = new Set();
   const wts = new Float32Array(8);
+  const GN = 55, GSTEP = 100 / GN;
   function* buildGc(cx, cz) {
     const out = [];
     const grid = D.grid, x0 = -2000 + cx * 100, z0 = -2000 + cz * 100;
-    for (let j = 0; j < 40; j++) {
-      for (let i = 0; i < 40; i++) {
-        const h1 = keepHash((cx * 40 + i) * 7919 + (cz * 40 + j) * 104729), h2 = keepHash((cx * 40 + i) * 31 + (cz * 40 + j) * 17 + 99);
-        const x = x0 + i * 2.5 + h1 * 2.5, z = z0 + j * 2.5 + h2 * 2.5;
+    for (let j = 0; j < GN; j++) {
+      for (let i = 0; i < GN; i++) {
+        const h1 = keepHash((cx * GN + i) * 7919 + (cz * GN + j) * 104729), h2 = keepHash((cx * GN + i) * 31 + (cz * GN + j) * 17 + 99), h3 = keepHash((cx * GN + i) * 577 + (cz * GN + j) * 1291 + 7);
+        const x = x0 + i * GSTEP + h1 * GSTEP, z = z0 + j * GSTEP + h2 * GSTEP;
         const gi = Math.round((x + 2000) / 4), gj = Math.round((z + 2000) / 4);
         if (grid.flat[gj * grid.N + gi]) continue; // roads and building pads
         const y = World.heightAt(x, z);
         if (y < 0.4) continue;
         const lakeEdge = y > LAKE.level - 0.2 && y < LAKE.level + 1.6 && x < -650 && z < -650;
         terrainWeights(x, z, y, 0, wts);
-        const clump = valueNoise(x / 9, z / 9, 5);
+        const clump = valueNoise(x / 9, z / 9, 5), patch = valueNoise(x / 7, z / 7, 17), flowerP = valueNoise(x / 11, z / 11, 29);
         let type = -1;
         if (lakeEdge && h1 < 0.5) type = 2;
-        else if (wts[1] > 0.4 && h2 < 0.45 * wts[1] * (0.4 + clump)) type = 1;
-        else if (wts[0] > 0.3 && h2 < 0.7 * wts[0] * (0.3 + clump)) type = h1 < 0.06 ? 3 : 0;
-        else if (wts[3] > 0.6 && h2 < 0.08) type = 0;
+        else if (wts[1] > 0.4) { // forest floor: ferns, litter, the odd tuft, rocks and sticks
+          if (h3 < 0.16 * wts[1] * (0.3 + clump)) type = 1; else if (h3 < 0.42) type = 4; else if (h3 < 0.5 && clump > 0.5) type = 0; else if (h3 > 0.965) type = 6; else if (h3 > 0.9) type = 7;
+          if (h2 > 0.7 && type === 4) type = -1;
+        } else if (wts[0] > 0.3) { // meadow: grass in patches (bare soil where the patch noise is high), wildflowers in drifts, clover
+          if (patch > 0.66) { if (h3 > 0.985) type = 6; }
+          else if (flowerP > 0.62 && h3 < 0.3) type = 3;
+          else if (h3 < 0.8 * wts[0] * (0.35 + clump)) type = h2 < 0.12 ? 5 : 0;
+          else if (h3 > 0.992) type = 6;
+        } else if (wts[3] > 0.6 && h2 < 0.06) type = 0;
+        else if (wts[2] > 0.4 && h3 > 0.93) type = 6; // rocky ground: pebbles
         if (type < 0) continue;
-        out.push(x, y, z, type, 0.7 + 0.6 * h1, h2 * 6.28);
+        out.push(x, y, z, type, (type === 6 ? 0.5 : 0.7) + (type === 6 ? 1.6 : 0.6) * h1, h2 * 6.28);
       }
       if ((j & 7) === 7) yield;
     }
     return Float32Array.from(out);
   }
+  const gcCounts = new Int32Array(NGC);
   let gcLast = new THREE.Vector3(1e9, 0, 0);
   function updateGc(cam, force) {
     const R = cfg.gcRadius;
@@ -269,14 +291,14 @@ export function createVegetation({ scene, renderer }) {
     if (!force && !missing && gcLast.distanceToSquared(cam) < 25) return;
     if (!force && gcLast.distanceToSquared(cam) < 25) return;
     gcLast.copy(cam);
-    const counts = [0, 0, 0, 0], R2 = R * R;
+    const counts = gcCounts; counts.fill(0); const R2 = R * R;
     for (let z = ccz - rc; z <= ccz + rc; z++) for (let x = ccx - rc; x <= ccx + rc; x++) {
       const arr = gcCache.get(z * NC + x); if (!arr) continue;
       for (let q = 0; q < arr.length; q += 6) {
         const dx = arr[q] - cam.x, dz = arr[q + 2] - cam.z, d2 = dx * dx + dz * dz;
         if (d2 > R2) continue;
         const t = arr[q + 3], mesh = gcMeshes[t];
-        if (counts[t] >= GC_CAP) continue;
+        if (counts[t] >= (t < 6 ? GC_CAP : 2500)) continue;
         // thin out with distance so the ring edge is soft
         if (d2 > R2 * 0.5 && keepHash(q + x * 997 + z) > 1.6 - 1.4 * d2 / R2) continue;
         const m = mesh.instanceMatrix.array, o = counts[t] * 16, sc = arr[q + 4], c = Math.cos(arr[q + 5]), sn = Math.sin(arr[q + 5]);
@@ -304,14 +326,17 @@ export function createVegetation({ scene, renderer }) {
       if (densChanged || midChanged) resetBlocks();
       st.dirty = true; gcLast.set(1e9, 0, 0);
     },
-    update(camera, light, fog) {
+    update(camera, light, fog, L) {
       const p = camera.position;
       const yaw = Math.atan2(camera.matrixWorld.elements[8], camera.matrixWorld.elements[10]);
       let dy = Math.abs(yaw - st.lastYaw); if (dy > Math.PI) dy = 2 * Math.PI - dy;
       if (st.dirty || st.lastPos.distanceToSquared(p) > 36 || dy > 0.2) { st.dirty = false; st.lastPos.copy(p); st.lastYaw = yaw; rebuildNear(camera); }
       updateBlocks(p);
       updateGc(p, false);
-      impMat.uniforms.uLight.value.setRGB(light, light, light * 1.02);
+      if (L) { // match the world's sun + sky fill (the bake used a neutral light)
+        const k = L.keyI / 7 * 1.45, f = 0.16 + 0.1 * L.day + 0.08 * L.night;
+        impMat.uniforms.uLight.value.setRGB(L.sunColor.r * k + f * 0.8, L.sunColor.g * k + f * 0.95, L.sunColor.b * k + f * 1.2);
+      } else impMat.uniforms.uLight.value.setRGB(light, light, light * 1.02);
       impMat.uniforms.fogColor.value.copy(fog.color); impMat.uniforms.fogDensity.value = fog.density;
       let n = 0; for (const b of blocks.values()) if (b.mesh) n += b.mesh.count; st.impostors = n;
     },

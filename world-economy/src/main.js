@@ -228,6 +228,7 @@ async function boot() {
       const rc = rend.counters; s.draw.calls = rc.mainCalls; s.draw.triangles = rc.mainTris; s.draw.shadowCalls = rc.shadowCalls; s.draw.shadowTriangles = rc.shadowTris; s.draw.postCalls = rc.postCalls;
       s.counts.programs = rend.renderer.info.programs ? rend.renderer.info.programs.length : 0;
       s.mem.textureBytes = MemTracker.textureBytes; s.mem.libraryTextureBytes = MemTracker.libraryTextureBytes; s.mem.renderTargetBytes = MemTracker.renderTargetBytes; s.mem.gpuEstimateBytes = MemTracker.gpuEstimate();
+      s.ambient = { ...rend.ambient.stats(), drawn: rend.ambientViews.stats.drawn, carsDrawn: rend.ambientViews.stats.cars, pedsDrawn: rend.ambientViews.stats.peds };
       s.veg = { ...rend.veg.state, lastPos: undefined }; s.counts.chunksDetail = rend.chunks.counts.detail; s.counts.lights = rend.fx.activeLights; s.counts.particles = rend.fx.particlesAlive;
       s.mem.geometryBytes = MemTracker.geometryBytes; s.blockoutFallbacks = Builders.blockoutIds().length; s.boot = marks; s.sun = game.env.sunDir.slice();
       s.farTris = rend.far.terrain.visibleTris + rend.far.masses.visibleTris; s.chunkTris = rend.chunks.counts.loadedTris;
