@@ -59,7 +59,7 @@ export function createRenderer({ canvas, settings, perf, quality, onRendererStri
   const far = buildFar(scene);
   marks.farMs = Math.round(performance.now() - tf);
   let derived = derived0;
-  const detailRadius = () => (derived.lodBias >= 1.2 ? 2 : 1);
+  const detailRadius = () => (derived.lodBias >= 1.2 ? 2 : derived.lodBias < 0.8 ? 0 : 1); // Low: only the camera chunk at LOD0
   const chunks = createChunkManager({ scene, far, getRadii: () => [Math.min(detailRadius(), derived.chunkRadii[0]), derived.chunkRadii[0], derived.chunkRadii[1]] });
   const veg = createVegetation({ scene, renderer });
   const views = createEntityViews(scene);

@@ -1,8 +1,8 @@
 // Visual capture (Annex G 7, MASTER_SPEC 9.3 acceptance 8): 16 standard viewpoints x {08:00 clear, 18:30 golden hour,
 // 22:00 night} + weather shots (rain V01/V13, mist V08/V16, overcast V15, storm V10) at High, 960x540. Each shot is checked
 // non-blank (pixel variance and colour count) and its counters recorded. Software GL takes 30-180 s per shot; pages run in
-// parallel (--pages=2). Output: test-results/shots/<id>_<hour|weather>.png + shots.json.
-// Usage: node test/visual/shots.cjs [--set=matrix|day|night|golden|weather] [V01 V05 ...] [--pages=2] [--preset=high] [--out=test-results/shots]
+// parallel (--pages=3). Output: test/screenshots/<id>_<hhmm|weather>.png + shots.json.
+// Usage: node test/visual/shots.cjs [--set=matrix|day|night|golden|weather|assets] [V01 V05 ...] [--pages=3] [--preset=high] [--out=test/screenshots]
 const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
@@ -11,11 +11,14 @@ const args = process.argv.slice(2);
 const opt = (k, d) => { const a = args.find((x) => x.startsWith('--' + k + '=')); return a ? a.split('=')[1] : d; };
 const ids = args.filter((a) => /^V\d\d$/.test(a));
 const VIEWS = ids.length ? ids : Array.from({ length: 16 }, (_, i) => 'V' + String(i + 1).padStart(2, '0'));
-const set = opt('set', 'matrix'), preset = opt('preset', 'high'), pages = Number(opt('pages', 2));
-const outDir = path.resolve(root, opt('out', 'test-results/shots'));
+const set = opt('set', 'matrix'), preset = opt('preset', 'high'), pages = Number(opt('pages', 3));
+const outDir = path.resolve(root, opt('out', 'test/screenshots'));
 const jobs = [];
 const hours = { day: [8], golden: [18.5], night: [22], matrix: [8, 18.5, 22], weather: [] }[set] || [8];
-for (const h of hours) for (const v of VIEWS) jobs.push({ v, hour: h, weather: 'clear', name: `${v}_${String(h).replace('.', '')}` });
+const hhmm = (h) => String(Math.floor(h)).padStart(2, '0') + String(Math.round((h % 1) * 60)).padStart(2, '0');
+for (const h of hours) for (const v of VIEWS) jobs.push({ v, hour: h, weather: 'clear', name: `${v}_${hhmm(h)}` });
+// H1, H2 asset views (Annex G 7.2): cafe racer on Old Forest Road at golden hour; the moored red trawler at the Port Calder quay
+if ((set === 'matrix' || set === 'assets') && !ids.length) jobs.push({ custom: 'H1', hour: 18.5, weather: 'clear', name: 'H1_moto_cafe' }, { custom: 'H2', hour: 10, weather: 'clear', name: 'H2_trawler' });
 if (set === 'matrix' || set === 'weather') for (const [v, w, h] of [['V01', 'rain', 10], ['V13', 'rain', 10], ['V08', 'mist', 7], ['V16', 'mist', 7], ['V15', 'overcast', 12], ['V10', 'storm', 16]]) if (!ids.length || ids.includes(v)) jobs.push({ v, hour: h, weather: w, name: `${v}_${w}` });
 (async () => {
   fs.mkdirSync(outDir, { recursive: true });
@@ -31,7 +34,13 @@ if (set === 'matrix' || set === 'weather') for (const [v, w, h] of [['V01', 'rai
     while (next < jobs.length) {
       const j = jobs[next++], t = Date.now();
       await p.evaluate(([w]) => window.__LOE.setWeather(w, 1), [j.weather]);
-      await p.evaluate(([v, hour]) => window.__LOE.viewpoint(v, { hour }), [j.v, j.hour]);
+      if (j.custom) await p.evaluate(async ([c, hour]) => {
+        const L = window.__LOE, W = L.world; L.setTime(hour);
+        if (c === 'H1') { const x = -196, z = -1146, y = W.heightAt(x, z); if (!W.data.decor.qaH1) { W.addPlacement({ id: 'qa.h1', archetype: 'veh.moto_cafe', x, y, z, rotY: 0.9, seed: 7, params: {} }); W.data.decor.qaH1 = true; } L.game.teleport([x + 6, y, z + 6], 0); L.rend.chunks.invalidate(); L.camera.set({ pos: [x + 1.9, y + 1.15, z - 1.6], target: [x, y + 0.6, z], fov: 45 }); }
+        else { const x = -934, z = 1143; L.game.teleport([-905, 3, 1140], 0); L.camera.set({ pos: [x + 12, 6.5, z - 14], target: [x, 2.5, z], fov: 50 }); }
+        return L.settle(240000, 2);
+      }, [j.custom, j.hour]);
+      else await p.evaluate(([v, hour]) => window.__LOE.viewpoint(v, { hour }), [j.v, j.hour]);
       // let lerped state (weather 20 s, region grade 3 s, exposure 1.5 s) settle: render simulated seconds
       await p.evaluate(() => { for (let i = 0; i < 30; i++) window.__LOE.rend.frame(window.__LOE.game, 1, 1); });
       const st = await p.evaluate(() => window.__LOE.pixelStats());
