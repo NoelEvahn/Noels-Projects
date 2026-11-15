@@ -49,7 +49,7 @@ void main(){
     if (float(i) >= uSamples) break;
     uv -= delta; float sky = step(0.99999, texture2D(tDepth, uv).x);
     vec3 c = texture2D(tColor, uv).rgb; float l = max(dot(c, vec3(0.3, 0.59, 0.11)) - 0.6, 0.0);
-    acc += sky * (0.25 + l) * w; w *= uDecay;
+    acc += sky * (0.08 + l) * w; w *= uDecay;
   }
   gl_FragColor = vec4(acc / uSamples * uStrength * uSunCol, 1.0);
 }`;
@@ -109,7 +109,7 @@ export function createPipeline(renderer, perf) {
   const projInv = new THREE.Matrix4(), projAO = new THREE.Matrix4();
   const aoMat = fsMat(AO_FS.replace(/projectionMatrixAO/g, 'uProjAO'), { tDepth: U(null), uProjInv: U(projInv), uProjAO: U(projAO), uNear: U(0.4), uFar: U(9000), uTexel: U(new THREE.Vector2()), uRadius: U(1.2), uSamples: U(8), uIntensity: U(1.1), uFrame: U(0) });
   aoMat.fragmentShader = aoMat.fragmentShader.replace('uniform vec2 uTexel;', 'uniform vec2 uTexel; uniform mat4 uProjAO;');
-  const raysMat = fsMat(RAYS_FS, { tDepth: U(null), tColor: U(null), uSunUv: U(new THREE.Vector2()), uSamples: U(32), uStrength: U(0.6), uDecay: U(0.965), uSunCol: U(new THREE.Color()) });
+  const raysMat = fsMat(RAYS_FS, { tDepth: U(null), tColor: U(null), uSunUv: U(new THREE.Vector2()), uSamples: U(32), uStrength: U(0.4), uDecay: U(0.965), uSunCol: U(new THREE.Color()) });
   const preMat = fsMat(PREFILTER_FS, { tSrc: U(null), uTexel: U(new THREE.Vector2()), uThreshold: U(1.0) });
   const downMat = fsMat(DOWN_FS, { tSrc: U(null), uTexel: U(new THREE.Vector2()) });
   const upMat = fsMat(UP_FS, { tSrc: U(null), tPrev: U(null), uTexel: U(new THREE.Vector2()) });

@@ -63,13 +63,13 @@ function conifer(S, lod, R) {
   const H = S.H, r0 = H * 0.018 + 0.12;
   bark.cyl(0, -0.3, 0, r0 * 1.25, r0 * 0.12, H + 0.3, lod ? 5 : 8, { noBottom: true });
   const cell = leafCell(S.cell);
-  const whorls = lod ? 4 : S.whorls, per = lod ? 4 : S.per;
+  const whorls = lod ? 7 : S.whorls, per = lod ? 5 : S.per;
   for (let w = 0; w < whorls; w++) {
     const t = w / (whorls - 1), y = H * (S.bare + (1 - S.bare) * t);
-    const L = S.len * (1.15 - t * 0.95) * (lod ? 1.5 : 1) + 0.4, rot = R() * 6.28;
+    const L = S.len * (1.15 - t * 0.95) * (lod ? 1.35 : 1) + 0.4, rot = R() * 6.28;
     for (let k = 0; k < per; k++) {
       const yaw = rot + (k / per) * Math.PI * 2 + (R() - 0.5) * 0.4, pitch = -0.15 - 0.25 * S.droop + R() * 0.15;
-      frond(leaf, Math.sin(yaw) * r0 * 0.5, y, -Math.cos(yaw) * r0 * 0.5, yaw, pitch, L, L * (0.55 + 0.15 * R()), cell, 0, L * 0.25 * S.droop);
+      frond(leaf, Math.sin(yaw) * r0 * 0.5, y, -Math.cos(yaw) * r0 * 0.5, yaw, pitch, L, L * (lod ? 0.85 : 0.55 + 0.15 * R()), cell, 0, L * 0.25 * S.droop);
       if (!lod && R() < 0.6) frond(leaf, Math.sin(yaw) * r0 * 0.5, y + 0.15, -Math.cos(yaw) * r0 * 0.5, yaw + 0.2, pitch + 0.1, L * 0.8, L * 0.45, cell, 1.3, L * 0.2 * S.droop);
     }
   }
@@ -91,11 +91,11 @@ function broadleaf(S, lod, R) {
     bark.tube([0, trunkH * 0.95, 0], end, rt * 0.55, rt * 0.2, 5, { noTop: true, noBottom: true });
   }
   const cell = leafCell(S.cell);
-  const n = lod ? 10 : S.clusters;
+  const n = lod ? 18 : S.clusters;
   for (let k = 0; k < n; k++) {
     const a = R() * 6.28, el = Math.acos(1 - 2 * Math.pow(R(), 0.8)) - 0.2, rr = 0.55 + 0.45 * Math.sqrt(R());
     const x = Math.sin(el) * Math.cos(a) * cr * rr, y = cy + Math.cos(el) * S.crown[1] * rr, z = Math.sin(el) * Math.sin(a) * cr * rr;
-    cluster(leaf, x, y, z, (lod ? 3.6 : 2.2) * (0.8 + 0.4 * R()) * (cr / 4.5 + 0.4), cell, R);
+    cluster(leaf, x, y, z, (lod ? 4.2 : 2.2) * (0.8 + 0.4 * R()) * (cr / 4.5 + 0.4), cell, R);
   }
   return { bark, leaf };
 }

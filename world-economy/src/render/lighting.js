@@ -117,7 +117,7 @@ export function createLighting({ scene, camera, renderer }) {
         u.uZenith.value.setRGB(0.35, 0.45, 0.6).multiplyScalar(0.2 + 0.8 * day);
       }
       // exposure (approximation of 1.5 s auto exposure: driven by the key light and interior state)
-      const expT = st.interior ? 1.9 : 0.95 + 0.9 * st.night * 0 + (1 - day) * 0.6 + cover * 0.2;
+      const expT = st.interior ? 1.5 : 0.68 + (1 - day) * 0.75 + cover * 0.25;
       st.exposure += (expT - st.exposure) * (1 - Math.exp(-dt / 1.5));
     },
     flash() { st.lightning = 1; },

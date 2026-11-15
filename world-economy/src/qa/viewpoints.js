@@ -4,7 +4,7 @@ export const VIEWPOINTS = {
   V01: { x: -147, z: 372, h: 1.65, t: [-170, 250, 16], note: 'Spawn on River St looking north to the viaduct and bridge tower' },
   V02: { x: -160, z: 316, h: 1.65, t: [-320, 300, 14], note: 'Old Town under the viaduct looking west to the tower and river' },
   V03: { x: 400, z: 200, h: 2.2, t: [400, 420, -4], note: 'Central Ave footbridge looking south along the boulevard' },
-  V04: { x: 190, z: 100, h: 1.65, t: [262, 22, 5], note: 'Midtown corner near the precinct looking north-east' },
+  V04: { x: 150, z: 58, h: 1.65, t: [262, 22, 5], note: 'Midtown corner near the precinct looking north-east' },
   V05: { x: 440, z: 744, h: 3, t: [640, 770, 2], note: 'Industrial street near the Swift Parcel depot looking east' },
   V06: { x: -350, z: 289, h: 1.65, t: [60, 300, 12], note: 'Harlan Bridge mid-span walkway looking east to the skyline' },
   V07: { x: -902.5, z: -802, h: 1.65, y: 42.33, t: [-900, -840, 40.8], note: 'Inside the Old Boathouse (int.boathouse) looking out over the slip to the lake' },

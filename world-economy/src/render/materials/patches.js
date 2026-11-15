@@ -70,7 +70,13 @@ float hashW(float n){ return fract(sin(n * 12.9898 + uDay * 78.233) * 43758.5453
 `;
 // fragment main: sample layers (or terrain splat), then tint, macro variation, wetness
 const ARR_MAIN = (splat) => `
-  vec2 tuv = vTUv; vec2 gx = dFdx(tuv), gy = dFdy(tuv);
+  vec2 tuv = vTUv;
+${splat ? `
+  { // terrain: planar projection on steep faces (no stretched stripes on cliffs and the mountain ring)
+    vec3 gn = normalize(cross(dFdx(vWPos), dFdy(vWPos)));
+    if (abs(gn.y) < 0.62) tuv = (abs(gn.x) > abs(gn.z) ? vWPos.zy : vWPos.xy) / 4.0;
+  }` : ''}
+  vec2 gx = dFdx(tuv), gy = dFdy(tuv);
   vec4 sA, sD; float Lmain;
 ${splat ? `
 #ifdef LOE_LOW

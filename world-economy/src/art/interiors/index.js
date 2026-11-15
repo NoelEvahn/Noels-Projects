@@ -10,8 +10,8 @@ const LIGHT = 236;
 export function room(g, w, d, h, y0, o) {
   const hw = w / 2, hd = d / 2, y1 = y0 + h, t = 1 / 1;
   g.groundAO = false;
-  g.mat(o.floor, o.floorTint || 0xffffff); g.quadUV([-hw, y0, -hd], [hw, y0, -hd], [hw, y0, hd], [-hw, y0, hd], 0, 0, w / g.tile, d / g.tile);
-  g.mat(o.ceil || o.wall, o.ceilTint || o.wallTint || 0xffffff); g.quadUV([-hw, y1, hd], [hw, y1, hd], [hw, y1, -hd], [-hw, y1, -hd], 0, 0, w / g.tile, d / g.tile);
+  g.mat(o.floor, o.floorTint || 0xffffff); g.quadUV([-hw, y0 + 0.03, hd], [hw, y0 + 0.03, hd], [hw, y0 + 0.03, -hd], [-hw, y0 + 0.03, -hd], 0, 0, w / g.tile, d / g.tile);
+  g.mat(o.ceil || o.wall, o.ceilTint || o.wallTint || 0xffffff); g.quadUV([-hw, y1, -hd], [hw, y1, -hd], [hw, y1, hd], [-hw, y1, hd], 0, 0, w / g.tile, d / g.tile);
   g.mat(o.wall, o.wallTint || 0xffffff);
   const dw = o.door || 1.2;
   // back (+Z) wall faces -Z
