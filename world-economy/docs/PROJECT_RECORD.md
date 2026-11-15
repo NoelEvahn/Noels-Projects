@@ -4,7 +4,7 @@ Orchestrator/QA: Sonnet 5.5 High (main) | Planner: Fable 5.2 High | Visual/UI/Fi
 ## Status
 - Stage 1 (master spec, Fable): COMPLETE; spec and the 8 default decisions approved by the user.
 - Stage 2 (S2a scaffold + S2 world blockout, Sonnet): COMPLETE, see "Stage 2 report" below. Checkpoint commit `a1e8d26` (tag `checkpoint/stage2-blockout` exists locally only: the git proxy returns 403 on tag pushes, so the commit hash is the reference). Orchestrator re-verified: `npm test` 33/33, e2e smoke all pass, screenshots reviewed.
-- Stage 3 split by the user into 3A (Opus: audio + quality system) and 3B (Opus: visual production). Stage 3A: COMPLETE at commit `f470631` (no tag: the proxy refuses tag pushes), see "Stage 3A report" below. Next: Stage 3B (visual), then Stage 4 gameplay (Sonnet).
+- Stage 3 split by the user into 3A (Opus: audio + quality system) and 3B (Opus: visual production). Stage 3A: COMPLETE at commit `f470631` (no tag: the proxy refuses tag pushes), see "Stage 3A report" below. Stage 3B (Opus, visual production): delivered up to the user's hand-off point (see "Stage 3B report"); screenshot review and visual/perf fix loop handed to Sonnet. Next: Sonnet 3B review, then Stage 4 gameplay (Sonnet).
 - Spec: docs/MASTER_SPEC.md + docs/spec/A-G. Build: `npm run build` OK (dist/life.html 0.645 MB). Tests: 33 unit/sim pass, e2e smoke pass, perf spec pass.
 
 ## Standing decisions
@@ -90,3 +90,22 @@ No image, audio or model files are used by the game. The repo holds only test sc
 
 ### For 3B
 - Replace the pixel-ratio-only adapter in `main.js` with `quality.setAdapter({ apply(derived, effective, changed) })` (interface in DECISIONS.md); read `derived.chunkRadii`; report passes with `perf.recordPass` and bytes with `MemTracker.addTexture/addRenderTarget`; add the Old Town benchmark render for the GPU Auto path (`benchmarkMedian` + `resolveAutoPreset({medianFrameMs})`); fill PERF_REPORT §2–§8, §11.
+
+## Stage 3B report (visual production) — Opus
+
+Commits on main (no tags: the proxy refuses tag pushes): `8613c33` draft fixes, `3782c80` builders for all archetypes, `ddc93e3` world decor, `d6c4ab7` / `988c11f` time-sliced builders + shadow proxies + batch split, `958cea9` texture library spec, `215c483` exposure/interior fixes, `c49a5fc` Low detail ring, `1ba1da4` PERF_REPORT; final hash in the hand-off message.
+
+### Completed
+- Draft `b42ec2b` reviewed and kept (texture-array library, patch chain, HDR pipeline with ACES/GTAO/bloom/god rays/SMAA-FXAA, sky with clouds/stars/moon, CSM lighting with region grade, Gerstner water, vegetation with impostors, far proxy); fixed the water shader compile error, the bloom feedback loop and legacy batches; quality adapter drives every derived parameter at runtime (shadows, shader tier, re-bake, chunk radii, LOD bias, vegetation caps, particles, light pool, post passes); GPU Auto benchmark path in `main.js`.
+- MatLib + 64-layer GPU-baked library (incl. 6 facade-module layers), every layer bakes, non-flat, tileable (`test/visual/textures.spec.cjs`).
+- Builders for all 210 archetypes (`Builders.blockoutIds()` = 0): facade-grammar buildings (recessed windows, storefronts, awnings, fire escapes, AC units, water towers, balconies, cornices), special structures, 90+ props, 13 vehicles (lofted bodies, separate spinning/steering wheels), 9 boats (lofted hulls, trawler part list), 16-segment characters with procedural gait, animals, vegetation, infrastructure, 17 interiors (cabin with fireplace and log floor, boathouse, diner, shops…) inside host buildings.
+- World decor (`world/layout/decor.js`): 3.6k street-furniture placements, traffic lights, dock dressing, campsites, logging yard, 47 moored boats, lamp and fire light definitions; night lighting (lamp heads + light pool + pool decals, lit windows per cell), weather (rain streaks, wetness/puddles, mist/overcast/storm fog and cover, lightning), smoke/flame/fog-card particles.
+- Optimisation: generator builders and pooled writers (0 slice overruns in most fly-throughs), LOD1 shadow proxies, batches split at 24k vertices, programs released on quality change (≤ 45 programs), all 64 counter rows within Annex G budgets.
+- Tests: `npm test` 59/59, `test:e2e` (smoke + quality) pass, perf spec rewritten for Stage 3 (4 presets × 16 viewpoints + fly-through + allocation), texture spec, screenshot matrix spec (`test/visual/shots.cjs`, output `test/screenshots/`).
+
+### Outstanding (Stage 3B)
+- Visual review of the screenshot matrix against Annex G §7.3 (Sonnet). Known weaknesses: views toward a low sun and the ocean/marina views are hazy/washed out; forest floor reads as bright grass in places, faint grid pattern on V15 terrain; LOD1 trees beyond 110 m still sparse; trawler and cars are simple (1–2.5k tris vs 22–45k targets, no reference-14/15 detail level); harbour boats static (no bobbing); traffic-light arm orientation unchecked; interior lighting bright (no fill-light tuning); fire inside the fireplace small; no first-person rod (V09); no crowds/traffic (Stage 4).
+- Not implemented: planar reflections, SSR, interior-mapping shader, city-block occlusion culling, dithered LOD cross-fade, small-object cull, instanced character crowds, light shafts tuning per region, fog cards only in forest/lake dawn/mist.
+- Fly-through: the full run had 1 overrun (5.7 ms) under natural GC; the Low re-run was disturbed by a container restart and must be repeated on a quiet machine.
+- `npm run test:audio` was not re-run after the last 3B commits (3A result stands; 3B did not touch `src/audio`).
+- Startup to `ready` is 8.3 s under software GL (menu budget 3 s).
