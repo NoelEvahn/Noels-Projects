@@ -2,7 +2,7 @@
 // 22:00 night} + weather shots (rain V01/V13, mist V08/V16, overcast V15, storm V10) at High, 960x540. Each shot is checked
 // non-blank (pixel variance and colour count) and its counters recorded. Software GL takes 30-180 s per shot; pages run in
 // parallel (--pages=3). Output: test/screenshots/<id>_<hhmm|weather>.png + shots.json.
-// Usage: node test/visual/shots.cjs [--set=matrix|day|night|golden|weather|assets] [V01 V05 ...] [--pages=3] [--preset=high] [--out=test/screenshots]
+// Usage: node test/visual/shots.cjs [--set=matrix|day|night|golden|weather|assets] [V01 V05 ...] [--pages=3] [--preset=high] [--out=test/screenshots] [--size=960x540] [--html=dist/life.html]
 const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
@@ -12,6 +12,7 @@ const opt = (k, d) => { const a = args.find((x) => x.startsWith('--' + k + '='))
 const ids = args.filter((a) => /^V\d\d$/.test(a));
 const VIEWS = ids.length ? ids : Array.from({ length: 16 }, (_, i) => 'V' + String(i + 1).padStart(2, '0'));
 const set = opt('set', 'matrix'), preset = opt('preset', 'high'), pages = Number(opt('pages', 3));
+const [SW, SH] = opt('size', '960x540').split('x').map(Number), htmlPath = path.resolve(root, opt('html', 'dist/life.html')); // --size=WxH, --html=<built page> (a private copy keeps another agent's rebuild from changing a run)
 const outDir = path.resolve(root, opt('out', 'test/screenshots'));
 const jobs = [];
 const hours = { day: [8], golden: [18.5], night: [22], matrix: [8, 18.5, 22], weather: [] }[set] || [8];
@@ -26,9 +27,9 @@ if (set === 'matrix' || set === 'weather') for (const [v, w, h] of [['V01', 'rai
   const rows = [], errs = [];
   let bad = 0, next = 0;
   async function worker(k) {
-    const p = await b.newPage({ viewport: { width: 960, height: 540 }, deviceScaleFactor: 1 });
+    const p = await b.newPage({ viewport: { width: SW, height: SH }, deviceScaleFactor: 1 });
     p.on('pageerror', (e) => errs.push(e.message)); p.on('console', (m) => { if (m.type() === 'error') errs.push(m.text()); });
-    await p.goto('file://' + path.join(root, 'dist/life.html'));
+    await p.goto('file://' + htmlPath);
     await p.evaluate(() => window.__LOE.ready);
     await p.evaluate((pr) => { window.__LOE.freeze(true); document.getElementById('overlay').style.display = 'none'; window.__LOE.setQuality(pr); for (const id of ['dbg', 'hint']) { const d = document.getElementById(id); if (d) d.style.display = 'none'; } }, preset);
     while (next < jobs.length) {

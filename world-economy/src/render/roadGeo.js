@@ -11,19 +11,19 @@ const SURF_LAYER = { 'surf.asphalt': 'tex.asphalt', 'surf.cobble': 'tex.cobble',
 const WHITE = 0xe8e6de, YELLOW = 0xe0b440;
 
 /** emit a strip from lateral latA to latB between arc positions s0..s1 of segment (a -> b), continuous uv */
-function strip(g, ax, ay, az, bx, by, bz, sA, sB, latA, latB, yOff, layer, tint = 0xffffff, m = 1, aoA = 1, aoB = 1) {
+function strip(g, ax, ay, az, bx, by, bz, sA, sB, latA, latB, yOff, layer, tint = 0xffffff, m = 1, aoA = 1, aoB = 1, flag = 0) {
   const dx = bx - ax, dz = bz - az, l = Math.hypot(dx, dz);
   if (l < 1e-4) return;
   const nx = -dz / l, nz = dx / l;
   const L = LAYERS[layer], t = 1 / L.tile;
-  g.L = L.index; g.tile = L.tile; g.T = tintBytes(tint, m);
+  g.L = L.index; g.tile = L.tile; g.T = tintBytes(tint, m); g.F = flag;
   g._grow(4, 6);
   const keep = g.ao; g.groundAO = false;
   g.ao = aoA; const v0 = g.vert(ax + nx * latA, ay + yOff, az + nz * latA, 0, 1, 0, latA * t, sA * t);
   g.ao = aoB; const v1 = g.vert(ax + nx * latB, ay + yOff, az + nz * latB, 0, 1, 0, latB * t, sA * t);
   const v2 = g.vert(bx + nx * latB, by + yOff, bz + nz * latB, 0, 1, 0, latB * t, sB * t);
   g.ao = aoA; const v3 = g.vert(bx + nx * latA, by + yOff, bz + nz * latA, 0, 1, 0, latA * t, sB * t);
-  g.ao = keep; g.groundAO = true;
+  g.ao = keep; g.groundAO = true; g.F = 0;
   if (latB > latA) { g.tri(v0, v1, v2); g.tri(v0, v2, v3); } else { g.tri(v0, v2, v1); g.tri(v0, v3, v2); }
 }
 /** vertical kerb face at lateral lat from y0 to y1 (facing the road centre when side = +1 means left) */
@@ -84,9 +84,9 @@ export function addRoadPiece(g, piece, lod) {
     if (cc) {
       const A = lerp(cc[0]), B = lerp(cc[1]);
       if (paved && lod <= 1) {
-        strip(g, A[0], A[1], A[2], B[0], B[1], B[2], cc[2], cc[3], -half + 0.5, half - 0.5, yo, surf);
-        for (const sd of [-1, 1]) strip(g, A[0], A[1], A[2], B[0], B[1], B[2], cc[2], cc[3], sd * (half - 0.5), sd * half, yo, surf, 0xb8b0a4, 0.8, 1, 0.75);
-      } else strip(g, A[0], A[1], A[2], B[0], B[1], B[2], cc[2], cc[3], -half, half, yo, surf);
+        strip(g, A[0], A[1], A[2], B[0], B[1], B[2], cc[2], cc[3], -half + 0.5, half - 0.5, yo, surf, 0xffffff, 1, 1, 1, 4);
+        for (const sd of [-1, 1]) strip(g, A[0], A[1], A[2], B[0], B[1], B[2], cc[2], cc[3], sd * (half - 0.5), sd * half, yo, surf, 0xb8b0a4, 0.8, 1, 0.75, 2);
+      } else strip(g, A[0], A[1], A[2], B[0], B[1], B[2], cc[2], cc[3], -half, half, yo, surf, 0xffffff, 1, 1, 1, e.surface === 'surf.asphalt' ? 4 : 0);
       if (lod <= 1 && paved) markings(g, e, A, B, cc[2], cc[3], yo + 0.018);
       if (lod === 0 && e.surface === 'surf.asphalt' && sw && hash(i, e.len | 0) < 0.25) manhole(g, A, B, (hash(i, 7) - 0.5) * half);
     }
@@ -106,7 +106,7 @@ export function addRoadPiece(g, piece, lod) {
         const A = lerp(cw[0]), B = lerp(cw[1]);
         const swL = oldTown ? 'tex.paver' : 'tex.concrete_cast';
         for (const side of [-1, 1]) {
-          strip(g, A[0], A[1], A[2], B[0], B[1], B[2], cw[2], cw[3], side * (half + 0.25), side * e.halfRow, 0.25, swL, oldTown ? 0xc8b8a8 : 0xd8d4cc, 1, 0.9, 1);
+          strip(g, A[0], A[1], A[2], B[0], B[1], B[2], cw[2], cw[3], side * (half + 0.25), side * e.halfRow, 0.25, swL, oldTown ? 0xc8b8a8 : 0xd8d4cc, 1, 0.9, 1, 3);
           strip(g, A[0], A[1], A[2], B[0], B[1], B[2], cw[2], cw[3], side * half, side * (half + 0.25), 0.25, 'tex.curb_stone');
           kerbFace(g, A[0], A[1], A[2], B[0], B[1], B[2], cw[2], cw[3], side * half, 0.08, 0.25, side);
         }
@@ -127,10 +127,10 @@ function markings(g, e, A, B, sA, sB, y) {
     for (; s < sB; s += per) {
       const s2 = Math.min(sB, s + dash), f0 = (s - sA) / (sB - sA), f1 = (s2 - sA) / (sB - sA);
       const P = [A[0] + (B[0] - A[0]) * f0, A[1] + (B[1] - A[1]) * f0, A[2] + (B[2] - A[2]) * f0], Q = [A[0] + (B[0] - A[0]) * f1, A[1] + (B[1] - A[1]) * f1, A[2] + (B[2] - A[2]) * f1];
-      strip(g, P[0], P[1], P[2], Q[0], Q[1], Q[2], s, s2, lat - w, lat + w, y, 'tex.flat', col, 1.15);
+      strip(g, P[0], P[1], P[2], Q[0], Q[1], Q[2], s, s2, lat - w, lat + w, y, 'tex.flat', col, 1.15, 1, 1, 1);
     }
   };
-  const solid = (lat, w, col) => strip(g, A[0], A[1], A[2], B[0], B[1], B[2], sA, sB, lat - w, lat + w, y, 'tex.flat', col, 1.15);
+  const solid = (lat, w, col) => strip(g, A[0], A[1], A[2], B[0], B[1], B[2], sA, sB, lat - w, lat + w, y, 'tex.flat', col, 1.15, 1, 1, 1);
   switch (e.cls) {
     case 'rural': solid(-0.12, 0.06, YELLOW); solid(0.12, 0.06, YELLOW); solid(-half + 0.35, 0.07, WHITE); solid(half - 0.35, 0.07, WHITE); break;
     case 'highway': case 'harlan': case 'bridgest': solid(-0.12, 0.06, YELLOW); solid(0.12, 0.06, YELLOW); dashes(-3.5, 0.07, WHITE, 3, 6); dashes(3.5, 0.07, WHITE, 3, 6); solid(-half + 0.3, 0.08, WHITE); solid(half - 0.3, 0.08, WHITE); break;
@@ -162,7 +162,7 @@ export function addIntersections(g, cx, cz, lod = 0) {
     if (!hc) continue;
     const y = n.y;
     // crossing pad (axis-aligned; city grid junctions are axis-aligned)
-    strip(g, n.x, y, n.z - hc, n.x, y, n.z + hc, n.z - hc, n.z + hc, -hc, hc, 0.1, surf);
+    strip(g, n.x, y, n.z - hc, n.x, y, n.z + hc, n.z - hc, n.z + hc, -hc, hc, 0.1, surf, 0xffffff, 1, 1, 1, surf === 'tex.asphalt' ? 4 : 0);
     if (!hw) continue;
     if (lod <= 1) for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
       const cxp = n.x + sx * (hc + hw) / 2, czp = n.z + sz * (hc + hw) / 2, s = (hw - hc) / 2;
@@ -177,7 +177,7 @@ export function addIntersections(g, cx, cz, lod = 0) {
       for (let q = -half + 0.6; q < half - 0.3; q += 1.0) {
         const d0 = hc + 0.8, d1 = hc + 3.6;
         const px = n.x - uz * q, pz = n.z + ux * q;
-        strip(g, px + ux * d0, y, pz + uz * d0, px + ux * d1, y, pz + uz * d1, d0, d1, -0.25, 0.25, 0.128, 'tex.flat', WHITE, 1.1);
+        strip(g, px + ux * d0, y, pz + uz * d0, px + ux * d1, y, pz + uz * d1, d0, d1, -0.25, 0.25, 0.128, 'tex.flat', WHITE, 1.1, 1, 1, 1);
       }
     }
   }

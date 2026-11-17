@@ -1,6 +1,6 @@
 // Art GeoBuilder (Annex A 6.1): append-only typed-array mesh writer with UVs in tile units, texture layer, tint + baked AO,
 // emissive code and a transform stack. Pure (no three). Output arrays are wrapped by render/ into BufferGeometry.
-// Vertex layout: position f32x3, normal i8x3 (+pad), uv f32x2, tint u8x4 (rgb linear tint, a = AO), aux u8x4 (layer, layer, blend, emissive).
+// Vertex layout: position f32x3, normal i8x3 (+pad), uv f32x2, tint u8x4 (rgb linear tint, a = AO), aux u8x4 (layer, layer, surface flag F, emissive). F: 1 painted road marking, 2 gutter strip, 3 sidewalk, 4 carriageway (shader detail, patches.js).
 import { LAYERS } from './layers.js';
 
 const lin = (c) => Math.pow(c / 255, 2.2);
@@ -23,7 +23,7 @@ export class GB {
     this.M = new Float64Array([1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]); this.stack = []; this.spool = []; this._r = new Float64Array(12); this._a = new Float64Array(12);
     this.resetState();
   }
-  resetState() { this.L = LAYERS['tex.flat'].index; this.tile = 1; this.T = [255, 255, 255]; this.ao = 1; this.E = 0; this.groundAO = true; this.uvOff = [0, 0]; return this; }
+  resetState() { this.L = LAYERS['tex.flat'].index; this.tile = 1; this.T = [255, 255, 255]; this.ao = 1; this.E = 0; this.F = 0; this.groundAO = true; this.uvOff = [0, 0]; return this; }
   reset() { this.vn = 0; this.in = 0; this.M.set(ID12); while (this.stack.length) this.spool.push(this.stack.pop()); return this.resetState(); }
   get empty() { return this.in === 0; }
   _grow(v, i) {
@@ -68,7 +68,7 @@ export class GB {
     let ao = this.ao;
     if (this.groundAO) ao *= 0.55 + 0.45 * Math.min(1, Math.max(0, Y / 1.8));
     this.tint[k * 4] = this.T[0]; this.tint[k * 4 + 1] = this.T[1]; this.tint[k * 4 + 2] = this.T[2]; this.tint[k * 4 + 3] = B(ao);
-    this.aux[k * 4] = this.L; this.aux[k * 4 + 1] = this.L; this.aux[k * 4 + 2] = 0; this.aux[k * 4 + 3] = this.E;
+    this.aux[k * 4] = this.L; this.aux[k * 4 + 1] = this.L; this.aux[k * 4 + 2] = this.F; this.aux[k * 4 + 3] = this.E;
     return this.vn++;
   }
   tri(a, b, c) { this.idx[this.in++] = a; this.idx[this.in++] = b; this.idx[this.in++] = c; }
