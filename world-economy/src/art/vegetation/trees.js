@@ -148,7 +148,7 @@ export function plantGeometry(id) {
     case 'veg.hedge': for (let k = 0; k < 30; k++) cluster(leaf, (R() - 0.5) * 2.6, 0.3 + R() * 0.8, (R() - 0.5) * 0.6, 0.9, C('broad'), R); break;
     case 'veg.fern': for (let k = 0; k < 9; k++) { const yaw = (k / 9) * 6.28 + R() * 0.4; frond(leaf, 0, 0.05, 0, yaw, 0.5 + R() * 0.35, 0.95, 0.55, C('fern'), 0, 0.3); } break;
     case 'veg.grass_tuft': crossed(C('grass'), 0.8, 0.62, 3); break;
-    case 'veg.lawn': crossed(C('lawn'), 0.62, 0.42, 3); break;
+    case 'veg.lawn': crossed(C('lawn'), 0.8, 0.5, 3); break;
     case 'veg.marram': crossed(C('marram'), 1.25, 1.05, 3); break;
     case 'veg.cattail': crossed(C('cattail'), 0.95, 1.8, 2); break;
     case 'veg.daisy': crossed(C('daisy'), 0.5, 0.42, 2); break;
@@ -159,7 +159,7 @@ export function plantGeometry(id) {
     case 'veg.groundcover': for (let k = 0; k < 4; k++) frond(leaf, 0, 0.02, 0, k * 1.57 + R(), 0.12, 0.5, 0.5, C('grass'), 0, 0.05); break;
     default: leaf.card(0, 1.5, 0, 1, 3, 0, ...C('broad')); // ivy
   }
-  const a = leaf.toArrays(); const WH = { 'veg.lawn': [0.45, 1], 'veg.daisy': [0.45, 1], 'veg.grass_tuft': [0.65, 1], 'veg.marram': [1.05, 1], 'veg.cattail': [1.8, 0.9], 'veg.reeds': [1.6, 0.9], 'veg.flowers': [0.6, 0.9] }[id] || [1.2, 0.8]; windWeights(a, WH[0], WH[1]);
+  const a = leaf.toArrays(); const WH = { 'veg.lawn': [0.5, 1], 'veg.daisy': [0.45, 1], 'veg.grass_tuft': [0.65, 1], 'veg.marram': [1.05, 1], 'veg.cattail': [1.8, 0.9], 'veg.reeds': [1.6, 0.9], 'veg.flowers': [0.6, 0.9] }[id] || [1.2, 0.8]; windWeights(a, WH[0], WH[1]);
   const r = { leaf: a };
   cache.set(id, r);
   return r;
