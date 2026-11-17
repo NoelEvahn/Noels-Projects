@@ -169,3 +169,27 @@ function rock(g, lod, R, s, tex, tint, moss) {
 for (const [kind, tex, tint, moss] of [['granite', 'tex.rock_granite', 0xffffff, false], ['dark', 'tex.rock_dark', 0xffffff, false], ['mossy', 'tex.rock_granite', 0xd8d8d0, true]]) {
   for (const [sz, s] of [['s', 0.45], ['m', 1.0], ['l', 2.1]]) P(`prop.rock_${kind}_${sz}`, (g, lod, R) => { rock(g, lod, R, s, tex, tint, moss); if (sz !== 's' && !lod) rock(g, lod, R, s * 0.45, tex, tint, moss); });
 }
+
+// ---- Detail Batch 1 props ----------------------------------------------------------------------------------------------------------------------
+// post-mounted rural mailbox with a red flag (cabin, house and farm lots)
+P('prop.mailbox_post', (g, lod, R) => {
+  const col = [0x2a2a2c, 0x3a5a3a, 0x7a2a22, 0xc8c4bc, 0x24406a][Math.floor(R() * 5)];
+  g.mat('tex.wood_weathered_dark', 0xb8a890); g.box(0, 0.55, 0, 0.1, 1.1, 0.1, { noBottom: true });
+  g.mat('tex.metal_painted', col); g.box(0, 1.2, 0, 0.26, 0.24, 0.5); g.cyl(0, 1.32, -0.25, 0.13, 0.13, 0.5, seg(lod, 10), { noTop: true, noBottom: true });
+  g.mat('tex.metal_painted', 0xc82820); g.box(0.15, 1.28, 0.05, 0.02, 0.2, 0.04);
+});
+// street litter: a pile of black and green bin bags
+P('prop.trash_bags', (g, lod, R) => {
+  g.groundAO = false;
+  const n = 3 + Math.floor(R() * 3);
+  for (let k = 0; k < n; k++) {
+    const a = k * 2.2 + R(), r = k ? 0.28 + R() * 0.1 : 0, s = 0.9 + R() * 0.4; g.mat('tex.plastic', k % 3 === 2 ? 0x2a4a34 : 0x16161a);
+    g.push().translate(Math.cos(a) * r, 0, Math.sin(a) * r).scale(s * 0.42, s * 0.38, s * 0.4); g.lathe([[0.001, 0.02], [0.7, 0.18], [1.0, 0.55], [0.75, 1.0], [0.3, 1.25], [0.05, 1.18]], seg(lod, 8)); g.pop();
+  }
+  g.groundAO = true;
+});
+// newspaper vending boxes, 3 colours in a row
+P('prop.newspaper_box', (g) => {
+  const cols = [0xc02a20, 0x2a5aa0, 0xe0b020, 0x2a7a4a];
+  for (let k = 0; k < 3; k++) { const x = (k - 1) * 0.46; g.mat('tex.metal_painted', cols[k]); g.box(x, 0.55, 0, 0.4, 0.78, 0.4); g.mat('tex.glass_window', 0xc8d4dc); g.box(x, 0.72, -0.205, 0.28, 0.22, 0.01); g.mat('tex.metal_painted', 0x2a2a2c); g.box(x, 0.2, 0, 0.1, 0.4, 0.1, { noBottom: true }); }
+});

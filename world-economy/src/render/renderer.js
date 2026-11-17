@@ -15,6 +15,7 @@ import { createLighting } from './lighting.js';
 import { createPipeline } from './pipeline.js';
 import { createChunkManager } from './chunkManager.js';
 import { createVegetation } from './vegetation.js';
+import { createDetail } from './detail.js';
 import { createEntityViews } from './entityViews.js';
 import { createEffects } from './effects.js';
 import { createAmbient } from '../game/ai/ambient.js';
@@ -46,7 +47,7 @@ export function createRenderer({ canvas, settings, perf, quality, onRendererStri
   baker.onStep = () => { Streaming.phase = 'textureBake'; };
   const bakeMs = baker.bakeAll();
   const atlasN = derived0.textures.atlas;
-  const leaf = makeLeafAtlas(Math.min(1024, atlasN)), particles = makeParticleAtlas(512), decals = makeDecalAtlas(512);
+  const leaf = makeLeafAtlas(Math.min(1024, atlasN)), particles = makeParticleAtlas(512), decals = makeDecalAtlas(atlasN >= 2048 ? 1024 : 512);
   MatLib.init({ leaf, particles, decals });
   const marks = { textureBakeMs: Math.round(bakeMs), atlasMs: Math.round(performance.now() - t0 - bakeMs) };
 
@@ -64,6 +65,7 @@ export function createRenderer({ canvas, settings, perf, quality, onRendererStri
   const detailRadius = () => (derived.lodBias >= 1.2 ? 2 : derived.lodBias < 0.8 ? 0 : 1); // Low: only the camera chunk at LOD0
   const chunks = createChunkManager({ scene, far, getRadii: () => [Math.min(detailRadius(), derived.chunkRadii[0]), derived.chunkRadii[0], derived.chunkRadii[1]] });
   const veg = createVegetation({ scene, renderer });
+  const detail = createDetail({ scene });
   const views = createEntityViews(scene);
   const ambient = createAmbient();
   const ambientViews = createAmbientViews({ scene, ambient });
@@ -75,9 +77,9 @@ export function createRenderer({ canvas, settings, perf, quality, onRendererStri
   const shadowCounter = { calls: 0, tris: 0 };
   sm.render = function (lights, sc, cam) { const c0 = renderer.info.render.calls, tr0 = renderer.info.render.triangles; smRender.call(sm, lights, sc, cam); shadowCounter.calls += renderer.info.render.calls - c0; shadowCounter.tris += renderer.info.render.triangles - tr0; };
 
-  { const origCompile = renderer.compile.bind(renderer); renderer.compile = (sc, cam, tgt) => { ambientViews.prewarm(true); const r = origCompile(sc, cam, tgt); ambientViews.prewarm(false); return r; }; }
+  { const origCompile = renderer.compile.bind(renderer); renderer.compile = (sc, cam, tgt) => { ambientViews.prewarm(true); detail.prewarm(true); const r = origCompile(sc, cam, tgt); ambientViews.prewarm(false); detail.prewarm(false); return r; }; }
   let w = 0, h = 0, applying = 0;
-  const api = { renderer, scene, camera, sky, water, far, chunks, views, ambient, ambientViews, veg, fx, lighting, pipeline, baker, info: renderer.info, cpuOnly: false, frozenCamera: false, marks, counters: { shadowCalls: 0, shadowTris: 0, mainCalls: 0, mainTris: 0, postCalls: 0 } };
+  const api = { renderer, scene, camera, sky, water, far, chunks, views, ambient, ambientViews, veg, detail, fx, lighting, pipeline, baker, info: renderer.info, cpuOnly: false, frozenCamera: false, marks, counters: { shadowCalls: 0, shadowTris: 0, mainCalls: 0, mainTris: 0, postCalls: 0 } };
   api.resize = function (cssW, cssH) {
     const pr = derived.pixelRatio;
     renderer.setPixelRatio(pr);
@@ -97,7 +99,8 @@ export function createRenderer({ canvas, settings, perf, quality, onRendererStri
       MatLib.setShaderTier(d.textures.tier === 'low' ? 'low' : 'full');
       sky.envMode = d.reflections.mode === 'off' ? 'off' : 'env';
       camera.fov = d.camera.fov; camera.far = Math.max(2500, d.farClip); camera.updateProjectionMatrix();
-      veg.configure({ density: d.vegetation.density, treeCaps: d.vegetation.treeCaps, groundCoverRadius: d.vegetation.groundCoverRadius, lodBias: d.lodBias, mid: d.chunkRadii[1], shadows: d.shadows.enabled, atlasSize: Math.min(2048, d.textures.atlas) });
+      veg.configure({ density: d.vegetation.density, treeCaps: d.vegetation.treeCaps, groundCoverRadius: d.vegetation.groundCoverRadius, detail: d.vegetation.detail, lodBias: d.lodBias, mid: d.chunkRadii[1], shadows: d.shadows.enabled, atlasSize: Math.min(2048, d.textures.atlas) });
+      detail.configure({ detail: d.vegetation.detail, shadows: d.shadows.enabled, lodBias: d.lodBias });
       fx.configure({ particles: d.particles.maxAlive, lightPool: d.lightPool, fogCards: d.fogCards });
       views.configure({ lodBias: d.lodBias, shadows: d.shadows.enabled });
       ambient.configure({ traffic: d.trafficDensity, crowd: d.crowdDensity });
@@ -146,6 +149,7 @@ export function createRenderer({ canvas, settings, perf, quality, onRendererStri
     camV.copy(camera.position);
     water.update(camV, 1);
     const L = lighting.state;
+    detail.update(camera);
     veg.update(camera, 0.25 + 0.9 * L.day * (1 - 0.5 * L.weather.cover) + 0.06 * L.night, scene.fog, L);
     fx.update(dt, camera, L, game);
     pst.exposure = L.exposure; pst.grade = L.grade; pst.sunDir = sd; pst.time = time;

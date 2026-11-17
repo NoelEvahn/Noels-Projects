@@ -70,7 +70,7 @@ for (const id of INTERIOR_IDS) add(id, 'interior', [10, 3, 8], { colliders: [], 
 // ---- props (Annex A 6.5) ------------------------------------------------------------------------------------------
 const PROP_SIZES = {
   streetlamp_a: [0.3, 6, 0.3], streetlamp_b: [0.3, 5, 0.3], traffic_light: [0.4, 5.5, 0.4], utility_pole: [0.35, 9, 0.35], bike_dock: [1.2, 1.1, 5],
-  map_kiosk: [0.8, 2.2, 0.4], bench: [1.8, 0.9, 0.6], bin: [0.5, 0.9, 0.5], hydrant: [0.35, 0.8, 0.35], mailbox: [0.5, 1.2, 0.5], bollard: [0.2, 0.9, 0.2],
+  map_kiosk: [0.8, 2.2, 0.4], bench: [1.8, 0.9, 0.6], bin: [0.5, 0.9, 0.5], hydrant: [0.35, 0.8, 0.35], mailbox: [0.5, 1.2, 0.5], mailbox_post: [0.3, 1.4, 0.5], trash_bags: [0.9, 0.6, 0.9], newspaper_box: [1.4, 1.1, 0.4], bollard: [0.2, 0.9, 0.2],
   planter: [1.2, 0.9, 1.2], parasol: [2.2, 2.4, 2.2], cafe_table_set: [1.6, 1, 1.6], newsstand: [1.5, 2.4, 1.2], bus_shelter: [3.5, 2.6, 1.4],
   water_tower: [4, 5, 4], dumpster: [2, 1.4, 1.2], pallet: [1.2, 0.15, 1], crate_wood: [0.8, 0.8, 0.8], barrel: [0.6, 0.9, 0.6], container: [2.4, 2.6, 6.1],
   vending_machine: [0.9, 1.9, 0.8], atm: [0.7, 1.9, 0.6], gas_pump: [0.8, 1.6, 0.5], tent: [3, 1.8, 3.5], picnic_table: [1.8, 0.8, 1.6], campfire: [1, 0.4, 1],
@@ -79,12 +79,12 @@ const PROP_SIZES = {
   channel_marker: [1, 4, 1], forklift_static: [1.3, 2.2, 2.8], scaffold: [2.5, 8, 1.5], fire_escape: [1.2, 3.2, 3], hunting_stand: [1.5, 4, 1.5], fallen_tree: [1, 1, 8],
 };
 const PROP_NOCOLLIDE = ['awning', 'manhole', 'fence_chainlink', 'net_drying', 'reeds', 'sign_shop', 'sign_street', 'sign_wood', 'trail_sign', 'billboard', 'roof_vent', 'antenna',
-  'ac_unit', 'roof_vent', 'hook_chain', 'rope_coil', 'oar', 'life_ring', 'lantern', 'net_pile', 'buoy_small', 'buoy_red', 'driftwood', 'ice_bin', 'fish_crate', 'parking_meter', 'traffic_cone'];
+  'ac_unit', 'roof_vent', 'hook_chain', 'rope_coil', 'oar', 'life_ring', 'lantern', 'net_pile', 'buoy_small', 'buoy_red', 'driftwood', 'ice_bin', 'fish_crate', 'parking_meter', 'traffic_cone', 'mailbox_post', 'trash_bags', 'newspaper_box'];
 const PROP_NAMES = ['ac_unit', 'antenna', 'anvil', 'atm', 'awning', 'barrel', 'barrier', 'beach_umbrella', 'bench', 'bike_dock', 'billboard', 'bin', 'bollard', 'bollard_mooring',
   'buoy_red', 'buoy_small', 'bus_shelter', 'cafe_table_set', 'campfire', 'channel_marker', 'container', 'crab_pot', 'crate_wood', 'dock_section', 'driftwood', 'dumpster', 'fallen_tree',
   'fence_chainlink', 'fire_escape', 'fish_crate', 'fish_rack', 'footbridge_wood', 'forklift_static', 'fuel_drum', 'gangway', 'gas_pump', 'gate_barrier', 'harbor_crane_small', 'hook_chain',
   'hunting_stand', 'hydrant', 'ice_bin', 'kayak', 'lantern', 'life_ring', 'lifeguard_tower', 'log_pile', 'log_single', 'mailbox', 'manhole', 'map_kiosk', 'net_drying', 'net_pile', 'newsstand',
-  'oar', 'outboard', 'pallet', 'parasol', 'parking_meter', 'picnic_table', 'pile', 'pile_rope', 'planter', 'railing', 'reeds', 'roof_vent', 'rope_coil', 'sawhorse', 'scaffold', 'sign_shop',
+  'mailbox_post', 'trash_bags', 'newspaper_box', 'oar', 'outboard', 'pallet', 'parasol', 'parking_meter', 'picnic_table', 'pile', 'pile_rope', 'planter', 'railing', 'reeds', 'roof_vent', 'rope_coil', 'sawhorse', 'scaffold', 'sign_shop',
   'sign_street', 'sign_wood', 'streetlamp_a', 'streetlamp_b', 'stump', 'sun_lounger', 'tent', 'traffic_cone', 'traffic_light', 'trail_sign', 'utility_pole', 'vending_machine', 'water_tower', 'workbench'];
 for (const rock of ['granite', 'dark', 'mossy']) for (const sz of ['s', 'm', 'l']) PROP_NAMES.push(`rock_${rock}_${sz}`);
 export const PROP_IDS = [];
@@ -114,7 +114,7 @@ for (const [id, s] of Object.entries(BOATS)) add(id, 'boat', s, { lod: [40, 160,
 const VEG = {
   'veg.pine_a': [4, 16, 4], 'veg.pine_b': [4, 20, 4], 'veg.spruce_a': [4.5, 22, 4.5], 'veg.oak_a': [8, 11, 8], 'veg.maple_a': [7, 10, 7], 'veg.street_tree': [5, 8, 5],
   'veg.palm_a': [4, 9, 4], 'veg.palm_b': [4, 11, 4], 'veg.bush_a': [1.6, 1.2, 1.6], 'veg.bush_b': [1.4, 1.0, 1.4], 'veg.hedge': [3, 1.2, 0.8], 'veg.fern': [1, 0.7, 1],
-  'veg.grass_tuft': [0.6, 0.5, 0.6], 'veg.reeds': [1, 1.6, 1], 'veg.groundcover': [1, 0.3, 1], 'veg.flowers': [0.6, 0.4, 0.6], 'veg.ivy': [1, 3, 0.1],
+  'veg.grass_tuft': [0.6, 0.5, 0.6], 'veg.lawn': [0.5, 0.4, 0.5], 'veg.marram': [1.1, 1.0, 1.1], 'veg.cattail': [0.9, 1.7, 0.9], 'veg.daisy': [0.5, 0.4, 0.5], 'veg.reeds': [1, 1.6, 1], 'veg.groundcover': [1, 0.3, 1], 'veg.flowers': [0.6, 0.4, 0.6], 'veg.ivy': [1, 3, 0.1],
 };
 export const VEG_IDS = Object.keys(VEG);
 for (const [id, s] of Object.entries(VEG)) add(id, 'vegetation', s, { colliders: [], lod: [80, 250, 900] });

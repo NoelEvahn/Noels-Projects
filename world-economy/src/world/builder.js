@@ -313,7 +313,7 @@ export function* buildWorld(seed = 1) {
   W.edgeById = new Map(edges.map((e) => [e.id, e]));
   W.poiById = new Map(poiDefs.map((p) => [p.id, p]));
   // S3B decoration placements + light definitions (MASTER_SPEC 9.1): visual only, no colliders
-  W.decor = generateDecor({ edges, nodes, placements: placer.placements, pois: poiDefs, heightAt, infra, seed });
+  W.decor = generateDecor({ edges, nodes, placements: placer.placements, pois: poiDefs, heightAt, infra, seed, roadIndex: W.roadIndex, overlaps: (r, m) => placer.overlapsExisting(r, m) });
   yield 'done';
   return W;
 }

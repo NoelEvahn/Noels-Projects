@@ -9,8 +9,8 @@ const path = require('path');
 const root = path.resolve(__dirname, '../..');
 const args = process.argv.slice(2);
 const opt = (k, d) => { const a = args.find((x) => x.startsWith('--' + k + '=')); return a ? a.split('=')[1] : d; };
-const ids = args.filter((a) => /^V\d\d$/.test(a));
-const VIEWS = ids.length ? ids : Array.from({ length: 16 }, (_, i) => 'V' + String(i + 1).padStart(2, '0'));
+const ids = args.filter((a) => /^V\d\d$/.test(a)), camOnly = args.some((a) => a.startsWith('--cam=')) && !ids.length;
+const VIEWS = camOnly ? [] : ids.length ? ids : Array.from({ length: 16 }, (_, i) => 'V' + String(i + 1).padStart(2, '0'));
 const set = opt('set', 'matrix'), preset = opt('preset', 'high'), pages = Number(opt('pages', 3));
 const [SW, SH] = opt('size', '960x540').split('x').map(Number), htmlPath = path.resolve(root, opt('html', 'dist/life.html')); // --size=WxH, --html=<built page> (a private copy keeps another agent's rebuild from changing a run)
 const outDir = path.resolve(root, opt('out', 'test/screenshots'));
@@ -18,8 +18,10 @@ const jobs = [];
 const hours = { day: [8], golden: [18.5], night: [22], matrix: [8, 18.5, 22], weather: [] }[set] || [8];
 const hhmm = (h) => String(Math.floor(h)).padStart(2, '0') + String(Math.round((h % 1) * 60)).padStart(2, '0');
 for (const h of hours) for (const v of VIEWS) jobs.push({ v, hour: h, weather: 'clear', name: `${v}_${hhmm(h)}` });
+// --cam=name:x,z,h,tx,ty,tz[:hour] adds a custom camera job (eye at x,z, h m above ground (h >= 30: absolute y) looking at t), e.g. --cam=D1:-1320,-1330,1.2,-1480,40,-1340:8
+for (const a of args.filter((x) => x.startsWith('--cam='))) { const [name, v, hr] = a.slice(6).split(':'); const n = v.split(',').map(Number); jobs.push({ cam: n, hour: hr ? Number(hr) : 8, weather: 'clear', name: `${name}_${hhmm(hr ? Number(hr) : 8)}` }); }
 // H1, H2 asset views (Annex G 7.2): cafe racer on Old Forest Road at golden hour; the moored red trawler at the Port Calder quay
-if ((set === 'matrix' || set === 'assets') && !ids.length) jobs.push({ custom: 'H1', hour: 18.5, weather: 'clear', name: 'H1_moto_cafe' }, { custom: 'H2', hour: 10, weather: 'clear', name: 'H2_trawler' });
+if ((set === 'matrix' || set === 'assets') && !ids.length && !camOnly) jobs.push({ custom: 'H1', hour: 18.5, weather: 'clear', name: 'H1_moto_cafe' }, { custom: 'H2', hour: 10, weather: 'clear', name: 'H2_trawler' });
 if (set === 'matrix' || set === 'weather') for (const [v, w, h] of [['V01', 'rain', 10], ['V13', 'rain', 10], ['V08', 'mist', 7], ['V16', 'mist', 7], ['V15', 'overcast', 12], ['V10', 'storm', 16]]) if (!ids.length || ids.includes(v)) jobs.push({ v, hour: h, weather: w, name: `${v}_${w}` });
 (async () => {
   fs.mkdirSync(outDir, { recursive: true });
@@ -35,7 +37,13 @@ if (set === 'matrix' || set === 'weather') for (const [v, w, h] of [['V01', 'rai
     while (next < jobs.length) {
       const j = jobs[next++], t = Date.now();
       await p.evaluate(([w]) => window.__LOE.setWeather(w, 1), [j.weather]);
-      if (j.custom) await p.evaluate(async ([c, hour]) => {
+      if (j.cam) await p.evaluate(async ([c, hour]) => {
+        const L = window.__LOE, W = L.world; L.setTime(hour);
+        const [x, z, h, tx, ty, tz] = c, y = W.heightAt(x, z);
+        L.game.teleport([x + 1.5, Math.max(y, 0), z + 1.5], 0); L.rend.chunks.invalidate(); L.camera.set({ pos: [x, h >= 30 ? h : y + h, z], target: [tx, ty, tz], fov: 50 }); // h >= 30: absolute eye height (over water)
+        return L.settle(240000, 2);
+      }, [j.cam, j.hour]);
+      else if (j.custom) await p.evaluate(async ([c, hour]) => {
         const L = window.__LOE, W = L.world; L.setTime(hour);
         if (c === 'H1') { const x = -196, z = -1146, y = W.heightAt(x, z); if (!W.data.decor.qaH1) { W.addPlacement({ id: 'qa.h1', archetype: 'veh.moto_cafe', x, y, z, rotY: 0.9, seed: 7, params: {} }); W.data.decor.qaH1 = true; } L.game.teleport([x + 6, y, z + 6], 0); L.rend.chunks.invalidate(); L.camera.set({ pos: [x + 1.9, y + 1.15, z - 1.6], target: [x, y + 0.6, z], fov: 45 }); }
         else { const x = -934, z = 1143; L.game.teleport([-905, 3, 1140], 0); L.camera.set({ pos: [x + 12, 6.5, z - 14], target: [x, 2.5, z], fov: 50 }); }

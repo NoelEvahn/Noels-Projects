@@ -41,7 +41,7 @@ export const SCHEMA = {
 /** Preset table (Annex G 3.3). Graphics fields written by applyPreset; `audio` written into settings.audio. */
 export const PRESETS = {
   low: {
-    graphics: { resolutionScale: 0.7, maxPixelRatio: 1, shadows: 'low', shadowDistance: 60, ao: 'off', bloom: false, reflections: 'off', antialiasing: 'off', godRays: false, fogCards: 'off', postGrade: true, interiorMapping: false, textureSize: 'low', anisotropy: 2, drawDistance: 0.7, lodBias: 0.7, vegetationDensity: 0.4, groundCoverRadius: 0, crowdDensity: 0.3, trafficDensity: 0.3, particles: 'low', lightPool: 2 },
+    graphics: { resolutionScale: 0.7, maxPixelRatio: 1, shadows: 'low', shadowDistance: 60, ao: 'off', bloom: false, reflections: 'off', antialiasing: 'off', godRays: false, fogCards: 'off', postGrade: true, interiorMapping: false, textureSize: 'low', anisotropy: 2, drawDistance: 0.7, lodBias: 0.7, vegetationDensity: 0.4, groundCoverRadius: 30, crowdDensity: 0.3, trafficDensity: 0.3, particles: 'low', lightPool: 2 },
     audio: { voiceLimit: 16, hrtf: false },
   },
   medium: {
@@ -65,6 +65,8 @@ export const TABLES = {
   textureSize: { low: { H: [512, 256], S: 256, D: 128, atlas: 1024 }, medium: { H: [512, 512], S: 512, D: 256, atlas: 1024 }, high: { H: [1024, 512], S: 512, D: 256, atlas: 2048 }, ultra: { H: [1024, 1024], S: 512, D: 512, atlas: 2048 } },
   particles: { low: 500, medium: 1500, high: 4000, ultra: 8000 },
   treeCaps: { low: [80, 800], medium: [160, 1500], high: [300, 2500], ultra: [450, 4000] },
+  // scene-detail density factor (ground-cover tufts, placed shrubs, parked cars, details): Detail Batch 1
+  detail: { low: 0.4, medium: 0.7, high: 1, ultra: 1.2 },
   ao: { off: { enabled: false, samples: 0 }, low: { enabled: true, samples: 8, halfRes: true }, high: { enabled: true, samples: 16, halfRes: true } },
   // shadow-casting batches per cascade (Annex G 2.3)
   shadowBatches: { off: 0, low: 60, medium: 80, high: 110, ultra: 140 },
@@ -123,7 +125,7 @@ export function derive(g, gov = { cascadesDelta: 0, midRadiusDelta: 0 }, deviceP
     textures: { tier: g.textureSize, H: tex.H.slice(), S: tex.S, D: tex.D, atlas: tex.atlas, anisotropy: g.anisotropy },
     drawDistance: g.drawDistance, chunkRadii: [near, Math.max(near, mid + (gov.midRadiusDelta || 0))], farClip: 9000 * Math.min(1, g.drawDistance), fogStartScale: g.drawDistance,
     lodBias: g.lodBias,
-    vegetation: { density: g.vegetationDensity, groundCoverRadius: g.groundCoverRadius, treeCaps: TABLES.treeCaps[tierName].slice() },
+    vegetation: { density: g.vegetationDensity, groundCoverRadius: g.groundCoverRadius, treeCaps: TABLES.treeCaps[tierName].slice(), detail: TABLES.detail[tierName] },
     crowdDensity: g.crowdDensity, trafficDensity: g.trafficDensity,
     particles: { tier: g.particles, maxAlive: TABLES.particles[g.particles] || 4000 },
     lightPool: g.lightPool,
