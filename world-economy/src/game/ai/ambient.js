@@ -60,6 +60,19 @@ export function createAmbient({ seed = 0x1ef3 } = {}) {
     P.dx = dx / l; P.dz = dz / l; P.slope = (p[b * 3 + 1] - p[a * 3 + 1]) / L;
     return P;
   }
+  // edges near the camera (rebuilt when the camera moves 40 m) so spawning does not search the whole map
+  const near = { cx: 1e9, cz: 1e9, car: new Int32Array(1024), nCar: 0, ped: new Int32Array(1024), nPed: 0 };
+  function refreshNear(cam) {
+    if (Math.abs(cam.x - near.cx) < 40 && Math.abs(cam.z - near.cz) < 40) return;
+    near.cx = cam.x; near.cz = cam.z; near.nCar = 0; near.nPed = 0;
+    const chk = (list, arr, key, R) => {
+      for (let k = 0; k < list.length; k++) {
+        const e = edges[list[k]], m = (e.n >> 1) * 3, dx = e.pts[m] - cam.x, dz = e.pts[m + 2] - cam.z, r = R + e.len * 0.5;
+        if (dx * dx + dz * dz < r * r && near[key] < arr.length) arr[near[key]++] = list[k];
+      }
+    };
+    chk(carEdges, near.car, 'nCar', cfg.spawnMax); chk(pedEdges, near.ped, 'nPed', cfg.pedMax);
+  }
   // ---- cars -----------------------------------------------------------------------------------------------------------------------------------------
   const cars = {
     n: 0, active: new Uint8Array(MAX_CARS), edge: new Int32Array(MAX_CARS), dir: new Int8Array(MAX_CARS), s: new Float32Array(MAX_CARS), lat: new Float32Array(MAX_CARS), laneOff: new Float32Array(MAX_CARS),
@@ -84,9 +97,9 @@ export function createAmbient({ seed = 0x1ef3 } = {}) {
     cars.laneOff[i] = offs[pick];
   }
   function spawnCar(i, cam) {
-    if (!carEdges.length) return false;
+    if (!near.nCar) return false;
     for (let tries = 0; tries < 14; tries++) {
-      const ei = carEdges[(R() * carEdges.length) | 0], e = edges[ei];
+      const ei = near.car[(R() * near.nCar) | 0], e = edges[ei];
       const s = R() * e.len; pointAt(e, s);
       const dx = P.x - cam.x, dz = P.z - cam.z, d = Math.hypot(dx, dz);
       if (d < cfg.spawnMin || d > cfg.spawnMax) continue;
@@ -124,7 +137,7 @@ export function createAmbient({ seed = 0x1ef3 } = {}) {
   function updateCars(dt, cam, t, density) {
     const target = Math.round(MAX_CARS * Math.min(1, density));
     cars.target = target;
-    let spawnBudget = 2;
+    let spawnBudget = 4;
     for (let i = 0; i < MAX_CARS; i++) {
       if (i >= target) { cars.active[i] = 0; continue; }
       if (!cars.active[i]) { if (spawnBudget > 0) { spawnBudget--; spawnCar(i, cam); } continue; }
@@ -198,9 +211,9 @@ export function createAmbient({ seed = 0x1ef3 } = {}) {
   };
   function pedOffset(e, side) { return side * (e.carriage / 2 + e.walkW / 2); }
   function spawnPed(i, cam) {
-    if (!pedEdges.length) return false;
+    if (!near.nPed) return false;
     for (let tries = 0; tries < 12; tries++) {
-      const ei = pedEdges[(R() * pedEdges.length) | 0], e = edges[ei];
+      const ei = near.ped[(R() * near.nPed) | 0], e = edges[ei];
       const s = R() * e.len; pointAt(e, s);
       const d = Math.hypot(P.x - cam.x, P.z - cam.z);
       if (d < cfg.pedMin || d > cfg.pedMax) continue;
@@ -217,7 +230,7 @@ export function createAmbient({ seed = 0x1ef3 } = {}) {
   function updatePeds(dt, cam, density, player) {
     const target = Math.round(MAX_PEDS * Math.min(1, density));
     peds.n = target;
-    let spawnBudget = 3;
+    let spawnBudget = 5;
     for (let i = 0; i < MAX_PEDS; i++) {
       if (i >= target) { peds.active[i] = 0; continue; }
       if (!peds.active[i]) { if (spawnBudget > 0) { spawnBudget--; spawnPed(i, cam); } continue; }
@@ -302,7 +315,7 @@ export function createAmbient({ seed = 0x1ef3 } = {}) {
       const rush = Math.exp(-((h - 8) ** 2) / 3) + Math.exp(-((h - 17.5) ** 2) / 4) + 0.5 * Math.exp(-((h - 12.5) ** 2) / 3);
       const day = h >= 6 && h < 22 ? 1 : h >= 22 || h < 1 ? 0.5 : 0.25;
       const carK = Math.min(1.1, (0.3 + 0.5 * rush) * day + 0.25 * day), pedK = Math.min(1.1, (0.25 + 0.6 * rush) * day * (1 - 0.6 * rain));
-      cam0.x = cam.x; cam0.y = cam.y; cam0.z = cam.z;
+      cam0.x = cam.x; cam0.y = cam.y; cam0.z = cam.z; refreshNear(cam0);
       updateCars(dt, cam0, time, cfg.traffic * carK * (48 / MAX_CARS));
       updatePeds(dt, cam0, cfg.crowd * pedK * (60 / MAX_PEDS), player);
       updateBirds(birds.gulls, GULL_SITES, dt, time, 1);

@@ -125,7 +125,7 @@ export function createLighting({ scene, camera, renderer }) {
         horCol.lerp(tmpC.setRGB(0.36, 0.40, 0.46), Math.min(1, Math.max(0, cover - 0.3) * 1.1));
         u.uZenith.value.copy(horCol).multiplyScalar(day);
         // what the world below the horizon looks like to reflections and ambient bounce: sunlit warm ground, never black glass
-        u.uGround.value.copy(st.fogCol).multiplyScalar(0.45).lerp(tmpC.setRGB(0.52, 0.42, 0.30).multiplyScalar(day * (0.4 + 0.6 * (1 - cover * 0.6))), 0.6 * day);
+        u.uGround.value.copy(st.fogCol).multiplyScalar(0.6).lerp(tmpC.setRGB(0.75, 0.62, 0.46).multiplyScalar(day * (0.4 + 0.6 * (1 - cover * 0.6))), 0.6 * day);
       }
       // grading helpers: warm highlights, cool shadows by day; moonlit cool at night
       st.tintHi.setRGB(1.04 + 0.05 * golden, 1.0, 0.95 - 0.07 * golden).lerp(tmpC.setRGB(0.92, 1.0, 1.15), st.night);
