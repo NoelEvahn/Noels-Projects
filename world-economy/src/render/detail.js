@@ -3,7 +3,7 @@
 // (per 100 m chunk, flat typed arrays); this module only draws what is inside the quality-scaled radius around the camera. Every type is one
 // InstancedMesh (one draw call per type per LOD, no shadow cost except the nearest parked cars' bodies), lists are rebuilt when the camera moves
 // > 5 m or turns > 12 degrees (CPU frustum + distance, no allocation per frame) and thinned with a per-instance hash so nothing pops. Wind sway and
-// the lily bob/ripple run in the vertex shader (patches.js wind / matlib mat.waterplant); nothing here runs per-frame work beyond a distance check.
+// the lily bob/ripple run in the vertex shader (patches.js wind / matlib mat.blob); nothing here runs per-frame work beyond a distance check.
 import * as THREE from 'three';
 import { World } from '../world/query.js';
 import { MatLib } from './materials/matlib.js';
@@ -17,7 +17,7 @@ const hash = (i) => { let h = Math.imul(i ^ 0x9e3779b9, 0x85ebca6b); h ^= h >>> 
 const lin = (hex) => { const f = (c) => Math.pow(c / 255, 2.2); return [f((hex >> 16) & 255), f((hex >> 8) & 255), f(hex & 255)]; };
 // shrub leaf tints (multiply the broadleaf atlas colour)
 const SHRUB_TINTS = [[1, 1, 1], [0.85, 1.05, 0.8], [1.2, 1.1, 0.75], [0.8, 0.92, 0.88], [1.35, 0.92, 0.8], [0.72, 0.86, 0.72], [1, 0.95, 0.9], [1.1, 1.18, 0.9]];
-const PAD_TINTS = [[1, 1, 1], [0.85, 1.05, 0.85], [1.15, 1.1, 0.8], [0.75, 0.95, 0.8]];
+const PAD_TINTS = [[0.62, 0.62, 0.62], [0.52, 0.66, 0.54], [0.72, 0.68, 0.5], [0.46, 0.6, 0.5]]; // unlit material: kept dark so the pads sit in the water
 // parked-car paint (sRGB -> linear; the carpaint layer albedo is ~0.6 so the multiplier is lifted)
 const CAR_COLOURS = [0xe8e8e4, 0x1a1a1c, 0x9ea4a8, 0x5a5e62, 0xa02020, 0x2a4a8a, 0x1a2a4a, 0x2a5a3a, 0xc8b894, 0xd8b030, 0xc86a20, 0x6a1c24].map((h) => lin(h).map((v) => v * 1.55));
 const CAR_KINDS = ['veh.sedan', 'veh.hatch_used', 'veh.pickup', 'veh.van'];
@@ -52,8 +52,9 @@ export function createDetail({ scene }) {
   const shrubs = [mk(artGeometry(plantGeometry('veg.bush_a').leaf), leafMat, 1400, 'detail.shrub.a', true), mk(artGeometry(plantGeometry('veg.bush_b').leaf), leafMat, 1400, 'detail.shrub.b', true)];
   const shrubBlob = mk(quadGeo(decalCell('bushblob')), MatLib.get('mat.blob'), 1800, 'detail.shrub.blob'); shrubBlob.renderOrder = 3;
   // ---- lily pads and flowers -----------------------------------------------------------------------------------------------------------------------
-  const wpMat = MatLib.get('mat.waterplant');
+  const wpMat = MatLib.get('mat.blob');
   const pads = mk(quadGeo(decalCell('lilypad')), wpMat, 3200, 'detail.lilypads', true), flowers = mk(flowerGeo(decalCell('lily')), wpMat, 700, 'detail.lilies', true);
+  pads.renderOrder = flowers.renderOrder = 4; // after the (transparent, renderOrder 2) water surface
   // ---- parked cars (lazy per kind and LOD) ------------------------------------------------------------------------------------------------------------
   const carSets = new Map();
   const carBlob = mk(quadGeo(decalCell('blob')), MatLib.get('mat.blob'), 320, 'detail.car.blob'); carBlob.renderOrder = 3;
@@ -114,7 +115,7 @@ export function createDetail({ scene }) {
         if (i >= (flower ? 700 : 3200)) continue;
         const sc = lp[q + 4], tt = PAD_TINTS[lp[q + 6] & 3];
         fillMatrix(mesh.instanceMatrix.array, i * 16, lp[q], lp[q + 1], lp[q + 2], lp[q + 5], flower ? 0.45 * sc : 0.62 * sc, flower ? 0.4 * sc : 1, flower ? 0.45 * sc : 0.62 * sc);
-        const ca = mesh.instanceColor.array; if (flower) { ca[i * 3] = 1; ca[i * 3 + 1] = 0.96 + 0.1 * hash(q); ca[i * 3 + 2] = 0.96; } else { ca[i * 3] = tt[0]; ca[i * 3 + 1] = tt[1]; ca[i * 3 + 2] = tt[2]; }
+        const ca = mesh.instanceColor.array; if (flower) { ca[i * 3] = 0.85; ca[i * 3 + 1] = 0.82 + 0.08 * hash(q); ca[i * 3 + 2] = 0.84; } else { ca[i * 3] = tt[0]; ca[i * 3 + 1] = tt[1]; ca[i * 3 + 2] = tt[2]; }
         if (flower) nfl++; else npd++;
       }
       // ---- parked cars

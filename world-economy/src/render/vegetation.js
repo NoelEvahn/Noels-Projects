@@ -201,6 +201,7 @@ export function createVegetation({ scene, renderer }) {
 
   // ---- near LOD lists -------------------------------------------------------------------------------------------------------------------------------
   const frustum = new THREE.Frustum(), pv = new THREE.Matrix4(), sph = new THREE.Sphere(), tmpC = new THREE.Color();
+  const AUTUMN = [new THREE.Color(1.25, 1.1, 0.62), new THREE.Color(1.5, 0.8, 0.62)]; // yellowing and reddening crowns
   function rebuildNear(camera) {
     pv.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse); frustum.setFromProjectionMatrix(pv);
     const cx = camera.position.x, cz = camera.position.z;
@@ -229,6 +230,7 @@ export function createVegetation({ scene, renderer }) {
         }
         const v = 0.82 + 0.3 * keepHash(i + 7);
         tmpC.setRGB(v * (0.95 + 0.1 * keepHash(i + 3)), v, v * 0.92);
+        if (s >= 3 && s <= 5) { const th = keepHash(i + 11); if (th < 0.12) tmpC.multiply(AUTUMN[0]); else if (th < 0.18) tmpC.multiply(AUTUMN[1]); } // per-instance autumn tint variance (broadleaf only)
         set.leaf.instanceColor.array[set.count * 3] = tmpC.r; set.leaf.instanceColor.array[set.count * 3 + 1] = tmpC.g; set.leaf.instanceColor.array[set.count * 3 + 2] = tmpC.b;
         if (d < 170) addBlob(i, s);
         set.count++; if (lod === 0) n0++; else n1++;
@@ -305,15 +307,15 @@ export function createVegetation({ scene, renderer }) {
           let type = -1, tint = 0;
           if (lakeEdge && h1 < 0.55) { type = h3 < 0.38 ? T_CATTAIL : T_REED; tint = 0; }
           else if (wts[1] > 0.4) { // forest floor: ferns, litter, the odd tuft, rocks and sticks
-            if (h3 < 0.16 * wts[1] * (0.3 + clump)) type = T_FERN; else if (h3 < 0.42) type = T_LITTER; else if (h3 < 0.5 && clump > 0.5) type = T_GRASS; else if (h3 > 0.965) type = T_ROCK; else if (h3 > 0.9) type = T_STICK;
+            if (h3 < 0.26 * wts[1] * (0.3 + clump)) type = T_FERN; else if (h3 < 0.4) type = T_LITTER; else if (h3 < 0.62 && clump > 0.38) type = T_GRASS; else if (h3 > 0.965) type = T_ROCK; else if (h3 > 0.9) type = T_STICK;
             if (h2 > 0.7 && type === T_LITTER) type = -1;
             tint = (h4 * 255 | 0) % 3;
-          } else if (wts[0] > 0.28) { // meadow and lawn
+          } else if (wts[0] > 0.2) { // meadow and lawn
             const lawn = reg === 'city' || reg === 'lake' || reg === 'ocean';
             const dry = reg === 'ocean' ? 0.55 : (wts[6] > 0.2 ? 0.45 : 0.06 + 0.18 * dryN);
             if (patch > 0.72) { if (h3 > 0.985) type = T_ROCK; }
             else if (flowerP > 0.6 && h3 < 0.32) type = lawn ? T_DAISY : T_FLOWER;
-            else if (h3 < 0.96 * Math.min(1, wts[0] * 1.15) * (0.55 + 0.8 * clump)) { type = h2 < 0.05 ? T_CLOVER : (lawn ? T_LAWN : T_GRASS); tint = h4 < dry ? 3 + ((h2 * 40 | 0) & 1) * 2 : ((h4 * 255 | 0) % 3); if (h4 > 0.93) tint = 2; }
+            else if (h3 < 0.98 * Math.min(1, 0.5 + wts[0]) * (0.6 + 0.8 * clump)) { type = h2 < 0.05 ? T_CLOVER : (lawn ? T_LAWN : T_GRASS); tint = h4 < dry ? 3 + ((h2 * 40 | 0) & 1) * 2 : ((h4 * 255 | 0) % 3); if (h4 > 0.93) tint = 2; }
             else if (h3 > 0.993) type = T_ROCK;
             else if (h3 < 0.012 + 0.012 * flowerP) type = lawn ? T_DAISY : T_FLOWER;
           } else if (wts[3] > 0.45 && (reg === 'ocean' || reg === 'city' || reg === 'lake')) { // sand: marram clumps on the dune side, sparse straw tufts and shells

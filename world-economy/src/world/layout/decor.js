@@ -253,8 +253,8 @@ function generateScatter({ edges, nodes, placements, heightAt, roadIndex, overla
     const h1 = hash2(gx, gz, seed + 301), h2 = hash2(gx, gz, seed + 302), x = gx + h1 * 11, z = gz + h2 * 11;
     const wb = waterBodyAt(x, z); if (!wb || (wb.body !== 'lake' && wb.body !== 'pond')) continue;
     const depth = wb.level - heightAt(x, z); if (depth < 0.3 || depth > 2.1) continue;
-    if (valueNoise(x / 38, z / 38, 61) < 0.46 || hash2(gx, gz, seed + 303) > 0.62) continue;
-    const n = 12 + Math.floor(hash2(gx, gz, seed + 304) * 26), R = 1.8 + hash2(gx, gz, seed + 305) * 3;
+    if (valueNoise(x / 38, z / 38, 61) < 0.46 || hash2(gx, gz, seed + 303) > 0.78) continue;
+    const n = 22 + Math.floor(hash2(gx, gz, seed + 304) * 40), R = 1.8 + hash2(gx, gz, seed + 305) * 2.8;
     for (let k = 0; k < n; k++) {
       const a = hash2(gx + k, gz, seed + 306) * 6.2832, r = R * Math.sqrt(hash2(gx, gz + k, seed + 307)), px = x + Math.cos(a) * r, pz = z + Math.sin(a) * r;
       const wb2 = waterBodyAt(px, pz); if (!wb2 || wb2.level - heightAt(px, pz) < 0.25) continue;

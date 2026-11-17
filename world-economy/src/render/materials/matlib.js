@@ -32,15 +32,15 @@ const MAKERS = {
   'mat.glow': () => { const m = new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: true, fog: true }); patchMaterial(m, { key: ':glow' }); return m; },
   'mat.lightpool': () => { const m = new THREE.MeshBasicMaterial({ map: decalAtlas, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: true, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 }); patchMaterial(m, { key: ':pool' }); return m; },
   'mat.decal': () => { const m = std({ map: decalAtlas, transparent: true, depthWrite: false, roughness: 0.8, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 }); patchMaterial(m, { key: ':decal' }); lit.add(m); return m; },
-  // contact shadows under trees / shrubs / parked cars: soft dark blobs from the decal atlas (flat quads, no depth write)
-  'mat.blob': () => { const m = new THREE.MeshBasicMaterial({ map: decalAtlas, transparent: true, depthWrite: false, fog: true, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -6 }); patchMaterial(m, { key: ':blob' }); return m; },
-  // water-surface plants (lily pads and flowers): decal-atlas cards that bob and ripple in the vertex shader (no CPU cost)
-  'mat.waterplant': () => { const m = std({ map: decalAtlas, alphaTest: 0.4, side: THREE.DoubleSide, roughness: 0.55 }); patchMaterial(m, { key: ':wp', extra(vs, fs) { return [vs.replace('#include <common>', '#include <common>\nuniform float uTime;').replace('#include <begin_vertex>', `#include <begin_vertex>
+  // contact shadows under trees / shrubs / parked cars AND water-lily pads and flowers: one unlit decal-atlas material (one program, not two). Soft alpha, no
+  // depth write; the vertex shader bobs and ripples instances a few cm (pads float, blobs move imperceptibly) and the fragment dims at night (unlit).
+  'mat.blob': () => { const m = new THREE.MeshBasicMaterial({ map: decalAtlas, transparent: true, depthWrite: false, fog: true, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -6 });
+    patchMaterial(m, { key: ':blob', extra(vs, fs) { return [vs.replace('#include <common>', '#include <common>\nuniform float uTime;').replace('#include <begin_vertex>', `#include <begin_vertex>
   #ifdef USE_INSTANCING
     { vec3 ip = vec3(instanceMatrix[3][0], instanceMatrix[3][1], instanceMatrix[3][2]); float ph = dot(ip.xz, vec2(0.71, 0.53));
       float rip = sin(uTime * 1.5 + ph * 3.0 + length(position.xz) * 4.0) * 0.012 + sin(uTime * 2.3 + ph) * 0.01;
-      transformed.y += rip * (0.4 + length(position.xz) * 1.5) + position.y * 0.0; transformed.xz += vec2(sin(uTime * 0.4 + ph), cos(uTime * 0.37 + ph * 1.3)) * 0.018; }
-  #endif`), fs]; } }); lit.add(m); return m; },
+      transformed.y += rip * (0.4 + length(position.xz) * 1.5); transformed.xz += vec2(sin(uTime * 0.4 + ph), cos(uTime * 0.37 + ph * 1.3)) * 0.012; }
+  #endif`), fs.replace('#include <common>', '#include <common>\nuniform float uNight;').replace('#include <opaque_fragment>', '#include <opaque_fragment>\n  gl_FragColor.rgb *= mix(1.0, 0.16, uNight);')]; } }); return m; },
   'mat.particle': () => { const m = new THREE.MeshBasicMaterial({ map: particleAtlas, transparent: true, depthWrite: false, fog: true, vertexColors: true }); patchMaterial(m, { key: ':pt' }); return m; },
   // Stage 2 materials (kept for the blockout fallback path)
   'mat.blockout': () => { const m = std({ vertexColors: true, roughness: 0.92 }); patchMaterial(m, { key: ':bo' }); lit.add(m); return m; },

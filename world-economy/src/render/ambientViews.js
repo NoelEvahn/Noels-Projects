@@ -27,7 +27,7 @@ function birdGeo(body, wing, span, lift, len) {
 export function createAmbientViews({ scene, ambient }) {
   const group = new THREE.Group(); group.name = 'ambient'; scene.add(group);
   const cfg = { lodBias: 1, shadows: true };
-  const mk = (geo, mat, cap, cast, name) => { const m = new THREE.InstancedMesh(geo, mat, cap); m.count = 0; m.visible = false; m.frustumCulled = false; m.castShadow = cast; m.receiveShadow = true; m.matrixAutoUpdate = false; m.name = name; group.add(m); return m; };
+  const mk = (geo, mat, cap, cast, name) => { const m = new THREE.InstancedMesh(geo, mat, cap); if (mat.name === 'mat.carpaint') m.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(cap * 3).fill(1), 3); /* same shader variant as the parked cars (detail.js): one carpaint program */ m.count = 0; m.visible = false; m.frustumCulled = false; m.castShadow = cast; m.receiveShadow = true; m.matrixAutoUpdate = false; m.name = name; group.add(m); return m; };
   const tmpA = new THREE.Matrix4(), tmpB = new THREE.Matrix4(), tmpC = new THREE.Matrix4(), tmpV = new THREE.Vector3(), tmpS = new THREE.Vector3(), tmpQ = new THREE.Quaternion(), tmpE = new THREE.Euler();
   const fwd = new THREE.Vector3(), cp = new THREE.Vector3();
   // ---- cars -----------------------------------------------------------------------------------------------------------------------------------

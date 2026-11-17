@@ -27,7 +27,7 @@ const check = (name, ok, detail = '') => { if (!ok) failures++; console.log(`${o
   const p = await b.newPage({ viewport: { width: 320, height: 180 }, deviceScaleFactor: 1 });
   const errs = [];
   p.on('pageerror', (e) => errs.push(e.message)); p.on('console', (m) => { if (m.type() === 'error') errs.push(m.text()); });
-  await p.goto('file://' + path.join(root, 'dist/life.html'));
+  await p.goto('file://' + path.resolve(root, opt('html', 'dist/life.html'))); // --html=<built page> runs against a private build
   const boot = await p.evaluate(() => window.__LOE.ready);
   console.log('boot marks (ms):', JSON.stringify(boot.marks));
   await p.evaluate(() => { window.__LOE.freeze(true); document.getElementById('overlay').style.display = 'none'; });
