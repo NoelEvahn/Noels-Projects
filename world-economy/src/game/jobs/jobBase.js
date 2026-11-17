@@ -8,7 +8,7 @@ export class JobController {
   constructor(ctx, jobId) {
     this.ctx = ctx; this.jobId = jobId; this.job = JOB_BY_ID[jobId]; this.sim = ctx.sim; this.input = ctx.input; this.env = ctx.env;
     this.rng = createRng((ctx.seed || 1) ^ jobId.length * 7919); this.shiftId = null; this.task = null; this.steps = []; this.stepIdx = 0;
-    this.stepScores = []; this.taskT = 0; this.pending = null; this.stats = { tasks: 0, failed: 0, earned: 0 }; this.active = false; this.stopReason = null; this.lastResult = null;
+    this.stepScores = []; this.taskT = 0; this.pending = null; this.pace = ctx.pace || 1; this.scoreScale = ctx.scoreScale || 1; this.stats = { tasks: 0, failed: 0, earned: 0 }; this.active = false; this.stopReason = null; this.lastResult = null;
   }
   /** override: return an array of primitives for a sim-issued task descriptor */
   plan() { throw new Error('plan() not implemented for ' + this.jobId); }
@@ -39,10 +39,10 @@ export class JobController {
       if (res === 'done') { this.stepScores.push(st.score); this.stepIdx++; }
       else if (res === 'fail') { this.finishTask(true); return; }
     }
-    if (this.stepIdx >= this.steps.length) {
+    if (this.stepIdx >= this.steps.length && (this.pace <= 1 || this.taskT >= this.task.minSeconds * this.pace)) {
       const avg = this.stepScores.reduce((a, b) => a + b, 0) / Math.max(1, this.stepScores.length);
       const par = this.task.minSeconds * 2, tf = this.taskT > par ? Math.max(0.5, par / this.taskT) : 1;
-      this.finishTask(false, avg * tf);
+      this.finishTask(false, avg * tf * this.scoreScale);
     }
   }
   finishTask(failed, score = 0) {

@@ -391,7 +391,7 @@ export function createBusiness(ctx) {
       const site = SITE_BY_ID[siteId]; if (!site || !site.kinds.includes('biz.vending')) { bump(); return fail(ERR.INVALID_ARG, 'site'); }
       if (S().sites[siteId]) { bump(); return fail(ERR.BUSY, 'site taken'); }
       if (site.premium && b.tier < 3) { bump(); return fail(ERR.REQUIREMENT, 'tier 3'); }
-      if (b.units.filter((u) => u.kind === 'machine').length >= 4 && b.tier < 2) { bump(); return fail(ERR.REQUIREMENT, 'tier 2 company needed for more than 4 machines'); }
+      if (b.units.filter((u) => u.kind === 'machine').length >= 5 && b.tier < 2) { bump(); return fail(ERR.REQUIREMENT, 'upgrade to a tier 2 company (5 machines) to add more'); }
       if (b.units.filter((u) => u.kind === 'machine').length >= 20 && b.tier < 3) { bump(); return fail(ERR.REQUIREMENT, 'tier 3'); }
       if (ctx.services.nearUnit && !ctx.services.nearUnit(siteId)) { bump(); return fail(ERR.OUT_OF_RANGE); }
       const cost = Math.round(T.unitCost * (b.tier >= 2 ? 1 - 0.10 : 1));

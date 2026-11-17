@@ -16,7 +16,7 @@ const LAKE_SPOTS = {
   default: [['item.fish.carp', 3], ['item.fish.perch', 3]],
 };
 const OCEAN_MIX = [['item.fish.mackerel', 4], ['item.fish.cod', 3], ['item.fish.snapper', 1.5], ['item.fish.shrimp', 1]];
-const WEIGHT = { 'item.fish.carp': [0.8, 3.5], 'item.fish.perch': [0.3, 1.2], 'item.fish.bass': [0.8, 3.2], 'item.fish.pike': [1.5, 6], 'item.fish.trout': [0.6, 3] };
+const WEIGHT = { 'item.fish.carp': [1.2, 5], 'item.fish.perch': [0.5, 1.8], 'item.fish.bass': [1.2, 4.8], 'item.fish.pike': [2.2, 8], 'item.fish.trout': [1, 4.5] };
 
 export function createJobs(ctx) {
   const S = () => ctx.state.jobs;
@@ -85,7 +85,7 @@ export function createJobs(ctx) {
       const table = LAKE_SPOTS[spot] || LAKE_SPOTS.default;
       const species = pickWeighted(table);
       const [lo, hi] = WEIGHT[species]; const rod = ctx.jobs ? bestRod() : { maxKg: 4 };
-      const kg = Math.max(1, Math.min(rod.maxKg, Math.round(rng().range(lo, hi))));
+      const kg = Math.max(1, Math.min(rod.maxKg, Math.round(rng().range(lo, hi) * (1 + 0.07 * (level(job) - 1)))));
       task.params = { spot, species, kg };
     }
     if (job.id === 'job.ocean.fisherman') {
@@ -150,7 +150,7 @@ export function createJobs(ctx) {
       const sh = S().shift; if (!sh || sh.id !== shiftId) return fail(ERR.NOT_FOUND);
       const task = sh.tasksOpen[taskId]; if (!task) return fail(ERR.NOT_FOUND, 'unknown or reported task');
       if (!Number.isFinite(score)) return fail(ERR.INVALID_ARG);
-      if (S().realSec - task.issuedReal + 1e-6 < task.minSeconds) return fail(ERR.REQUIREMENT, 'too fast');
+      if (!failed && S().realSec - task.issuedReal + 1e-6 < task.minSeconds) return fail(ERR.REQUIREMENT, 'too fast');
       const job = JOB_BY_ID[sh.jobId], spec = job.tasks[task.kind];
       score = clamp(score, 0, 1);
       delete sh.tasksOpen[taskId];
