@@ -105,13 +105,12 @@ export function createEconomyLink({ sim, game, bus, clock }) {
       if (km > 0.0001) sim.cmd('veh.use', { vehId: vid, km, throttle: Math.min(1, Math.abs(v.sim.speed) / (VEHICLE_ECON[v.sim.archetype] ? 20 : 20)) });
       sim.cmd('veh.setPos', { vehId: vid, pos: [v.sim.x, v.sim.y, v.sim.z], yaw: v.sim.yaw });
     }
+    empty.clear(); for (const ov of sim.select('veh.owned')) if (ov.fuel <= 0 && entityOf.has(ov.id)) empty.add(entityOf.get(ov.id));
     void prevPos;
   };
-  /** engine cut when the tank is empty (Annex D 10): the game layer asks before stepping the vehicle */
-  link.blocked = function (entityId) {
-    for (const [vid, eid] of entityOf) if (eid === entityId) { const v = sim.select('veh.owned').find((x) => x.id === vid); return !!v && v.fuel <= 0; }
-    return false;
-  };
+  /** engine cut when the tank is empty (Annex D 10): refreshed with the 0.5 s odometer update, read per physics step */
+  const empty = new Set();
+  link.blocked = (entityId) => empty.has(entityId);
   link.entityOf = entityOf;
   return link;
 }
