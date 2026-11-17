@@ -110,3 +110,17 @@ Commits on main (no tags: the proxy refuses tag pushes): `8613c33` draft fixes, 
 - Fly-through: the full run had 1 overrun (5.7 ms) under natural GC; the Low re-run was disturbed by a container restart and must be repeated on a quiet machine.
 - `npm run test:audio` was not re-run after the last 3B commits (3A result stands; 3B did not touch `src/audio`).
 - Startup to `ready` is 8.3 s under software GL (menu budget 3 s).
+
+
+## Visual Fix Round 1 (Sonnet) - result of the 08:00 review
+
+Complaints: flat terrain, low-poly look, no life, ugly water, off light/shadows, plain white light. Details and numbers in `docs/DECISIONS.md` ("Visual Fix Round 1"). Screenshots: `test/screenshots/fix1/` (V01, V03, V08, V10, V12, V13, V14, V16 at 08:00 and 18:30; V01 and V10 at 22:00; V01 rain).
+
+- **A light/colour: done.** Sun 7.0 with colour temperature by elevation, blue sky/hemisphere fill, warm ground bounce, blue-white regional haze (warm toward the sun), gradient sky with horizon glow and clouds, split-toned grade (cool shadows, warm highlights), S-curve and vibrance, mixed warm/cool/violet window light at night.
+- **B shadows: done as far as measured.** Sun:sky about 5:1 so shadows read (long attached tree/building shadows at 08:00 and 18:30), terrain receives and casts, AO unchanged. Tree and pedestrian shadows go through cheap proxies (O7).
+- **C water: done** except planar reflection (not built): own fresnel + sky/cloud reflection, depth colour, four normal octaves, sun glitter, shore foam and wave lines.
+- **D terrain: partial.** Palettes, macro variation, patchy grass/soil, browner forest floor, denser ground cover (flowers, clover, litter, ferns, pebbles, sticks). No finer terrain cells (4 m height grid) and no real geometric relief.
+- **E vegetation: partial.** Fuller conifers, broadleaf crowns, palms and bushes (LOD0 about 2-3.7k tris); still 8 species with one shape each, impostor beyond LOD1.
+- **F ambient: done as v0.** `src/game/ai/ambient.js` + `src/render/ambientViews.js` + `test/unit/ambient.test.mjs` (5 tests).
+- **Bug found and fixed**: an instanced car batch produced a non-finite fragment that bloom smeared into a black octagon; world shaders and post now sanitise NaN/Inf.
+- **Perf**: all 64 rows inside Annex G budgets (shadow calls and shadow triangles needed the proxies above); baseline rebased (more draws from ambient, more triangles from trees). One row (High V09) shows CPU 5.7 ms against the 5 ms software-GL figure; natural-GC fly-through had 2 overruns (max 6 ms), forced-GC bound and allocation (0 B/frame) pass.
