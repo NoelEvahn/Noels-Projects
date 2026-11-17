@@ -38,7 +38,8 @@ export function createAmbientViews({ scene, ambient }) {
     if (!s) {
       const arch = ambient.CAR_KINDS[kind];
       const r = Builders.get(arch)({ archetype: arch, seed: 11 + variant * 5 + kind, x: 0, y: 0, z: 0, rotY: 0, params: lod === 0 ? { noWheels: true } : undefined }, { lod });
-      s = { n: 0, meshes: r.batches.filter((b) => b.geometry.art).map((b) => mk(artGeometry(b.geometry), MatLib.get(MatLib.has(b.materialId) ? b.materialId : 'mat.world'), CAP_CAR, lod === 0 && cfg.shadows, `amb.car.${arch}.${variant}.L${lod}`)) };
+      s = { n: 0, meshes: r.batches.filter((b) => b.geometry.art).map((b) => mk(artGeometry(b.geometry), MatLib.get(MatLib.has(b.materialId) ? b.materialId : 'mat.world'), CAP_CAR, false, `amb.car.${arch}.${variant}.L${lod}`)) };
+      if (lod === 0 && s.meshes[0]) s.meshes[0].castShadow = cfg.shadows; // one caster per car (the body); wheels and glass skip the shadow pass
       carSets.set(key, s);
     }
     return s;
@@ -46,7 +47,7 @@ export function createAmbientViews({ scene, ambient }) {
   function wheelSet(r, w) {
     const key = r + ':' + w;
     let s = wheelSets.get(key);
-    if (!s) { const gb = new GB(1024); wheel(gb, r, w, 0); s = { n: 0, mesh: mk(artGeometry(gb.toArrays()), MatLib.get('mat.world'), CAP_CAR * 4 + 8, cfg.shadows, 'amb.wheel.' + key) }; wheelSets.set(key, s); }
+    if (!s) { const gb = new GB(1024); wheel(gb, r, w, 0); s = { n: 0, mesh: mk(artGeometry(gb.toArrays()), MatLib.get('mat.world'), CAP_CAR * 4 + 8, false, 'amb.wheel.' + key) }; wheelSets.set(key, s); }
     return s;
   }
   function carMatrix(arr, o, x, y, z, yaw, pitch) {
@@ -62,10 +63,11 @@ export function createAmbientViews({ scene, ambient }) {
     let s = pedVar[v];
     if (!s) {
       const seed = 101 + v * 17, segs = segmentGeometry('chr.ped', seed, 0);
-      s = { n: 0, nodes: SEGMENTS.map((sg, i) => mk(artGeometry(segs[i], false), MatLib.get('mat.world'), CAP_PED_NEAR, i === 3 ? false : cfg.shadows, `amb.ped.${v}.${sg[0]}`)), far: null, nFar: 0 };
+      s = { n: 0, nodes: SEGMENTS.map((sg, i) => mk(artGeometry(segs[i], false), MatLib.get('mat.world'), CAP_PED_NEAR, false, `amb.ped.${v}.${sg[0]}`)), far: null, nFar: 0, proxy: null, nProxy: 0 };
       const r = Builders.get('chr.ped')({ archetype: 'chr.ped', seed, x: 0, y: 0, z: 0, rotY: 0 }, { lod: 1 });
       const b = r.batches.filter((x) => x.geometry.art)[0];
       s.far = mk(artGeometry(b.geometry), MatLib.get('mat.world'), 100, false, `amb.pedfar.${v}`);
+      s.proxy = mk(s.far.geometry, MatLib.get('mat.world'), 100, cfg.shadows, `amb.pedshadow.${v}`); s.proxy.layers.set(1); s.proxy.receiveShadow = false;
       pedVar[v] = s;
     }
     return s;
@@ -94,7 +96,7 @@ export function createAmbientViews({ scene, ambient }) {
   const stats = { cars: 0, peds: 0, pedsNear: 0, drawn: 0 };
   // background warm-up: one geometry combination per frame so nothing is built in the middle of play (one-time cost, O9/O10)
   const warm = [];
-  for (let k = 0; k < ambient.CAR_KINDS.length; k++) for (let v = 0; v < 3; v++) for (let l = 0; l < 2; l++) if (!(k === 0 && v === 0)) warm.push(() => carSet(k, v, l));
+  for (let k = 0; k < ambient.CAR_KINDS.length; k++) for (let v = 0; v < 2; v++) for (let l = 0; l < 2; l++) if (!(k === 0 && v === 0)) warm.push(() => carSet(k, v, l));
   for (let v = 0; v < 4; v++) warm.push(() => pedSet(v));
   let warmI = 0;
   return {
@@ -104,10 +106,10 @@ export function createAmbientViews({ scene, ambient }) {
       carSet(0, 0, 0); carSet(0, 0, 1); wheelSet(0.33, 0.22); pedSet(0); birdMeshes();
       for (const s of carSets.values()) for (const m of s.meshes) { m.visible = on; m.count = on ? 1 : 0; }
       for (const s of wheelSets.values()) { s.mesh.visible = on; s.mesh.count = on ? 1 : 0; }
-      for (const s of pedVar) if (s) { for (const m of s.nodes) { m.visible = on; m.count = on ? 1 : 0; } s.far.visible = on; s.far.count = on ? 1 : 0; }
+      for (const s of pedVar) if (s) { for (const m of s.nodes) { m.visible = on; m.count = on ? 1 : 0; } s.far.visible = on; s.far.count = on ? 1 : 0; s.proxy.visible = false; }
       for (const p of [...gullPoses, ...crowPoses]) { p.mesh.visible = on; p.mesh.count = on ? 1 : 0; }
     },
-    configure({ lodBias = 1, shadows = true } = {}) { cfg.lodBias = lodBias; cfg.shadows = shadows; for (const s of carSets.values()) if (s.meshes[0].name.endsWith('L0')) for (const m of s.meshes) m.castShadow = shadows; },
+    configure({ lodBias = 1, shadows = true } = {}) { cfg.lodBias = lodBias; cfg.shadows = shadows; for (const s of carSets.values()) if (s.meshes[0].name.endsWith('L0')) s.meshes[0].castShadow = shadows; for (const s of pedVar) if (s) s.proxy.castShadow = shadows; },
     update(camera) {
       if (!ambient.ready) return;
       if (warmI < warm.length) warm[warmI++]();
@@ -141,7 +143,7 @@ export function createAmbientViews({ scene, ambient }) {
       for (const s of carSets.values()) for (const m of s.meshes) { m.count = s.n; m.visible = s.n > 0; if (s.n) { m.instanceMatrix.needsUpdate = true; draws++; } }
       for (const s of wheelSets.values()) { s.mesh.count = s.n; s.mesh.visible = s.n > 0; if (s.n) { s.mesh.instanceMatrix.needsUpdate = true; draws++; } }
       // pedestrians
-      for (const s of pedVar) if (s) { s.n = 0; s.nFar = 0; }
+      for (const s of pedVar) if (s) { s.n = 0; s.nFar = 0; s.nProxy = 0; }
       let np = 0, nn = 0;
       for (let i = 0; i < peds.edge.length; i++) {
         if (!peds.active[i]) continue;
@@ -149,6 +151,7 @@ export function createAmbientViews({ scene, ambient }) {
         if (d2 > 170 * 170) continue;
         if (d2 > 900 && dx * fwd.x + dz * fwd.z < -0.15 * Math.sqrt(d2)) continue;
         const s = pedSet(peds.variant[i]); np++;
+        if (d2 < 70 * 70 && s.nProxy < 100) { carMatrix(s.proxy.instanceMatrix.array, s.nProxy * 16, peds.x[i], peds.y[i], peds.z[i], peds.yaw[i], 0); s.nProxy++; }
         const th = -peds.yaw[i];
         if (d2 < 32 * 32 * cfg.lodBias * cfg.lodBias && s.n < CAP_PED_NEAR) {
           nn++;
@@ -171,6 +174,7 @@ export function createAmbientViews({ scene, ambient }) {
       for (const s of pedVar) if (s) {
         for (const m of s.nodes) { m.count = s.n; m.visible = s.n > 0; if (s.n) { m.instanceMatrix.needsUpdate = true; draws++; } }
         s.far.count = s.nFar; s.far.visible = s.nFar > 0; if (s.nFar) { s.far.instanceMatrix.needsUpdate = true; draws++; }
+        s.proxy.count = s.nProxy; s.proxy.visible = s.nProxy > 0; if (s.nProxy) s.proxy.instanceMatrix.needsUpdate = true;
       }
       // birds
       birdMeshes();

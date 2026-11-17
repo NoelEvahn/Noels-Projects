@@ -111,7 +111,7 @@ export function createAmbient({ seed = 0x1ef3 } = {}) {
       let clear = true;
       for (let j = 0; j < MAX_CARS; j++) if (j !== i && cars.active[j] && cars.edge[j] === ei && cars.dir[j] === dir && cars.laneOff[j] === cars.laneOff[i] && Math.abs(cars.s[j] - s) < 12) { clear = false; break; }
       if (!clear) continue;
-      cars.kind[i] = pickKind(e); cars.variant[i] = (R() * 3) | 0; cars.len[i] = KIND_LEN[CAR_KINDS[cars.kind[i]]] || 4.6;
+      cars.kind[i] = pickKind(e); cars.variant[i] = (R() * 2) | 0; cars.len[i] = KIND_LEN[CAR_KINDS[cars.kind[i]]] || 4.6;
       cars.vmax[i] = e.speed * (0.7 + 0.25 * R()); cars.speed[i] = cars.vmax[i] * 0.8; cars.lat[i] = cars.laneOff[i]; cars.active[i] = 1; cars.wait[i] = 0;
       return true;
     }

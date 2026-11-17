@@ -65,13 +65,21 @@ export function createVegetation({ scene, renderer }) {
   function makeSet(lod, cap) {
     for (let s = 0; s < NS; s++) {
       const old = sets[lod][s];
-      if (old) { group.remove(old.bark, old.leaf); old.bark.dispose(); old.leaf.dispose(); }
+      if (old) { group.remove(old.bark, old.leaf); old.bark.dispose(); old.leaf.dispose(); if (old.pb) { group.remove(old.pb, old.pl); old.pb.dispose(); old.pl.dispose(); } }
       const g = treeGeometry(TREE_TYPES[s], lod);
       const bg = old ? old.bg : artGeometry(g.bark), lg = old ? old.lg : artGeometry(g.leaf);
       const bark = new THREE.InstancedMesh(bg, barkMat, cap), leaf = new THREE.InstancedMesh(lg, leafMat, cap);
       leaf.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(cap * 3), 3);
-      for (const m of [bark, leaf]) { m.count = 0; m.frustumCulled = false; m.castShadow = cfg.shadows && lod === 0; m.receiveShadow = true; m.matrixAutoUpdate = false; m.name = `veg.${TREE_TYPES[s]}.L${lod}`; group.add(m); }
-      sets[lod][s] = { bark, leaf, bg, lg, cap, count: 0, height: g.height };
+      for (const m of [bark, leaf]) { m.count = 0; m.frustumCulled = false; m.castShadow = false; m.receiveShadow = true; m.matrixAutoUpdate = false; m.name = `veg.${TREE_TYPES[s]}.L${lod}`; group.add(m); }
+      sets[lod][s] = { bark, leaf, bg, lg, cap, count: 0, height: g.height, pb: null, pl: null };
+      if (lod === 0) {
+        // O7: LOD0 trees cast through their ~200-triangle LOD1 shape on layer 1 (seen by the shadow cameras only), sharing the instance matrices
+        const g1 = treeGeometry(TREE_TYPES[s], 1), pg = old && old.pg ? old.pg : [artGeometry(g1.bark), artGeometry(g1.leaf)];
+        const pb = new THREE.InstancedMesh(pg[0], barkMat, cap), pl = new THREE.InstancedMesh(pg[1], leafMat, cap);
+        pb.instanceMatrix = bark.instanceMatrix; pl.instanceMatrix = leaf.instanceMatrix; pl.instanceColor = leaf.instanceColor;
+        for (const m of [pb, pl]) { m.count = 0; m.frustumCulled = false; m.castShadow = cfg.shadows; m.receiveShadow = false; m.matrixAutoUpdate = false; m.layers.set(1); m.name = `veg.${TREE_TYPES[s]}.shadow`; group.add(m); }
+        Object.assign(sets[lod][s], { pb, pl, pg });
+      }
     }
   }
   // ---- impostor atlas bake ---------------------------------------------------------------------------------------------------------------------
@@ -209,7 +217,7 @@ export function createVegetation({ scene, renderer }) {
     }
     for (let l = 0; l < 2; l++) for (let s = 0; s < NS; s++) {
       const set = sets[l][s];
-      set.bark.count = set.leaf.count = set.count;
+      set.bark.count = set.leaf.count = set.count; if (set.pb) set.pb.count = set.pl.count = set.count;
       if (set.count) { set.bark.instanceMatrix.needsUpdate = true; set.leaf.instanceMatrix.needsUpdate = true; set.leaf.instanceColor.needsUpdate = true; }
     }
     // adapt radii toward the caps (Annex G 3.3 tree caps)
