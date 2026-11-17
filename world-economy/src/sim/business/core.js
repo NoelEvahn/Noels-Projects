@@ -252,7 +252,7 @@ export function createBusiness(ctx) {
       if (patch.autoRestock) {
         const a = patch.autoRestock;
         if (a.targets && Object.entries(a.targets).some(([k, v]) => !ITEM_BY_ID[k] || !Number.isInteger(v) || v < 0)) return fail(ERR.INVALID_ARG, 'targets');
-        P.autoRestock = { ...P.autoRestock, ...a, targets: a.targets ? { ...a.targets } : P.autoRestock.targets };
+        P.autoRestock = { ...P.autoRestock, ...a, targets: a.targets ? { ...a.targets } : P.autoRestock.targets, autoTargets: a.targets ? false : (a.autoTargets !== undefined ? !!a.autoTargets : P.autoRestock.autoTargets !== false) };
         if (P.autoRestock.enabled && !Object.keys(P.autoRestock.targets).length) P.autoRestock.targets = suggestTargets(b);
       }
       if (patch.pricing) { if (!['manual', 'auto'].includes(patch.pricing)) return fail(ERR.INVALID_ARG); if (patch.pricing === 'auto' && !managerOk(b)) return fail(ERR.REQUIREMENT, 'needs a manager and management L3'); P.pricing = patch.pricing; }
@@ -454,24 +454,26 @@ export function createBusiness(ctx) {
   }
   function suggestTargets(b) {
     const T = typeOf(b), t = {};
-    const days = 1.0;
+    const days = 1.0, grow = 1.5;
     for (const p of b.products) if (p.active) for (const [it, n] of Object.entries(p.recipe)) {
       const used = (b.stats.days.length ? b.stats.days.slice(-3).reduce((s, d) => s + ((d.usage && d.usage[it]) || 0), 0) / Math.min(3, b.stats.days.length) : 0);
-      const dflt = T.model === 'vending' ? 30 * (b.units.filter((u) => u.kind === 'machine').length || 1) : T.id === 'biz.supermarket' ? 300 : 60;
-      t[it] = Math.max(t[it] || 0, Math.ceil(Math.max(used * 1.3 * days, dflt * n)));
+      const dflt = T.model === 'vending' ? 30 * (b.units.filter((u) => u.kind === 'machine').length || 1) : T.id === 'biz.supermarket' ? 800 : T.id === 'biz.retail' ? 150 : 80;
+      t[it] = Math.max(t[it] || 0, Math.ceil(Math.max(used * grow * days, dflt * n)));
     }
     return t;
   }
-  function autoRestock(b) {
+  function autoRestock(b, lowOnly) {
     const P = b.policies.autoRestock;
     if (!P.enabled) return;
+    if (!lowOnly && P.autoTargets !== false) P.targets = { ...P.targets, ...suggestTargets(b) };
     for (const [it, target] of Object.entries(P.targets)) {
       const have = ctx.inv.qty(inv(b), it);
+      if (lowOnly && have >= target * 0.3) continue;
       let need = target - have; if (need <= 0) continue;
       const mk = pickMarket(it, P.source); if (!mk) continue;
       const free = ctx.inv.freeKg(inv(b)) / (ITEM_BY_ID[it].weight || 1); need = Math.min(need, Math.floor(free));
       const stock = Math.floor(ctx.market.stockOf(mk, it)); need = Math.min(need, stock);
-      const afford = (qty) => { return Math.ceil(ctx.market.quote(mk, it, qty, 'buy').total * (1 + deliverySurcharge(b, false))); };
+      const afford = (qty) => Math.ceil(ctx.market.quote(mk, it, qty, 'buy').total * (1 + deliverySurcharge(b, false)));
       while (need > 0 && !ctx.ledger.canAfford(acct(b), afford(need))) need = Math.floor(need * 0.7);
       if (need > 0) ctx.market.doBuy({ marketId: mk, itemId: it, qty: need, toContainer: inv(b), acct: acct(b), surcharge: deliverySurcharge(b, false), check: false, memo: 'Auto-restock ' + it });
     }
@@ -529,6 +531,7 @@ export function createBusiness(ctx) {
   function hourly(hour, t) {
     for (const b of S().businesses.slice()) {
       H.simulateHour(b, hour, t);
+      if (b.policies.autoRestock.enabled && !b.suspended && hour % 3 === 2) autoRestock(b, true);
       ctx.emit('biz:hourly', { bizId: b.id, report: { revenue: b.stats.today.revenue, customers: b.stats.today.customers } });
     }
   }
@@ -559,9 +562,9 @@ export function createBusiness(ctx) {
       if (e.morale < 0.3) { alert(b, 'staffQuit', { staffId: e.id }); b.staff = b.staff.filter((x) => x !== e); if (b.policies.managerId === e.id) b.policies.managerId = null; }
     }
     // maintainers service vending machines
-    if (T.model === 'vending') maintain(b);
-    // auto restock
+    // auto restock, then maintainers distribute
     autoRestock(b);
+    if (T.model === 'vending') maintain(b);
     if (managerOk(b) && b.policies.pricing === 'auto') autoPrice(b);
     // growth of ground richness handled globally; daily report
     const rep = ctx.reports.pnlRange(b.id, today, today);
@@ -584,8 +587,10 @@ export function createBusiness(ctx) {
       // collect
       u.cash = 0; u.fullBox = false;
       // restock from the business depot up to par
-      for (const p of b.products) if (p.active || true) for (const it of Object.keys(p.recipe)) {
-        const have = u.stock[it] || 0, par = 20; const need = Math.min(par - have, ctx.inv.qty(inv(b), it));
+      const act = new Set(); for (const p of b.products) if (p.active && (!p.hot || (u.upg && u.upg.includes('vend.hotfood')))) for (const it of Object.keys(p.recipe)) act.add(it);
+      for (const it of act) {
+        const p = { active: true };
+        const have = u.stock[it] || 0, par = Math.floor(typeOf(b).unitSlots / act.size); const need = Math.min(par - have, ctx.inv.qty(inv(b), it));
         const cur = Object.values(u.stock).reduce((s, n) => s + n, 0);
         const room = Math.min(need, typeOf(b).unitSlots - cur);
         if (room > 0 && (p.active || have > 0)) { ctx.inv.remove(inv(b), it, room); u.stock[it] = have + room; }

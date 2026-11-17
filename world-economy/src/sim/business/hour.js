@@ -73,7 +73,9 @@ export function createHour(ctx, B) {
       const d = stochRound(F * capture * ((p.share || 1) / (totalShare || 1)) * appeal * priceMult(b, p, eps, B.refOf(b, p)) * shareMult * (T.id === 'biz.supermarket' || T.id === 'biz.retail' ? active.length * 0.5 : 1), rngS());
       dem.push(d); demandTotal += d;
     }
-    const cap = capacity(b, T, hasAssist, null);
+    const basket = T.basket || 1;
+    const capC = capacity(b, T, hasAssist, null);
+    const cap = capC === null ? null : capC * basket;
     const scale = cap !== null && demandTotal > cap ? cap / demandTotal : 1;
     let revenue = 0, served = 0, lost = 0, stockout = false;
     const ticket = b.upgrades.includes('rest.signature') ? 1.25 : 1;
@@ -133,7 +135,7 @@ export function createHour(ctx, B) {
     for (const u of b.units) if (u.busy > 0) { u.busy--; if (u.busy === 0) { u.condition = Math.max(0, u.condition - 0.004); } }
     const attendantCap = capacity(b, T, b.assist && b.assist.hours > 0, null);
     if (b.assist && b.assist.hours > 0) b.assist.hours -= 1;
-    let rentals = stochRound(F * 0.55 * mult(b, 'capture') * (0.6 + 0.4 * b.reputation), rngS());
+    let rentals = stochRound(F * 0.035 * mult(b, 'capture') * (0.6 + 0.4 * b.reputation), rngS());
     if (attendantCap !== null) rentals = Math.min(rentals, Math.floor(attendantCap));
     let revenue = 0, done = 0;
     const free = b.units.filter((u) => u.kind === 'boat' && !u.busy && u.condition > 0.1);
@@ -206,7 +208,7 @@ export function createHour(ctx, B) {
     if (!loggers.length || !trucks.length) return 0;
     const sk = loggers.reduce((s, e) => s + 0.7 + 0.1 * e.skill, 0);
     const forest = ctx.state.jobs.forestHealth;
-    const output = loggers.length * 12 * (sk / loggers.length) * meta.health * mult(b, 'crew') * (0.8 + 0.4 * forest);
+    const output = loggers.length * 15 * (sk / loggers.length) * meta.health * mult(b, 'crew') * (0.8 + 0.4 * forest);
     const drivers = b.staff.filter((e) => e.role === 'driver').length || (b.ownerOperates ? 1 : 0);
     const trips = Math.min(trucks.length, Math.max(drivers, 0)) * 3 * mult(b, 'trips');
     const m3 = Math.floor(Math.min(output, trips * 14));
@@ -250,7 +252,8 @@ export function createHour(ctx, B) {
     const rev = fn(b, T, t, hour, st);
     if (rev > 0 && (T.model === 'retail' || T.model === 'vending' || T.model === 'boatrental' || T.model === 'delivery')) B.receive(b, 'ext:customers', rev, TX.SALE_GOODS, T.name + ' sales');
     // payroll accrues for staff on duty (up to 10 h a day)
-    if (b.staff.length && (isOpen(b, hour, t) || T.model === 'fishing') && b.finance.hoursToday < 10) { for (const e of b.staff) b.finance.accrued += e.wage; b.finance.hoursToday++; }
+    if (T.model === 'fishing') { for (const e of b.staff) { const u = b.units.find((x) => x.id === e.unitId); if (u && u.trip) b.finance.accrued += e.wage; } }
+    else if (b.staff.length && isOpen(b, hour, t) && b.finance.hoursToday < 10) { for (const e of b.staff) b.finance.accrued += e.wage; b.finance.hoursToday++; }
     if (b.assist && b.assist.hours <= 0) b.assist = null;
     void dayOf; void ROLE_THROUGHPUT; void ITEM_BY_ID;
   }
