@@ -2,7 +2,7 @@
 const DEFAULT_BINDINGS = {
   forward: ['KeyW', 'ArrowUp'], back: ['KeyS', 'ArrowDown'], left: ['KeyA'], right: ['KeyD'], sprint: ['ShiftLeft', 'ShiftRight'], walk: ['ControlLeft', 'ControlRight'],
   jump: ['Space'], interact: ['KeyE', 'KeyF'], camera: ['KeyV'], phone: ['Tab', 'KeyP'], map: ['KeyM'], inventory: ['KeyI'], pause: ['Escape'],
-  handbrake: ['Space'], horn: ['KeyH'], lights: ['KeyL'], reset: ['KeyR'], turnLeft: ['ArrowLeft', 'KeyQ'], turnRight: ['ArrowRight'], perfHud: ['F3'], debugHud: ['F4'], cleanHud: ['F2'], teleport: ['KeyT'],
+  handbrake: ['Space'], horn: ['KeyH'], lights: ['KeyL'], reset: ['KeyR'], turnLeft: ['ArrowLeft', 'KeyQ'], turnRight: ['ArrowRight'], perfHud: ['F3'], debugHud: ['F4'], economyHud: ['F5'], cleanHud: ['F2'], teleport: ['KeyT'],
 };
 
 export const Input = (() => {

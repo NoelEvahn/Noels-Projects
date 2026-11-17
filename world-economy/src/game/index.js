@@ -10,6 +10,7 @@ import { createEnv, sunDirection, phaseAt } from './env/daynight.js';
 import { PLAYER_SPAWN, VEHICLE_SPAWNS, BOAT_SPAWNS } from '../world/layout/spawns.js';
 import { ENTITY_FLAGS, INT, SCALE } from '../data/ids.js';
 import { ARCHETYPES } from '../world/archetypes.js';
+import { createEconomyLink } from './economyLink.js';
 
 export function createGame() {
   const G = { entities: createEntityStore(), env: createEnv(), camera: createCamera(), jobs: { start() { return { ok: false }; }, stop() {} } };
@@ -59,10 +60,13 @@ export function createGame() {
     vehicles.set(ent.id, { kind: 'boat', ent, sim, id: spec.id });
     return ent;
   }
-  G.spawnVehicle = spawnVehicle;
+  G.spawnVehicle = spawnVehicle; G.spawnBoat = spawnBoat; G.spawnRoadVehicle = spawnRoadVehicle;
 
-  G.init = function ({ bus: b, input: inp, settings: s, clock: c }) {
+  let econ = null;
+  G.init = function ({ bus: b, input: inp, settings: s, clock: c, sim }) {
     bus = b; input = inp; settings = s; clock = c;
+    G.inputRef = inp;
+    if (sim) econ = G.economy = createEconomyLink({ sim, game: G, bus: b, clock: c });
     interactions = createInteractions(bus);
     const p = World.poi(PLAYER_SPAWN.poi);
     char = createCharacter(p.pos[0], p.pos[1], p.pos[2]);
@@ -72,6 +76,7 @@ export function createGame() {
     player.entityId = playerEnt.id;
     for (const v of VEHICLE_SPAWNS) spawnRoadVehicle(v);
     for (const bt of BOAT_SPAWNS) spawnBoat(bt);
+    if (econ) econ.syncVehicles();
     input.setContext('foot');
     region = World.regionAt(char.x, char.z); district = World.districtAt(char.x, char.z);
     snapPose(playerEnt, char.x, char.y, char.z, char.yaw);
@@ -101,7 +106,7 @@ export function createGame() {
       const driven = player.vehicleId === id;
       if (v.kind === 'vehicle') {
         const s = v.sim;
-        const inp = driven ? { throttle: input.axis('throttle'), steer: input.axis('steer'), handbrake: input.down('handbrake') } : { throttle: 0, steer: 0, handbrake: true };
+        const inp = driven ? { throttle: econ && econ.blocked(id) ? Math.min(0, input.axis('throttle')) : input.axis('throttle'), steer: input.axis('steer'), handbrake: input.down('handbrake') } : { throttle: 0, steer: 0, handbrake: true };
         if (driven || s.speed !== 0 || !s.onGround || Math.abs(s.vlat) > 0.01) stepVehicle(s, inp, dt);
         setPose(v.ent, s.x, s.y, s.z, s.yaw, s.pitch, s.roll);
         const p = v.ent.parts; p.steer = s.steerAngle; p.brake = s.brake; p.rpm = s.rpm; p.gear = s.gear; p.lights = 0;
@@ -206,12 +211,13 @@ export function createGame() {
     const inv = settings && settings.controls && settings.controls.invertY ? -1 : 1;
     const lx = input.axis('lookX') * sens, ly = input.axis('lookY') * sens * inv;
     if (input.pressed('camera')) firstPerson = !firstPerson;
-    if (input.pressed('interact')) G.interact();
+    if (input.pressed('interact') && !(G.jobs && G.jobs.consumesInteract && G.jobs.consumesInteract())) G.interact(); // a job step that uses E owns the key
     if (input.down('reset') && player.mode === 'vehicle') { resetHold += dtReal; if (resetHold > 1.5) { resetHold = 0; resetVehicle(); } } else resetHold = 0;
     updateCameraNow(dtReal, lx, ly);
     G.camera.fov = settings && settings.graphics ? settings.graphics.fov : 60;
     if (interactions && player.mode === 'foot') interactions.update(char.x, char.y, char.z, char.yaw);
     if (clock) { G.env.timeOfDay = clock.hourFloat; sunDirection(G.env.timeOfDay, G.env.sunDir); }
+    if (econ) econ.update(dtReal);
     void alpha;
   };
   function resetVehicle() {

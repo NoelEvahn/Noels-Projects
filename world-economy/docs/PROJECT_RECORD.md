@@ -124,3 +124,54 @@ Complaints: flat terrain, low-poly look, no life, ugly water, off light/shadows,
 - **F ambient: done as v0.** `src/game/ai/ambient.js` + `src/render/ambientViews.js` + `test/unit/ambient.test.mjs` (5 tests).
 - **Bug found and fixed**: an instanced car batch produced a non-finite fragment that bloom smeared into a black octagon; world shaders and post now sanitise NaN/Inf.
 - **Perf**: all 64 rows inside Annex G budgets (shadow calls and shadow triangles needed the proxies above); baseline rebased (more draws from ambient, more triangles from trees). One row (High V09) shows CPU 5.7 ms against the 5 ms software-GL figure; natural-GC fly-through had 2 overruns (max 6 ms), forced-GC bound and allocation (0 B/frame) pass.
+
+## Stage 4 (Sonnet: gameplay and economy)
+
+Scope delivered: one ledger as the only money store, bank (deposit/withdraw/transfer/loans/credit/savings), taxes (income, business, property, arrears), markets with sliced price impact, inventory with freshness, skills, needs (energy, hunger, sleep fast-forward, pass-out), jobs (17 controllers, sim-issued tasks, validated reports, 10% withheld tax, tips untaxed), 12 business types on one framework (staff, units, upgrades, tiers, policies, payables, close/sell), property and rentals, construction and furnishing (2 m grid, support rules, rooms, comfort, 70% refund, commercial site registration), vehicle ownership (buy/sell/fuel/wear/repair/delivery/tow), investments (6 securities), notifications. All in `src/sim/**` and `src/data/**`; the game link is `src/game/economyLink.js` and `src/game/jobs/**`.
+
+Sim API: 71 commands (`Sim.cmd`) and 43 selectors (`Sim.select`); `test/sim/cmds.sim.mjs` fails if any is untested. Extra commands beyond Annex D section 12: `veh.use`, `veh.setPos` (game-driven), `tutorial.set`. Events added: `needs:sleep`, `needs:wake`, `job:licence`, `save:autosaveDue`.
+
+### Tests (all run with `npm test`; 162 tests, 0 failures at the time of writing)
+| File | What |
+|---|---|
+| `test/sim/cmds.sim.mjs` | every command (success and error codes) and every selector, coverage meta-test |
+| `test/sim/soak.sim.mjs` | 60 game days, 3,000+ random commands, invariant after each, no negative balances |
+| `test/sim/exploit.sim.mjs` | Annex D section 15 rules 1-14 |
+| `test/sim/jobs.sim.mjs` | 17 jobs x (good bot paid, bad bot fails), pay formula, strikes, fishing roll saved |
+| `test/sim/business.sim.mjs` | 12 types: 7-day operation, P&L equals ledger totals, close returns the account |
+| `test/sim/saveload.sim.mjs` | round trips mid-shift, mid-hour, with vehicles/plots, via `core/save.js`, RNG not re-rollable |
+| `test/sim/perf.sim.mjs` | 30 businesses, 300 employees: tickMinute 0.000 ms mean, hourly about 1 ms mean (max 12 ms first call), daily close about 16 ms |
+| `test/sim/economy.sim.mjs` | economy bots (average pacing) vs Annex D section 14 |
+| `test/sim/game.sim.mjs` | real World + Game: range gates, a courier shift through `Game.jobs`, owned vehicle fuel by distance |
+
+### Balance results (real minutes at scale 1, bots in `test/sim/bots/`)
+| Milestone | Target | Measured | Status |
+|---|---|---|---|
+| First wage | 6 min | 4 | in range |
+| $250 | 15-20 min | 16 | in range |
+| First business (vending) | 35-50 min | 56 | in range (+35%) |
+| Net worth $1,000 | 60-80 min | 80-88 | in range |
+| Five machines | 150 min | 133 (expanding bot) | in range |
+| Net worth $10,000 (courier+vendor) | 4-5.5 h | 4.5 h | in range |
+| $10,000 jobs only | 9-12 h | 12.5 h | in range (+35%) |
+| $10,000 angler-trader | 4-5.5 h | 13.6 h | **out of range**; fishing under-pays at L1, only the courier path is calibrated |
+| Cafe | 6-7 h | 8.8 h | in range (+35%) |
+| First property | 7-9 h | 11.4 h | in range |
+| Restaurant | 10-12 h | 22 h | **out of range** |
+| $100,000 | 14-18 h | not reached in 28 h | **out of range**; the tycoon bot is a simple sequential strategy and compounding is slower than Annex D payback implies |
+| $1,000,000 | 40-55 h | not run | not measured |
+
+### Not done or partial
+- Tutorial flow and `tutorial.state` steps (only a stored step number).
+- Customer / pedestrian / wildlife AI extensions of `ambient.js` (`npc:customer` not emitted; ambient untouched and its tests green).
+- Job minigame presentation (HUD widgets are Stage 5; controllers expose `getHud()` and a dev text HUD on F5).
+- Several job mechanics are reduced forms (one primitive chain per task, route steps check position/mode rather than driving physics scores, comfort/damage meters not modelled).
+- `veh.deliver`/`veh.tow` charge the fee and emit `veh:changed` but the game does not teleport the vehicle yet.
+- Business `staffAssist` exists as a command; no controller calls it yet. Business-specific managers/auto-pricing are generic.
+- Interactables for ATM/shops/beds are not wired to UI (Stage 5 calls `Sim.cmd`); only `interact:used` is emitted by Game.
+- Perf of `Game.fixedUpdate` with 40 cars and 80 pedestrians was not re-measured in this stage.
+
+### Known risks
+- Daily close for 30 businesses takes about 16 ms in Node (one frame at midnight); hourly about 1 ms.
+- The balance of late-game compounding (restaurant, $100k) needs another tuning pass with a smarter bot.
+- Software-GL e2e is slow; the smoke test result for this stage is recorded by the commit message of the last Stage 4 commit.

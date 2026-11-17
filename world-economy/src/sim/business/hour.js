@@ -90,7 +90,7 @@ export function createHour(ctx, B) {
       lost += dem[i] - n;
     }
     st.revenue += revenue; st.customers += served; st.lost += Math.max(0, lost); st.qualitySum += q; st.qualityN++;
-    if (stockout) { st.stockouts++; B.alert(b, 'stockout', {}); }
+    if (stockout) { st.stockouts++; B.raiseAlert(b, 'stockout', {}); }
     const demandAll = served + Math.max(0, lost);
     const rep = BALANCE.repGain * (demandAll > 0 ? served / demandAll - 0.85 : 0) * mult(b, 'repGain') + 0.01 * (q - 0.5) - (stockout ? 0.03 : 0);
     b.reputation = clamp(b.reputation + rep, add(b, 'repFloor') || 0, 1);
@@ -104,7 +104,7 @@ export function createHour(ctx, B) {
     for (const u of b.units) {
       if (u.kind !== 'machine') continue;
       const site = SITE_BY_ID[u.siteId]; if (!site) continue;
-      if (u.condition < 0.5 && !u.jammed && rngS().float() < 0.05) { u.jammed = true; B.alert(b, 'breakdown', { unitId: u.id }); }
+      if (u.condition < 0.5 && !u.jammed && rngS().float() < 0.05) { u.jammed = true; B.raiseAlert(b, 'breakdown', { unitId: u.id }); }
       if (u.jammed || u.fullBox) continue;
       const F = site.footfall[hour] * weekdayMult(site, t) * weatherMult(site, wx) * ctx.market.activity(site.region);
       const q = clamp(0.5 + 0.1 * add(b, 'quality') + 0.2 * u.condition, 0, 1.2);
@@ -118,9 +118,9 @@ export function createHour(ctx, B) {
         const stk = Math.min(...Object.entries(p.recipe).map(([it, n]) => Math.floor((u.stock[it] || 0) / n)));
         const n = Math.min(d, stk);
         if (n > 0) { for (const [it, q2] of Object.entries(p.recipe)) { u.stock[it] -= q2 * n; if (u.stock[it] <= 0) delete u.stock[it]; } revenue += n * p.price; u.cash += n * p.price; st.customers += n; st.usage = st.usage || {}; for (const [it, q2] of Object.entries(p.recipe)) st.usage[it] = (st.usage[it] || 0) + q2 * n; }
-        if (d > n) { st.lost += d - n; if (stk === 0) { st.stockouts++; B.alert(b, 'stockout', { unitId: u.id }); } }
+        if (d > n) { st.lost += d - n; if (stk === 0) { st.stockouts++; B.raiseAlert(b, 'stockout', { unitId: u.id }); } }
       }
-      if (u.cash >= T.cashBoxMax) { u.fullBox = true; B.alert(b, 'lowCash', { unitId: u.id, kind: 'fullBox' }); }
+      if (u.cash >= T.cashBoxMax) { u.fullBox = true; B.raiseAlert(b, 'lowCash', { unitId: u.id, kind: 'fullBox' }); }
     }
     st.revenue += revenue;
     return revenue;

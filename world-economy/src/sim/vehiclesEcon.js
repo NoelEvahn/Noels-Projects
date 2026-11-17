@@ -97,7 +97,7 @@ export function createVehicles(ctx) {
       if (!(km >= 0) || !Number.isFinite(km)) return fail(ERR.INVALID_ARG);
       const e = VEHICLE_ECON[v.model], lvl = ctx.skills.level(isBoat(v.model) ? 'skill.boating' : 'skill.driving');
       const use = e.use * km * clamp(0.7 + 0.9 * throttle, 0.7, 1.6) * (1 - 0.03 * (lvl - 1));
-      v.fuel = Math.max(0, Math.round((v.fuel - use) * 100) / 100);
+      v.fuel = Math.max(0, Math.round((v.fuel - use) * 10000) / 10000);
       v.odo = Math.round((v.odo + km) * 100) / 100;
       v.condition = clamp(Math.round((v.condition - BALANCE.wearPer10km * km / 10 - Math.max(0, impulse) * 0.002) * 10000) / 10000, 0, 1);
       if (impulse <= 0 && km > 0) ctx.skills.addXp(isBoat(v.model) ? 'skill.boating' : 'skill.driving', Math.round(km * 2));

@@ -3,7 +3,7 @@ import { timingBar, holdRing, tensionBar, sequence, balance, reach, choice, gaug
 
 const at = (c, poi, dx = 0, dz = 0) => () => { const p = c.env.poi(poi); return p ? [p[0] + dx, p[1], p[2] + dz] : [dx, 0, dz]; };
 /** a stop at `dist` metres from a POI along a bearing chosen from the task id (deterministic) */
-const stop = (c, poi, task, dist) => { const a = (parseInt(String(task.id).slice(1), 10) * 2.399) % 6.283; return at(c, poi, Math.round(Math.sin(a) * dist), Math.round(-Math.cos(a) * dist)); };
+const stop = (c, poi, task, dist) => { const a = (parseInt(String(task.id).slice(1), 10) * 2.399) % 6.283; const base = at(c, poi, Math.round(Math.sin(a) * dist), Math.round(-Math.cos(a) * dist)); return () => { const p = base(); if (!c.env.snap) return p; const s = c.env.snap(p[0], p[2]); return [s[0], p[1], s[1]]; }; };
 const lbl = (p, l) => { p.label = l; return p; };
 const pickV = (task, n) => parseInt(String(task.id).slice(1), 10) % n;
 

@@ -45,7 +45,7 @@ export function createBusiness(ctx) {
     const c = S().inventory.containers[inv(b)]; if (!c) return;
     for (const [it, e] of Object.entries(c.items)) { const loss = Math.floor(e.qty * pct + (ctx.rng.sim.float() < (e.qty * pct) % 1 ? 1 : 0)); if (loss > 0) ctx.inv.remove(inv(b), it, Math.min(loss, e.qty)); }
   }
-  function alert(b, kind, data) {
+  function raiseAlert(b, kind, data) {
     const al = (b.stats.today.alerted ||= {});
     const key = kind + (data && data.unitId ? data.unitId : '');
     if (al[key]) return; al[key] = 1;
@@ -59,7 +59,7 @@ export function createBusiness(ctx) {
     if (r.ok) return true;
     const f = b.finance, k = to + '|' + type;
     f.owed[k] = (f.owed[k] || 0) + amount; f.payables += amount; if (!f.payablesSince) f.payablesSince = dayOf(ctx.now());
-    alert(b, 'lowCash', {});
+    raiseAlert(b, 'lowCash', {});
     return false;
   }
   function receive(b, from, amount, type, memo) {
@@ -93,7 +93,7 @@ export function createBusiness(ctx) {
     if ((b.policies.logSale || 'auto') !== 'auto') return;
     for (const it of ['item.wood.log_pine', 'item.wood.log_spruce']) { const q = ctx.inv.qty(inv(b), it); if (q > 0) ctx.market.doSell({ marketId: 'mkt.forest.sawmill', itemId: it, qty: q, fromContainer: inv(b), acct: acct(b), player: false }); }
   }
-  const H = createHour(ctx, { upgradeDef, refOf, freshness, maxServable, consume, shrink, alert, pay, receive, landFish, sellLogs });
+  const H = createHour(ctx, { upgradeDef, refOf, freshness, maxServable, consume, shrink, raiseAlert, pay, receive, landFish, sellLogs });
   // ---- valuation --------------------------------------------------------------------------------------------------------------
   function assetValue(b) {
     let v = Math.floor((b.finance.equipCost || 0) * BALANCE.closeSellPct);
@@ -559,7 +559,7 @@ export function createBusiness(ctx) {
     // staff morale
     for (const e of b.staff.slice()) {
       e.morale = clamp(e.morale + (allPaid ? 0.02 : -0.1), 0, 1);
-      if (e.morale < 0.3) { alert(b, 'staffQuit', { staffId: e.id }); b.staff = b.staff.filter((x) => x !== e); if (b.policies.managerId === e.id) b.policies.managerId = null; }
+      if (e.morale < 0.3) { raiseAlert(b, 'staffQuit', { staffId: e.id }); b.staff = b.staff.filter((x) => x !== e); if (b.policies.managerId === e.id) b.policies.managerId = null; }
     }
     // maintainers service vending machines
     // auto restock, then maintainers distribute

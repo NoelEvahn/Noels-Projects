@@ -12,6 +12,8 @@ import { Streaming } from './render/streaming.js';
 import { installHarness } from './qa/harness.js';
 import { VIEWPOINTS } from './qa/viewpoints.js';
 import { createDebugHud } from './ui/hud/debugHud.js';
+import { createJobDevHud } from './ui/hud/jobDev.js';
+import { runShift } from './game/jobs/bot.js';
 import { createPerfHud } from './ui/hud/perfHud.js';
 import { createQuality, benchmarkMedian } from './render/quality.js';
 import { attachGovernor } from './render/governor.js';
@@ -37,7 +39,7 @@ async function boot() {
   bus.on('time:minute', (gt) => sim.tickMinute(gt));
   const save = createSave({
     collect: () => ({ v: 1, meta: { createdAt: 0, savedAt: 0, playTimeSec: 0, build: H.version, cheated: sim.cheated }, rng: {}, time: { total: clock.state.total, scale: clock.scale }, sim: sim.serialize(), player: { pos: game ? game.playerPos() : [0, 0, 0], yaw: 0, mode: 'foot', vehicleId: null, outfit: {} }, env: {}, settingsRef: false }),
-    restore: (s) => sim.init({ state: s.sim }),
+    restore: (s) => { sim.init({ state: s.sim }); if (s.time && Number.isFinite(s.time.total)) { clock.state.total = s.time.total; clock.state.frac = 0; clock.setScale(s.time.scale || 1); } if (game && game.economy) game.economy.syncVehicles(); },
   });
   let game = null;
 
@@ -76,7 +78,11 @@ async function boot() {
 
   game = createGame();
   Input.init(canvas, bus);
-  game.init({ bus, input: Input, settings, clock });
+  game.init({ bus, input: Input, settings, clock, sim });
+  // S4 hooks: sleep fast-forward (clock x120 until wake), autosave triggers from the economy, dev economy HUD (F5)
+  bus.on('needs:sleep', (p) => clock.setScale(120)); bus.on('needs:wake', () => clock.setScale(1));
+  bus.on('save:autosaveDue', () => { try { save.write('auto'); } catch (e) { /* storage may be unavailable */ } });
+  const jobHud = createJobDevHud({ root: $('ui'), sim, game });
   // S3A hook: audio reacts to bus events (MASTER_SPEC 7.6) and reads the player vehicle read-only; it never touches game state
   Audio.attach({
     bus, settings, getTime: () => game.env.timeOfDay % 24, getPlayerPos: () => game.playerPos(),
@@ -159,7 +165,7 @@ async function boot() {
     renderNow(acc * 60, dtReal);
     perf.mark('render', performance.now() - tR);
     const tU = performance.now();
-    hud.update(dtReal); perfHud.update(dtReal);
+    hud.update(dtReal); perfHud.update(dtReal); jobHud.update(dtReal); if (Input.pressed('economyHud')) jobHud.toggle();
     perf.mark('ui', performance.now() - tU);
     const tA = performance.now();
     { const c = game.camera, fx = c.target[0] - c.pos[0], fy = c.target[1] - c.pos[1], fz = c.target[2] - c.pos[2], fl = Math.hypot(fx, fy, fz) || 1; aFwd[0] = fx / fl; aFwd[1] = fy / fl; aFwd[2] = fz / fl; Audio.setListener(c.pos, aFwd, aUp); }
@@ -258,7 +264,8 @@ async function boot() {
     return { mean, variance: s2 / n - mean * mean, colors: seen.size };
   };
   H.grant = (cents) => sim.cmd('debug.grant', { cents });
-  H.bots = { run() { return Promise.reject(new Error('bots arrive in Stage 4')); } };
+  // S4: scripted job bots run through the live Sim and the real controllers, advancing the clock one game minute per 60 fixed steps
+  H.bots = { run(jobId, { style = 'good', minutes = 60, pace = 1, scoreScale = 1 } = {}) { return Promise.resolve(runShift({ sim, jobId, style, minutes, pace, scoreScale, bus, onMinute: () => { clock.advance(1); bus.flush(); } })).then((r) => ({ ok: r.ok, error: r.error, summary: r.summary, stats: r.stats, reason: r.reason })); } };
   H.viewpoints = VIEWPOINTS;
   H.viewpoint = async (id, { hour, settleMs = 120000 } = {}) => {
     const v = VIEWPOINTS[id];
