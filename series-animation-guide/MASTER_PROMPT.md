@@ -28,7 +28,7 @@ use them unless new files are attached.
 ### Workflow
 1. **Check the asset library first.** Read `series-animation-guide/assets/library/INDEX.md` (characters, animals, props, sets, FX, hand/hold/sit APIs, screenshots) and `assets/library/cat/CAT_BIBLE.md` (Gerald the recurring cat and his episode log). Import what exists instead of rebuilding it. Anything new you build (character, prop, set, FX) goes into the library with code **and** a screenshot (add it to `registry.js`, regenerate screenshots, update `INDEX.md`). The hero and family never change.
 2. Read this prompt and any attached files. Check the toolchain in the session scratchpad (node deps and Python venv live outside the repo). The repo may only receive content for `series-animation-guide/` (the library, episode folders, this prompt, the README); work directly on `main`, per the repository's `CLAUDE.md`. Never add anything else, and never name anything after the repository.
-3. Plan the episode yourself, then write a detailed brief (`episode-N/BRIEF.md`): beat grid, exact counter maths, a shot list of at least 110 shots, the voice table, the narration, the Gerald plan, a defect checklist, and the report format. Put every spoken event (story narration, Gerald roasts, catchphrase moments) on one timeline table on the 0.4 s grid first and check that nothing overlaps.
+3. Plan the episode yourself, then write a detailed brief (`episode-N/BRIEF.md`): beat grid, exact counter maths, a shot list of about 30–45 shots (2–3 s each, see Pacing), the voice table, the narration, the Gerald plan, a defect checklist, and the report format. Put every spoken event (story narration, Gerald roasts, catchphrase moments) on one timeline table on the 0.4 s grid first and check that nothing overlaps.
 4. A **Sonnet 5.5 high-effort executor** subagent builds the whole thing (when the user says "just two people", the orchestrator builds it itself and the Opus advisor only reviews). It must provide partial re-render tools (frame ranges, preview scale) so fixes stay cheap.
 5. When it finishes, check the format, the counter and the contact sheets yourself.
 6. Then run an **Opus 5.5 medium-effort advisor** subagent. It only reviews and advises and never writes code.
@@ -54,12 +54,19 @@ Rules:
 - Max **2 recurring tropes** per episode (reporter, government/bank room, fisherman, astronaut, house exterior, a crowd field of the cast; Gerald does not count). Any trope that does return must look and play differently: a new angle, a new gag, a new set.
 - Every location must be recognisable within 0.3 s and must suit the TOPIC. The topic's props drive the gags; episode 2 went pennies → avalanche → bills → briefcases → SOLD tags.
 
-### Shot density — 1.5× episode 2
-- **At least 110–125 shots in 90 s**, averaging about 0.75 s, every cut on the 0.4 s grid (0.2 s in montages).
-- Cover the same scene from several angles: wide establishing shot → medium → close-up → insert → reaction → over-the-shoulder → top-down.
-- No shot over 2.0 s unless the camera is moving and a new gag is landing.
-- **An insert that must be read stays on screen at least 0.6 s.** In ep2 the "SOLD $163.84" board flashed for only 5 frames.
-- Key props must first appear in a **wide or establishing shot** before their close-ups. In v1 of ep2 the auction duck was never shown.
+### Pacing — READ THIS FIRST (user feedback on episode 3: "way too fast, confusing")
+Episode 3 v1 cut every ~0.7 s and the user rejected it: confusing, text overlapping, glitchy backgrounds, unreadable sets. **Episodes 1 and 2 held each shot about 2–3 seconds, and that is the target.**
+- **Average shot length 2.0–3.0 s; about 30–45 shots in 90 s.** Every cut on the 0.4 s grid. **No shot shorter than 1.6 s**, except at most one 3–4 shot montage per episode (min 0.8 s each). No more than 3 shots per scene beat unless the shots are long.
+- **One idea per shot.** A shot shows one gag landing clearly: establish (wide, ≥ 2 s), then one medium or close-up, then the reaction. Let each gag play out before cutting. A reader must be able to say what happened in each shot.
+- An insert that must be read (board, sign, result) stays on screen at least 1.5 s. Key props first appear in a wide shot.
+- Cameras move slowly (push-ins, slow pans), never whip around. No fast zooms except the single punch-zoom before a voiced line.
+- Voiced lines: the speaker is on screen for the whole line plus 0.4 s before and after.
+
+### Layout and text (no overlaps, no glitches)
+- Never let two pieces of text overlap, and never let text sit on a face, a board, a chyron or the counter. One caption at a time. Narration captions, voice captions and Gerald roasts must never be on screen together (check on the timeline table).
+- Faces stay below the counter / tag / chip band (top ~30 % of the frame). Heart tags, banners and effects must also stay out of that band.
+- Test every shot at full resolution (still frames) for: flickering or z-fighting surfaces, objects clipping through walls or characters, floating or half-built props, pop-in, black gaps, instanced crowds showing blank faces from the front.
+- **Sets must be complete and logical.** A theatre or stadium needs real seats that people sit in, aisles, a visible stage/pitch, and people facing the right way; check the establishing shot as a viewer would. If a set cannot be made believable, choose a simpler location.
 
 ### Detail level — keep episode-2 quality (the user said the detail was really good)
 - Fully dressed sets: no plain boxes or walls. Use the library's sets and characters; held items sit in the palm (`hold()`), seated characters sit on a seat (`POSES.sitOn`), nothing clips.
@@ -140,6 +147,7 @@ Sound effects must never bury speech.
 - **Determinism:** every frame is a pure function of its frame index, so re-rendered frames match exactly.
 
 ### Quality checks before delivery
+- Look at EVERY shot as a viewer: one still at the start and one at the end of each shot, full resolution. Review the contact sheet at one frame per 0.8 s as well, and fix anything confusing, overlapping or glitchy before sending.
 - Format, duration and frame count.
 - Read the counter off frames at about 14 checkpoints and compare with the maths.
 - Contact sheets of the whole video (one frame per 0.4 s) and full-res stills of every key gag, all looked at, with the checklist applied.
