@@ -61,7 +61,7 @@ Outfits: hoodie tee jersey stripes coat suit dress cardigan jumpsuit toga fur ar
 | `stage.js` | curtain, velvetStage, marquee, seatRows, **audience** (instanced, cheer anim), judgesTable, spotlightBeam, scoreboard, confettiCannon |
 | `lab.js` | **lovometer** (`setLevel`, `snap` = needle breaks off), labBench, flask, bubbles, testTubeRack, ratCage, wallMonitor, heartOGram, pinkTank, wallChart |
 | `sky.js` | cloud, cloudFloor, hotAirBalloon, airliner, cabinWall, parachuteCanopy, rainbow, sunDisc, bird |
-| `world.js` | **makeEarth** (`setPink(0..1)` turns the night lights pink), makeMoon, starfield, makeGalaxy, solarSystem, drawHeroFace, **billboard**, skyline, landmark(bigben/sydney/tokyo/burj/empire/christ/pyramid/liberty), car, iceCreamTruck, schoolBus, reliefMap |
+| `world.js` | **makeEarth** (`setPink(0..1)` turns the night lights pink), makeMoon, starfield, makeGalaxy, solarSystem, drawHeroFace, **billboard** (`redraw(counterText)` repaints the screen every frame), skyline, landmark(bigben/sydney/tokyo/burj/empire/christ/pyramid/liberty), car, iceCreamTruck, schoolBus, reliefMap |
 
 ## Sets (`sets/`) — screens `set_*.jpg`
 | Set | Builder | Notes |
@@ -85,3 +85,8 @@ Each set pairs with a `*_STAGE` lighting preset (or `plazaStage(city)`) for `mak
 
 ## Screenshots
 `screenshots/<id>.jpg` for every registry item; contact sheets in `screenshots/sheets/`.
+
+## Episode usage notes (ep3)
+* `makeLovers(scene)` in `episode-N/src/common.js` (heart tag above each lover's head, pops in at its birth time) is a good pattern to copy for "count of X" gags.
+* Instanced crowds: `props/stage.js audience()` (seated or standing, cheer animation, faces) and `randomPerson(rng)` low-detail characters.
+* Scenes that need many places in one page: put each place in its own `Group` far apart, toggle `.visible` per shot, swap `scene.background` per shot.
