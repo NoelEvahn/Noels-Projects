@@ -28,3 +28,9 @@ The user asked for "two people only": the orchestrator built everything and an O
 
 ## Open questions / unverified
 Tag figures (≈8.3B population, ≈117B people ever lived) were not web-checked. Nobody could listen to the audio. The bakery, office facade, marching band and `makeLovers` were built inside the scene files, not in the library.
+
+## Update (local session, VideoHub)
+* **VideoHub:** the whole `series-animation-guide/` folder is one VideoHub project (VideoHub refuses files outside a project, so the library must be inside it). Page `episode-3/index.html` (three.js + Anton copied into `episode-3/vendor/`, gitignored; imports are relative), `window.renderOut(t)` draws synchronously, `render.js` at the series root renders 2 s chunks (`PAGE=episode-N/index.html` for later episodes). Review in VideoHub's live preview, render through its queue.
+* **Pacing:** `regroup()` in `src/common.js` merges the old 133 cuts into 47 (about 2 s each); each held shot reuses the camera of the gag or voiced line it covers. Cut lists sit right after each scene's `S.shots`.
+* **Theatre rebuilt** (raked rows, aisles, seated audience facing the stage). Skyline and plazas remodelled with geometry. **Rule: never add textures.**
+* Audio not rebuilt yet: the preview plays v1's soundtrack (timeline unchanged, so it still lines up).

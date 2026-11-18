@@ -69,6 +69,7 @@ Episode 3 v1 cut every ~0.7 s and the user rejected it: confusing, text overlapp
 - **Sets must be complete and logical.** A theatre or stadium needs real seats that people sit in, aisles, a visible stage/pitch, and people facing the right way; check the establishing shot as a viewer would. If a set cannot be made believable, choose a simpler location.
 
 ### Detail level — keep episode-2 quality (the user said the detail was really good)
+- **Never add textures** (user rule). Detail comes from modelled geometry, shapes, colour and light, not image, bump or normal maps or surface patterns. Canvas only for readable text on signs, boards and screens.
 - Fully dressed sets: no plain boxes or walls. Use the library's sets and characters; held items sit in the palm (`hold()`), seated characters sit on a seat (`POSES.sitOn`), nothing clips.
 - Characters with big eyes, brows, mouths and exaggerated reactions.
 - Instanced props in large numbers (coins, bills, debris, crowds).

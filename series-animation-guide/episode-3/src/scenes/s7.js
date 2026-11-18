@@ -1,14 +1,14 @@
 // S7 — THE FINAL HUG (75.2–90): hilltop, silence, ONE HUG at 80.0, love-wave, cosmic pull-back, cast crowd, back to the wrecked BBQ, "Bombo.", freeze + title card.
-import { THREE, makeCharacter, PRESETS, POSES, FACES, randomPerson, rng, clamp, smooth, lerp, easeOutBack, easeOutCubic, orbit, cam, shot, pick, pops, place, V, D2R, makeLovers } from '../common.js';
-import { makeStage, gradientTexture } from '/lib/stage.js';
-import { buildHilltop, HILL_STAGE, hillH } from '/lib/sets/hilltop.js';
-import { buildGarden } from '/lib/sets/garden.js';
-import { buildSpace, buildCosmos, SPACE_STAGE } from '/lib/sets/space.js';
-import { makeLoveWave, makeHeartField, makeHeart, makeGlowSprite } from '/lib/fx/hearts.js';
-import { ghostify } from '/lib/character.js';
-import { makeAnimal, APOSES, ANIMALS } from '/lib/animal.js';
-import { makeMoon } from '/lib/props/world.js';
-import { mat, add } from '/lib/util.js';
+import { THREE, makeCharacter, PRESETS, POSES, FACES, randomPerson, rng, clamp, smooth, lerp, easeOutBack, easeOutCubic, orbit, cam, shot, pick, regroup, pops, place, V, D2R, makeLovers } from '../common.js';
+import { makeStage, gradientTexture } from '../../../assets/library/stage.js';
+import { buildHilltop, HILL_STAGE, hillH } from '../../../assets/library/sets/hilltop.js';
+import { buildGarden } from '../../../assets/library/sets/garden.js';
+import { buildSpace, buildCosmos, SPACE_STAGE } from '../../../assets/library/sets/space.js';
+import { makeLoveWave, makeHeartField, makeHeart, makeGlowSprite } from '../../../assets/library/fx/hearts.js';
+import { ghostify } from '../../../assets/library/character.js';
+import { makeAnimal, APOSES, ANIMALS } from '../../../assets/library/animal.js';
+import { makeMoon } from '../../../assets/library/props/world.js';
+import { mat, add } from '../../../assets/library/util.js';
 
 const HILL_BG = gradientTexture(HILL_STAGE.sky[0], HILL_STAGE.sky[2], HILL_STAGE.sky[1]);
 const SPACE_BG = gradientTexture('#02030a', '#0a1230');
@@ -82,6 +82,8 @@ export default {
       { ...shot(88.4, 88.8, G([1.0, 0.9, 6.2], [1.3, 0.55, 3.4], 36)), g: 'garden' },                                                      // Gerald looks away
       { ...shot(88.8, 90.0, G([-0.6, 1.9, 5.2], [0.4, 1.7, 2.6], 30), G([-0.5, 1.9, 4.6], [0.4, 1.7, 2.6], 28)), g: 'garden' },            // FREEZE: title card
     ];
+    // slower edit: ~2 s shots, each holding the camera of the gag / voiced line it covers
+    S.shots = regroup(S.shots, [[75.2, 77.6, 75.2], [77.6, 79.6, 78.4], [79.6, 81.2, 80.0], [81.2, 82.0, 81.6], [82.0, 82.8, 82.0], [82.8, 83.6, 83.2], [83.6, 85.6, 84.4], [85.6, 87.2, 86.6], [87.2, 88.8, 88.0], [88.8, 90.0, 88.8]]);
     S.HC = HC; return S;
   },
   frame(t, S, ctx) {

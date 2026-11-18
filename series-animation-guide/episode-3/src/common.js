@@ -1,8 +1,8 @@
 // Shared helpers for the episode scenes: camera rigs, shot picking, easing, hearts above heads, small utilities.
 import * as THREE from 'three';
-import { makeCharacter, PRESETS, POSES, FACES, randomPerson } from '/lib/character.js';
-import { makeHeartTag, makeLoveAura } from '/lib/fx/hearts.js';
-import { rng, clamp, smooth, lerp, easeOutBack, easeOutCubic, easeInOut } from '/lib/util.js';
+import { makeCharacter, PRESETS, POSES, FACES, randomPerson } from '../../assets/library/character.js';
+import { makeHeartTag, makeLoveAura } from '../../assets/library/fx/hearts.js';
+import { rng, clamp, smooth, lerp, easeOutBack, easeOutCubic, easeInOut } from '../../assets/library/util.js';
 export { THREE, makeCharacter, PRESETS, POSES, FACES, randomPerson, makeHeartTag, makeLoveAura, rng, clamp, smooth, lerp, easeOutBack, easeOutCubic, easeInOut };
 
 export const D2R = Math.PI / 180;
@@ -14,6 +14,11 @@ export const cam = (pos, target, fov = 42, roll = 0) => ({ pos, target, fov, rol
 export const mix = (a, b, k) => ({ pos: a.pos.map((v, i) => v + (b.pos[i] - v) * k), target: a.target.map((v, i) => v + (b.target[i] - v) * k), fov: lerp(a.fov, b.fov, k), roll: lerp(a.roll ?? 0, b.roll ?? 0, k) });
 // A shot: [t0, t1, camA, camB?, opts]. Camera eases from A to B across the shot (linear if B omitted -> static).
 export const shot = (t0, t1, a, b = null, o = {}) => ({ t0, t1, a, b: b ?? a, ...o });
+// Slower edit (user feedback: "way too fast"): cuts = [[t0, t1, keyTime], ...]. Each new shot reuses the camera (and location key g)
+// of the original shot playing at keyTime, held for the whole t0..t1, so its A->B move is stretched (slower). Keep cuts on the 0.4 s grid.
+export function regroup(shots, cuts) {
+  return cuts.map(([t0, t1, k]) => { let s = shots[0]; for (const x of shots) if (k >= x.t0 - 1e-6) s = x; return { ...s, t0, t1 }; });
+}
 export function pick(shots, t) { let s = shots[0], idx = 0; for (let i = 0; i < shots.length; i++) if (t >= shots[i].t0 - 1e-6) { s = shots[i]; idx = i; } const u = clamp((t - s.t0) / Math.max(1e-6, s.t1 - s.t0)); return { shot: s, idx, u, cam: mix(s.a, s.b, o_ease(u, s.ease)) }; }
 const o_ease = (u, e) => (e === 'in' ? u * u : e === 'out' ? 1 - (1 - u) * (1 - u) : e === 'smooth' ? smooth(u) : u);
 export const fl = (n) => Math.floor(n);

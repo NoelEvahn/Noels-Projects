@@ -16,7 +16,7 @@ node tools/shoot.mjs <outDir> '<id regex>' 900 600               # screenshots o
 tools/sheet.sh '<regex>' 3 out.jpg 640 <dir>                     # contact sheet
 ```
 `viewer.html` + `tools/server.mjs` serve the library with an import map (`three` -> node_modules/three). Fonts: `Anton` (HUD/captions) from `@fontsource/anton`.
-Render flags that matter: ACES tone mapping, sRGB, PCFSoft shadows (`stage.js: makeRenderer / makeStage`). Software GL (SwiftShader) is ~0.4 s per 1080x1920 frame.
+Render flags that matter: ACES tone mapping, sRGB, PCFSoft shadows (`stage.js: makeRenderer / makeStage`). `makeStage` also adds a cool rim light (`rimI`) and soft sky-coloured image light (`env`, auto-dimmed on bright skies; `env: 0` turns it off). Eyes have a coloured iris ring (`irisColor`, else picked by `seed`) and two catchlights. Software GL (SwiftShader) is ~0.4 s per 1080x1920 frame.
 
 ## Core modules
 | File | What |
@@ -68,16 +68,17 @@ Outfits: hoodie tee jersey stripes coat suit dress cardigan jumpsuit toga fur ar
 |---|---|---|
 | Garden BBQ | `buildGarden({wrecked})` | house back, fences, grill+smoke, table, chairs, pool, gazebo, bunting; wrecked variant: hearts, toppled table/fence, stuck balloons |
 | Terraced street | `buildStreet()` | houses both sides, road, lamps, cars, postbox, bunting; `mailSack`, `postbox` exported |
-| Talent-show theatre | `buildTheatre()` | stage, curtains, marquee "BIG BREAK SHOW", tiered seats + instanced audience, 4 judges seated at table |
+| Talent-show theatre | `buildTheatre({rows, cols, freeSeats})` | gold proscenium, curtains, marquee, footlights; **raked house**: rows climb away from the stage, three blocks split by two aisles with step lights, armrests, risers, everyone seated facing the stage; balconies, sconces, EXIT signs, back wall with booth; `anchors.seatWorld(i)`; `freeSeats` stay empty (Gerald). Views: `set_theatre`, `set_theatre_house` |
 | Love-research lab | `buildLab()` | Lovometer on wall (`update(t,{level,snapK})`), benches, glassware, rat cage |
 | Cloud Nine sky | `buildSkyScene()`, `skydiverHeart()` | cloud floor, clouds, sun, rainbow, balloons, airliner; `SKY_STAGE` |
 | Earth at night | `buildSpace()` (+`buildCosmos()` solar system + galaxy) | `update(t,{pink})`; `SPACE_STAGE` |
-| Billboard plazas | `buildPlaza(city)` | tokyo nyc london dubai rio sydney; billboard + landmark + skyline + crowd |
+| Billboard plazas | `buildPlaza(city)` | tokyo nyc london dubai rio sydney; billboard + landmark + skyline + crowd; paved plaza with kerbs, zebra crossing, lamps, planters, bins. `skyline({night})` towers are all geometry: floor ledges, instanced framed windows (some lit), setbacks, parapets, water tanks / AC / antennas, shopfronts with awnings |
 | Hilltop golden hour | `buildHilltop()` | rounded instanced trees, flowers, distant town; `update(waveR)` bends trees as a shockwave passes; `HILL_STAGE` |
 | Relief map | `reliefMap()` | stylised "state" heightfield |
 Each set pairs with a `*_STAGE` lighting preset (or `plazaStage(city)`) for `makeStage()`.
 
 ## Rules (learned the hard way)
+* **Never add textures.** "More detail" means more geometry (real windows, trims, seams, bolts, props), better shapes, colour and lighting, never image maps, bump/normal maps or procedural surface patterns. Canvas is only for readable text (signs, boards, screens).
 * Characters, props and sets never clip: arms/legs are tapered lathe limbs with overlapping joint spheres, held items sit in the palm anchor, seated characters use `POSES.sit(t, seatHeight)` + `plant`.
 * Never `offsetHSL` dark colours (use `shade(hex, factor)`); never `Math.random`/`Date.now` (use `rng(seed)`); instanced meshes are updated with explicit matrices.
 * Text on boards/billboards is head-on and authored with `textBoard`/canvas so it can auto-fit.

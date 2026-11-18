@@ -1,13 +1,13 @@
 // S5 — CLOUD NINE (44.8–57.6): fans release heart balloons, he floats up through the clouds; airliner passengers, balloonist, skydivers; golden cloud at 54.0.
-import { THREE, makeCharacter, PRESETS, POSES, FACES, randomPerson, rng, clamp, smooth, lerp, easeOutBack, easeOutCubic, orbit, cam, shot, pick, pops, place, V, D2R } from '../common.js';
-import { makeStage } from '/lib/stage.js';
-import { buildSkyScene, skydiverHeart, SKY_STAGE } from '/lib/sets/sky.js';
-import { cloud, airliner, hotAirBalloon } from '/lib/props/sky.js';
-import { makeAnimal, APOSES, ANIMALS } from '/lib/animal.js';
-import { makeHeartField, makeConfetti, makeSparkles } from '/lib/fx/hearts.js';
-import { balloonBunch, heartBalloon, tray } from '/lib/props/holdables.js';
-import { starfield } from '/lib/props/world.js';
-import { mat, add, cyl, sph, box, canvasTex } from '/lib/util.js';
+import { THREE, makeCharacter, PRESETS, POSES, FACES, randomPerson, rng, clamp, smooth, lerp, easeOutBack, easeOutCubic, orbit, cam, shot, pick, regroup, pops, place, V, D2R } from '../common.js';
+import { makeStage } from '../../../assets/library/stage.js';
+import { buildSkyScene, skydiverHeart, SKY_STAGE } from '../../../assets/library/sets/sky.js';
+import { cloud, airliner, hotAirBalloon } from '../../../assets/library/props/sky.js';
+import { makeAnimal, APOSES, ANIMALS } from '../../../assets/library/animal.js';
+import { makeHeartField, makeConfetti, makeSparkles } from '../../../assets/library/fx/hearts.js';
+import { balloonBunch, heartBalloon, tray } from '../../../assets/library/props/holdables.js';
+import { starfield } from '../../../assets/library/props/world.js';
+import { mat, add, cyl, sph, box, canvasTex } from '../../../assets/library/util.js';
 
 const GROUND_Y = -60;                                       // launch field sits far below the cloud layer
 const B = 7;                                                  // hero hover height above the cloud tops
@@ -62,6 +62,9 @@ export default {
       shot(55.6, 56.4, orbit([0, B + 1.2, 0], 20, 4.2, 0.2, 38)),                                                                              // hero close, sun
       shot(56.4, 57.6, cam([0, B + 2, 12], [0, B + 3, 0], 56), cam([0, B + 20, 14], [0, B + 22, 0], 56)),                                      // rising towards space
     ];
+    // slower edit: ~2 s shots, each holding the camera of the gag / voiced line it covers
+    S.shots = regroup(S.shots, [[44.8, 46.4, 44.8], [46.4, 48.4, 46.8], [48.4, 50.4, 48.8], [50.4, 52.4, 51.2], [52.4, 54.8, 53.2], [54.8, 57.6, 54.0]]);
+    S.shots[1].a = cam(F(4.9, 0.6, 0.9), F(3.4, 0.45, 3.0), 54); S.shots[1].b = cam(F(4.7, 0.55, 1.2), F(3.4, 0.4, 3.0), 50);   // held on Gerald in the grass; the hero lifts out of the top of frame during the roast
     return S;
   },
   frame(t, S, ctx) {
@@ -79,7 +82,7 @@ export default {
     // swarm streaming up around the hero's altitude
     S.swarm.update((i) => { const p = S.swP[i]; if (t < 45.8) return null; const y = ((p.y0 + (t - 45.8) * p.sp * 6) % 120) + A - 60; return { x: p.x + Math.sin(t + p.ph) * 0.6, y, z: p.z, s: p.s * 0.8, ry: Math.sin(t * 0.7 + p.ph) * 0.4 }; });
     // Gerald watches from the grass
-    S.catG.pose(APOSES.loaf(t)); S.catG.face({ lid: 0.55 }); S.catG.root.visible = t < 47.7;
+    S.catG.pose(APOSES.loaf(t)); S.catG.face({ lid: 0.55 }); S.catG.root.visible = t < 48.5;
     // balloonist
     S.ball.pose({ ...POSES.deadpan(t), aRf: 0.3 }); S.ball.face(t >= 51.2 && t < 52.2 ? { ...FACES.deadpan, open: ctx.mouth('balloonist_flat', t) * 0.6, lid: 0.25 } : { ...FACES.deadpan, lid: 0.3 }); S.hab.position.y = 10 + Math.sin(t * 0.8) * 0.3;
     S.liner.position.x = 10 - (t - 48.0) * 1.5; S.dive.update(t);

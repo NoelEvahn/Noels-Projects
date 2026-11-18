@@ -7,7 +7,7 @@ const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ?
 const from = +arg('from', 0), to = +arg('to', 2699), step = +arg('step', 1), scale = +arg('scale', 1), workers = +arg('workers', 3), out = path.resolve(arg('out', 'frames')), quality = arg('q', '0.92');
 const build = process.env.EP_BUILD || path.resolve(out, '..');
 fs.mkdirSync(out, { recursive: true });
-const { srv, port } = await startServer(process.env.LIB_DEPS, 0, { '/lib/': LIBDIR + '/', '/ep/': path.join(EP, 'src') + '/', '/build/': build + '/' });
+const { srv, port } = await startServer(process.env.LIB_DEPS, 0, { '/lib/': LIBDIR + '/', '/assets/library/': LIBDIR + '/', '/ep/': path.join(EP, 'src') + '/', '/build/': build + '/' });
 const frames = []; for (let i = from; i <= to; i += step) if (!fs.existsSync(path.join(out, `f${String(i).padStart(5, '0')}.jpg`)) || process.env.FORCE) frames.push(i);
 console.log('frames to render', frames.length, 'scale', scale, 'workers', workers);
 let next = 0, done = 0, t0 = Date.now();

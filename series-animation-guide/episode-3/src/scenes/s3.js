@@ -1,12 +1,12 @@
 // S3 — TALENT SHOW (20.8–32.0): the hero wanders onto a magician's act; the audience pivots; golden buzzer; result board. Count 2,048 -> 32,768.
-import { THREE, makeCharacter, PRESETS, POSES, FACES, rng, clamp, smooth, lerp, easeOutBack, easeOutCubic, orbit, cam, shot, pick, pops, place, V, D2R } from '../common.js';
-import { makeStage } from '/lib/stage.js';
-import { buildTheatre } from '/lib/sets/theatre.js';
-import { makeAnimal, APOSES, ANIMALS } from '/lib/animal.js';
-import { goldenBuzzerButton, microphone } from '/lib/props/holdables.js';
-import { makeConfetti, makeHeartField } from '/lib/fx/hearts.js';
-import { textBoard, mat, add } from '/lib/util.js';
-import { confettiCannon } from '/lib/props/stage.js';
+import { THREE, makeCharacter, PRESETS, POSES, FACES, rng, clamp, smooth, lerp, easeOutBack, easeOutCubic, orbit, cam, shot, pick, regroup, pops, place, V, D2R } from '../common.js';
+import { makeStage } from '../../../assets/library/stage.js';
+import { buildTheatre } from '../../../assets/library/sets/theatre.js';
+import { makeAnimal, APOSES, ANIMALS } from '../../../assets/library/animal.js';
+import { goldenBuzzerButton, microphone } from '../../../assets/library/props/holdables.js';
+import { makeConfetti, makeHeartField } from '../../../assets/library/fx/hearts.js';
+import { textBoard, mat, add } from '../../../assets/library/util.js';
+import { confettiCannon } from '../../../assets/library/props/stage.js';
 
 const STAGE = { sky: ['#1a0a10', '#3a1420'], ground: null, hemiI: 0.95, key: 0xfff0d6, keyI: 2.0, keyPos: [2, 14, 12], shadow: { extent: 18, size: 2048 } };
 const STG = [0, 0.52, -9];
@@ -65,6 +65,8 @@ export default {
       shot(31.2, 31.6, cam([0, 6.5, 12], [0, 2.8, -4], 52), cam([0, 6.0, 10], [0, 2.8, -4], 52)),                              // standing ovation wide
       shot(31.6, 32.0, orbit([0.3, 1.5, -9], 10, 3.4, 0.2, 40)),                                                                // hero bows in confetti
     ];
+    // slower edit: ~2 s shots, each holding the camera of the gag / voiced line it covers
+    S.shots = regroup(S.shots, [[20.8, 24.0, 20.8], [24.0, 25.6, 24.8], [25.6, 27.2, 24.0], [27.2, 28.8, 28.0], [28.8, 30.4, 29.2], [30.4, 32.0, 30.8]]);
     return S;
   },
   frame(t, S, ctx) {

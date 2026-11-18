@@ -1,13 +1,13 @@
 // S2 — THE STREET (9.6–20.8): neighbours spill out of every door, fan mail, chalk hearts, ice-cream truck, conga line. Count 16 -> 1,024.
-import { THREE, makeCharacter, PRESETS, POSES, FACES, randomPerson, makeLoveAura, rng, clamp, smooth, lerp, easeOutBack, easeOutCubic, orbit, cam, shot, pick, pops, place, V, D2R } from '../common.js';
-import { makeStage } from '/lib/stage.js';
-import { buildStreet, mailSack } from '/lib/sets/street.js';
-import { makeAnimal, APOSES, ANIMALS } from '/lib/animal.js';
-import { makeHeartField, makeConfetti, HEART_GEO, makeHeart } from '/lib/fx/hearts.js';
-import { heartBalloon } from '/lib/props/holdables.js';
-import { iceCreamTruck } from '/lib/props/world.js';
-import * as HOLD from '/lib/props/holdables.js';
-import { heartGeo } from '/lib/util.js';
+import { THREE, makeCharacter, PRESETS, POSES, FACES, randomPerson, makeLoveAura, rng, clamp, smooth, lerp, easeOutBack, easeOutCubic, orbit, cam, shot, pick, regroup, pops, place, V, D2R } from '../common.js';
+import { makeStage } from '../../../assets/library/stage.js';
+import { buildStreet, mailSack } from '../../../assets/library/sets/street.js';
+import { makeAnimal, APOSES, ANIMALS } from '../../../assets/library/animal.js';
+import { makeHeartField, makeConfetti, HEART_GEO, makeHeart } from '../../../assets/library/fx/hearts.js';
+import { heartBalloon } from '../../../assets/library/props/holdables.js';
+import { iceCreamTruck } from '../../../assets/library/props/world.js';
+import * as HOLD from '../../../assets/library/props/holdables.js';
+import { heartGeo } from '../../../assets/library/util.js';
 
 const STAGE = { sky: ['#7fd0ff', '#fff6dc'], ground: null, fog: ['#e8f4ff', 40, 120], shadow: { extent: 16 }, keyPos: [6, 10, 6] };
 const ROAD_Z = 1.2;
@@ -73,6 +73,8 @@ export default {
       shot(19.6, 20.0, cam([hh(19.6)[0] - 4, 1.4, -2.2], [hh(19.6)[0] + 1.6, 1.1, ROAD_Z], 50), cam([hh(20.0)[0] - 4, 1.4, -2.2], [hh(20.0)[0] + 1.6, 1.1, ROAD_Z], 50)),
       shot(20.0, 20.8, cam([hh(20.0)[0] - 9, 5.2, 5.2], [hh(20.4)[0] - 1, 1.0, 1.0], 56), cam([hh(20.8)[0] - 9, 4.8, 5.0], [hh(20.8)[0] - 1, 1.0, 1.0], 56)), // crowd chases
     ];
+    // slower edit: ~2 s shots, each holding the camera of the gag / voiced line it covers
+    S.shots = regroup(S.shots, [[9.6, 12.4, 10.4], [12.4, 15.2, 13.6], [15.2, 17.2, 15.6], [17.2, 18.8, 17.2], [18.8, 20.8, 18.4]]);
     return S;
   },
   frame(t, S, ctx) {

@@ -1,6 +1,6 @@
 // World props: Earth (day/night + pink-lights), Moon, solar system, galaxy, stars, billboards, skylines, landmarks, vehicles, relief map.
 import * as THREE from 'three';
-import { mat, glow, add, sph, box, cyl, cap, cone, tor, rbox, rng, canvasTex, textBoard, C } from '../util.js';
+import { mat, glow, add, sph, box, cyl, cap, cone, tor, rbox, rng, canvasTex, textBoard, shade, C } from '../util.js';
 import { makeHeart } from '../fx/hearts.js';
 
 // -------- Earth: painted continents, night-side city lights that turn pink (earth.setPink(0..1), earth.update(t)) --------
@@ -66,10 +66,61 @@ export function billboard(w = 6, h = 3.4, { label = 'THAT GUY', counter = '♥ 8
   return g;
 }
 // Instanced skyline of boxy buildings with lit windows (faces +Z). Returns Group.
-export function skyline({ n = 14, spread = 40, hmin = 6, hmax = 28, seed = 1, palette = [0x4a5a7a, 0x5a6a8a, 0x3a4a6a, 0x6a7a9a, 0x7a6a8a] } = {}) {
+// City skyline built from geometry only (no textures): each tower has floor ledges, instanced glass windows on the three
+// visible faces (some warmly lit), an optional setback tier, a parapet and rooftop kit (water tank, AC units, antenna),
+// and a street-level shopfront band with a coloured awning. Faces +Z. night: 0..1 lights more windows.
+export function skyline({ n = 14, spread = 40, hmin = 6, hmax = 28, seed = 1, palette = [0x4a5a7a, 0x5a6a8a, 0x3a4a6a, 0x6a7a9a, 0x7a6a8a], night = 0 } = {}) {
   const r = rng(seed), g = new THREE.Group();
-  const win = canvasTex(64, 128, (c, w, h) => { c.fillStyle = '#ffffff'; c.fillRect(0, 0, w, h); for (let y = 6; y < h; y += 14) for (let x = 6; x < w; x += 14) { c.fillStyle = r() < 0.6 ? '#ffe9a0' : '#7a8aa8'; c.fillRect(x, y, 8, 9); } });
-  for (let i = 0; i < n; i++) { const w = r.range(3, 6), h = r.range(hmin, hmax), d = r.range(3, 5); const m = new THREE.MeshStandardMaterial({ color: r.pick(palette), roughness: 0.7, emissive: 0x222233, emissiveMap: win, emissiveIntensity: 0.8, map: null }); const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); const mapT = win.clone(); mapT.repeat.set(Math.round(w / 1.6), Math.round(h / 3)); mapT.wrapS = mapT.wrapT = THREE.RepeatWrapping; mapT.needsUpdate = true; m.emissiveMap = mapT; b.position.set((i / (n - 1) - 0.5) * spread + r.range(-1, 1), h / 2, -r.range(0, 8)); b.castShadow = b.receiveShadow = true; g.add(b); }
+  const wins = [], ledges = [], kit = [];
+  const glass = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.15, metalness: 0.2 });
+  const AWN = [0xe5483a, 0x2f8f6a, 0xf5b82e, 0x2f6fd6, 0x8a52c9];
+  const tower = (x, z, w, h, d, col, base) => {
+    const body = add(g, box(w, h, d), mat(col, { rough: 0.8 }), [x, base + h / 2, z]);
+    const trim = shade(col, 0.72), floors = Math.max(1, Math.floor(h / 3));
+    for (let f = 1; f <= floors; f++) ledges.push({ x, y: base + f * 3 - 0.05, z, w: w + 0.12, d: d + 0.12, col: trim });
+    const faces = [[0, 1, w], [1, 0, d], [-1, 0, d]];       // +Z front, +X side, -X side
+    for (const [fx, fz, span] of faces) {
+      const cols = Math.max(1, Math.floor(span / 1.3)), step = span / cols;
+      for (let f = base === 0 ? 1 : 0; f < floors; f++) for (let c = 0; c < cols; c++) {
+        const u = -span / 2 + step * (c + 0.5), y = base + f * 3 + 1.55;
+        const lit = r() < 0.12 + night * 0.5;
+        wins.push({ x: x + (fz ? u : fx * (w / 2 + 0.02)), y, z: z + (fz ? d / 2 + 0.02 : u), ry: fz ? 0 : fx * Math.PI / 2, w: step * 0.62, lit });
+      }
+    }
+    return body;
+  };
+  for (let i = 0; i < n; i++) {
+    const w = r.range(3.2, 6), h = r.range(hmin, hmax), d = r.range(3, 5), col = r.pick(palette);
+    const x = (i / (n - 1) - 0.5) * spread + r.range(-1, 1), z = -r.range(0, 8);
+    tower(x, z, w, h, d, col, 0);
+    let top = h, tw = w, td = d;
+    if (h > 14 && r() < 0.45) { tw = w * 0.68; td = d * 0.68; const h2 = r.range(3, 7); tower(x, z, tw, h2, td, shade(col, 1.08), h); top = h + h2; }
+    const pc = shade(col, 0.65);                                                    // parapet ring
+    for (const [px, pz, pw, pd] of [[0, td / 2, tw, 0.18], [0, -td / 2, tw, 0.18], [tw / 2, 0, 0.18, td], [-tw / 2, 0, 0.18, td]]) add(g, box(pw, 0.5, pd), mat(pc), [x + px, top + 0.25, z + pz]);
+    const k = r();
+    if (k < 0.35) { add(g, cyl(0.55, 0.55, 1.1, 12), mat(0x7a5a3a), [x + tw * 0.2, top + 1.6, z]); add(g, cone(0.62, 0.5, 12), mat(0x5a4028), [x + tw * 0.2, top + 2.4, z]); for (const s of [-1, 1]) add(g, cyl(0.05, 0.05, 1.1, 5), mat(0x3a3a40), [x + tw * 0.2 + s * 0.4, top + 0.55, z]); }
+    else if (k < 0.7) { for (let j = 0; j < 2; j++) add(g, box(0.9, 0.55, 0.7), mat(0xb8bcc4, { rough: 0.5, metal: 0.3 }), [x - tw * 0.2 + j * 1.1, top + 0.28, z + 0.3]); }
+    else { add(g, cyl(0.06, 0.1, 3.2, 6), mat(0xc8ccd4, { metal: 0.6, rough: 0.3 }), [x, top + 1.6, z]); add(g, sph(0.12, 8, 6), glow(0xff3a3a, 1.2), [x, top + 3.25, z]); }
+    // street level: dark shopfront glass band + awning
+    add(g, box(w * 0.86, 1.8, 0.1), mat(0x2a3440, { rough: 0.2, metal: 0.3 }), [x, 1.0, z + d / 2 + 0.03]);
+    add(g, box(w * 0.92, 0.08, 0.9), mat(r.pick(AWN)), [x, 2.15, z + d / 2 + 0.45], [0.28, 0, 0]);
+  }
+  // instanced windows (frame + glass) and floor ledges: few draw calls, lots of detail
+  const frameM = new THREE.InstancedMesh(box(1, 1.7, 0.06), mat(0xe8e4dc, { rough: 0.6 }), wins.length);
+  const glassM = new THREE.InstancedMesh(box(1, 1, 0.08), glass, wins.length);
+  const ledgeM = new THREE.InstancedMesh(box(1, 0.14, 1), mat(0xffffff, { rough: 0.7 }), ledges.length);
+  const o = new THREE.Object3D(), cc = new THREE.Color();
+  wins.forEach((w, i) => {
+    o.position.set(w.x, w.y, w.z); o.rotation.set(0, w.ry, 0); o.scale.set(w.w + 0.14, 1, 1); o.updateMatrix(); frameM.setMatrixAt(i, o.matrix);
+    o.scale.set(w.w, 1.5, 1); o.updateMatrix(); glassM.setMatrixAt(i, o.matrix);
+    glassM.setColorAt(i, cc.setHex(w.lit ? 0xffd88a : 0x5a7aa0));
+  });
+  ledges.forEach((l, i) => { o.position.set(l.x, l.y, l.z); o.rotation.set(0, 0, 0); o.scale.set(l.w, 1, l.d); o.updateMatrix(); ledgeM.setMatrixAt(i, o.matrix); ledgeM.setColorAt(i, cc.setHex(l.col)); });
+  glassM.material.emissive = new THREE.Color(0x000000);
+  for (const m of [frameM, glassM, ledgeM]) { m.castShadow = false; m.receiveShadow = true; g.add(m); }
+  // lit windows glow: a second instanced layer only for lit ones (emissive), so daylight glass stays glass
+  const litW = wins.filter((w) => w.lit);
+  if (litW.length) { const lm = new THREE.InstancedMesh(box(1, 1, 0.02), glow(0xffd27a, 0.7 + night), litW.length); litW.forEach((w, i) => { o.position.set(w.x, w.y, w.z); o.rotation.set(0, w.ry, 0); o.translateZ(0.05); o.scale.set(w.w * 0.92, 1.4, 1); o.updateMatrix(); lm.setMatrixAt(i, o.matrix); }); g.add(lm); }
   return g;
 }
 // -------- landmarks (primitive, instantly recognisable silhouettes) --------

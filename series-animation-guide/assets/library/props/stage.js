@@ -1,6 +1,6 @@
 // Theatre / talent-show props: velvet curtains, seat rows, audience crowd (instanced), judges' table, scoreboard, spotlights, marquee bulbs.
 import * as THREE from 'three';
-import { mat, glow, add, sph, box, cyl, cap, cone, tor, rbox, rng, textBoard, canvasTex, C } from '../util.js';
+import { mat, glow, add, sph, box, cyl, cap, cone, tor, rbox, rng, textBoard, canvasTex, shade, C } from '../util.js';
 
 export function curtain(w = 3, h = 6, color = 0xa3162b, folds = 9) {
   const g = new THREE.Group(); const m = mat(color, { rough: 0.7 });
@@ -22,29 +22,57 @@ export function marquee(w = 7, cols = 14, bulb = 0xfff0b0) { // row of lit bulbs
   g.bulbs = im; return g;
 }
 // Instanced theatre seats: rows x cols, tiered. Returns {mesh, seatPos[]}
-export function seatRows(rows = 8, cols = 14, { gap = 0.75, rowGap = 1.0, rise = 0.22, color = 0xa3162b } = {}) {
-  const g = new THREE.Group(); const n = rows * cols;
-  const seat = new THREE.InstancedMesh(rbox(0.6, 0.12, 0.55, 0.05), mat(color, { rough: 0.7 }), n), back = new THREE.InstancedMesh(rbox(0.6, 0.6, 0.1, 0.05), mat(color, { rough: 0.7 }), n);
+// Raked theatre seating. People sit facing -Z (toward the stage); each row is further back (+Z) and higher.
+// aisles: column indices AFTER which an aisle gap opens (default: two aisles splitting the house in three blocks).
+// Returns a group with seatPos (seat-local [x, y, z] of each seat's floor point, used by audience()), risers, armrests and aisle steps.
+export function seatRows(rows = 8, cols = 14, { gap = 0.75, rowGap = 1.0, rise = 0.22, color = 0xa3162b, aisles = null, aisleW = 1.1 } = {}) {
+  rowGap = Math.abs(rowGap);
+  const g = new THREE.Group(), n = rows * cols;
+  const ais = aisles ?? [Math.floor(cols / 3) - 1, Math.floor(2 * cols / 3) - 1];
+  const xs = []; let x = 0; for (let c = 0; c < cols; c++) { xs.push(x); x += gap + (ais.includes(c) ? aisleW : 0); }
+  const mid = (xs[0] + xs[cols - 1]) / 2; for (let c = 0; c < cols; c++) xs[c] -= mid;
+  const width = xs[cols - 1] - xs[0] + gap + 1.2;
+  const frame = shade(color, 0.45);
+  const seat = new THREE.InstancedMesh(rbox(0.56, 0.14, 0.5, 0.05), mat(color, { rough: 0.85 }), n);
+  const back = new THREE.InstancedMesh(rbox(0.58, 0.62, 0.12, 0.05), mat(color, { rough: 0.85 }), n);
+  const shell = new THREE.InstancedMesh(rbox(0.62, 0.68, 0.06, 0.03), mat(frame, { rough: 0.5 }), n);         // hard back shell
+  const arm = new THREE.InstancedMesh(rbox(0.07, 0.06, 0.46, 0.02), mat(0x2a1a14, { rough: 0.4 }), n + rows);
+  const leg = new THREE.InstancedMesh(box(0.06, 0.42, 0.06), mat(0x1c1c22, { metal: 0.5, rough: 0.4 }), n + rows);
   const d = new THREE.Object3D(), pos = [];
-  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
-    const i = r * cols + c, x = (c - (cols - 1) / 2) * gap, y = r * rise, z = -r * rowGap; pos.push([x, y, z]);
-    d.rotation.set(0, 0, 0); d.position.set(x, y + 0.45, z); d.updateMatrix(); seat.setMatrixAt(i, d.matrix);
-    d.position.set(x, y + 0.8, z - 0.27); d.rotation.set(-0.1, 0, 0); d.updateMatrix(); back.setMatrixAt(i, d.matrix);
+  let ai = 0;
+  for (let r = 0; r < rows; r++) {
+    const y = r * rise, z = r * rowGap;
+    if (r > 0) add(g, box(width, y, rowGap), mat(0x2a0e16, { rough: 0.9 }), [0, y / 2, z]);                       // riser step under the row
+    add(g, box(width, 0.04, 0.08), mat(0x7a5a2a, { metal: 0.4, rough: 0.5 }), [0, y + 0.02, z - rowGap / 2 + 0.04]);   // brass nosing on the step edge
+    for (let c = 0; c < cols; c++) {
+      const i = r * cols + c, sx = xs[c]; pos.push([sx, y, z]);
+      d.rotation.set(0, 0, 0); d.position.set(sx, y + 0.44, z - 0.02); d.updateMatrix(); seat.setMatrixAt(i, d.matrix);
+      d.position.set(sx, y + 0.8, z + 0.25); d.rotation.set(0.12, 0, 0); d.updateMatrix(); back.setMatrixAt(i, d.matrix);
+      d.position.set(sx, y + 0.78, z + 0.33); d.updateMatrix(); shell.setMatrixAt(i, d.matrix);
+    }
+    // armrests + legs between seats, and at each block edge
+    const edges = []; for (let c = 0; c < cols; c++) { edges.push(xs[c] - gap / 2); if (c === cols - 1 || ais.includes(c)) edges.push(xs[c] + gap / 2); }
+    for (const ex of [...new Set(edges.map((v) => +v.toFixed(3)))]) { if (ai >= n + rows) break; d.rotation.set(0, 0, 0); d.position.set(ex, y + 0.62, z + 0.02); d.updateMatrix(); arm.setMatrixAt(ai, d.matrix); d.position.set(ex, y + 0.21, z + 0.02); d.updateMatrix(); leg.setMatrixAt(ai, d.matrix); ai++; }
+    // aisle step lights (small warm lamps on each riser in the aisles)
+    for (const c of ais) add(g, box(0.2, 0.05, 0.05), glow(0xffd88a, 1.4), [(xs[c] + xs[c + 1]) / 2, y + 0.06, z - rowGap / 2 + 0.03]);
   }
-  seat.castShadow = back.castShadow = true; seat.receiveShadow = back.receiveShadow = true; g.add(seat, back);
-  g.seatPos = pos; return g;
+  arm.count = leg.count = ai;
+  for (const m of [seat, back, shell, arm, leg]) { m.castShadow = true; m.receiveShadow = true; g.add(m); }
+  g.seatPos = pos; g.width = width; g.depth = rows * rowGap; g.aisleX = ais.map((c) => (xs[c] + xs[c + 1]) / 2);
+  return g;
 }
 // Cheap instanced audience seated in the rows. update(t, cheer 0..1, seed) animates arms-up bobbing.
-export function audience(seatPos, { seed = 5, fill = 0.9, palette = [0xe76f51, 0x2a9d8f, 0xe9c46a, 0x264653, 0xf4a261, 0x7b2cbf, 0x3a86ff, 0xff006e, 0x8bc34a], skins = [0xf2b98f, 0xd99a6c, 0x9b6338, 0x6b4226, 0xf8d5b8] } = {}) {
-  const r = rng(seed), g = new THREE.Group(), idx = []; seatPos.forEach((p, i) => { if (r() < fill) idx.push(i); });
+export function audience(seatPos, { seed = 5, fill = 0.9, skip = [], palette = [0xe76f51, 0x2a9d8f, 0xe9c46a, 0x264653, 0xf4a261, 0x7b2cbf, 0x3a86ff, 0xff006e, 0x8bc34a], skins = [0xf2b98f, 0xd99a6c, 0x9b6338, 0x6b4226, 0xf8d5b8] } = {}) {
+  const r = rng(seed), g = new THREE.Group(), idx = []; seatPos.forEach((p, i) => { if (r() < fill && !skip.includes(i)) idx.push(i); });
   const n = idx.length;
   const bodyI = new THREE.InstancedMesh(new THREE.CapsuleGeometry(0.2, 0.2, 4, 10), new THREE.MeshStandardMaterial({ roughness: 0.8 }), n);
   const headI = new THREE.InstancedMesh(new THREE.SphereGeometry(0.22, 14, 10), new THREE.MeshStandardMaterial({ roughness: 0.6 }), n);
   const armI = new THREE.InstancedMesh(new THREE.CapsuleGeometry(0.055, 0.28, 3, 8), new THREE.MeshStandardMaterial({ roughness: 0.7 }), n * 2);
+  const thighI = new THREE.InstancedMesh(new THREE.CapsuleGeometry(0.075, 0.26, 3, 8), new THREE.MeshStandardMaterial({ roughness: 0.8 }), n * 2);
   const hairI = new THREE.InstancedMesh(new THREE.SphereGeometry(0.235, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.5), new THREE.MeshStandardMaterial({ roughness: 0.7 }), n);
   const eyeW = new THREE.InstancedMesh(new THREE.SphereGeometry(0.055, 8, 6), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 }), n * 2), eyeB = new THREE.InstancedMesh(new THREE.SphereGeometry(0.03, 6, 5), new THREE.MeshStandardMaterial({ color: 0x15151c }), n * 2), mouthI = new THREE.InstancedMesh(new THREE.SphereGeometry(0.05, 8, 6), new THREE.MeshStandardMaterial({ color: 0x4a1218 }), n);
   const col = new THREE.Color(); const S = [];
-  idx.forEach((si, k) => { const c1 = r.pick(palette), sk = r.pick(skins), hc = r.pick([0x15100c, 0x3a2a1a, 0x6a4a28, 0xc9a24a, 0x8a8a92, 0x15100c]); col.set(c1); bodyI.setColorAt(k, col); col.set(sk); headI.setColorAt(k, col); armI.setColorAt(k * 2, col); armI.setColorAt(k * 2 + 1, col); col.set(hc); hairI.setColorAt(k, col); S.push({ si, ph: r() * 6.28, sp: r.range(0.8, 1.2), s: r.range(0.9, 1.1), bald: r() < 0.1 }); });
+  idx.forEach((si, k) => { const c1 = r.pick(palette), sk = r.pick(skins), hc = r.pick([0x15100c, 0x3a2a1a, 0x6a4a28, 0xc9a24a, 0x8a8a92, 0x15100c]); col.set(c1); bodyI.setColorAt(k, col); col.set(r.pick([0x2a3048, 0x3a3a40, 0x5a4a3a, 0x1e2a44])); thighI.setColorAt(k * 2, col); thighI.setColorAt(k * 2 + 1, col); col.set(sk); headI.setColorAt(k, col); armI.setColorAt(k * 2, col); armI.setColorAt(k * 2 + 1, col); col.set(hc); hairI.setColorAt(k, col); S.push({ si, ph: r() * 6.28, sp: r.range(0.8, 1.2), s: r.range(0.9, 1.1), bald: r() < 0.1 }); });
   const d = new THREE.Object3D();
   g.update = (t, cheer = 0, hold = 0) => {
     S.forEach((s, k) => {
@@ -55,11 +83,12 @@ export function audience(seatPos, { seed = 5, fill = 0.9, palette = [0xe76f51, 0
       d.position.set(x, y + 1.37 + up * 0.1, z + 0.02); d.rotation.set(-0.7, 0, 0); d.scale.set(s.s, s.bald ? 0.0001 : s.s, s.s); d.updateMatrix(); hairI.setMatrixAt(k, d.matrix);
       for (const sd of [-1, 1]) { d.rotation.set(0, 0, 0); d.scale.setScalar(s.s); d.position.set(x + sd * 0.09 * s.s, y + 1.27 + up * 0.1, z - 0.2 * s.s); d.updateMatrix(); eyeW.setMatrixAt(k * 2 + (sd > 0 ? 1 : 0), d.matrix); d.position.z -= 0.035 * s.s; d.updateMatrix(); eyeB.setMatrixAt(k * 2 + (sd > 0 ? 1 : 0), d.matrix); }
       d.rotation.set(0, 0, 0); d.scale.set(s.s * (1 + cheer * 0.8), s.s * (0.5 + cheer * 1.4), s.s * 0.5); d.position.set(x, y + 1.15 + up * 0.1, z - 0.2 * s.s); d.updateMatrix(); mouthI.setMatrixAt(k, d.matrix);
+      for (const sd of [-1, 1]) { d.rotation.set(Math.PI / 2, 0, 0); d.scale.setScalar(s.s); d.position.set(x + sd * 0.1, y + 0.6, z - 0.2); d.updateMatrix(); thighI.setMatrixAt(k * 2 + (sd > 0 ? 1 : 0), d.matrix); }
       for (const sd of [-1, 1]) { d.scale.setScalar(s.s); d.position.set(x + sd * 0.27, y + 1.0 + up * 0.35, z + 0.02); d.rotation.set(0, 0, -sd * (0.15 + up * 2.6) * 0.5 - 0.0 * sd); d.updateMatrix(); armI.setMatrixAt(k * 2 + (sd > 0 ? 1 : 0), d.matrix); }
     });
-    for (const m of [bodyI, headI, armI, hairI, eyeW, eyeB, mouthI]) m.instanceMatrix.needsUpdate = true;
+    for (const m of [bodyI, headI, armI, thighI, hairI, eyeW, eyeB, mouthI]) m.instanceMatrix.needsUpdate = true;
   };
-  g.add(bodyI, headI, armI, hairI, eyeW, eyeB, mouthI); g.count = n; g.update(0);
+  g.add(bodyI, headI, armI, thighI, hairI, eyeW, eyeB, mouthI); g.count = n; g.update(0);
   return g;
 }
 export function judgesTable(w = 6) { const g = new THREE.Group(); add(g, rbox(w, 0.08, 1.0, 0.04), mat(0x2a1a14, { rough: 0.35 }), [0, 0.88, 0]); add(g, rbox(w, 0.85, 0.12, 0.03), mat(0x3a2418, { rough: 0.45 }), [0, 0.42, 0.45]); add(g, box(w + 0.1, 0.05, 1.05), mat(C.gold, { metal: 0.8 }), [0, 0.9, 0]); return g; }

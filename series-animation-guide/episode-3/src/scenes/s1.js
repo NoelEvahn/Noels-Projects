@@ -1,12 +1,12 @@
 // S1 — GARDEN BBQ (0–9.6): hearts appear above heads: 1 (grandma) -> 2 (kid) -> 4 (mum,dad) -> 8 (4 neighbours) -> 16 (8 more).
-import { THREE, makeCharacter, PRESETS, POSES, FACES, randomPerson, makeLoveAura, rng, clamp, smooth, lerp, easeOutBack, easeOutCubic, orbit, cam, shot, pick, pops, place, makeLovers, V, yawTo, D2R } from '../common.js';
-import { makeStage } from '/lib/stage.js';
-import { buildGarden } from '/lib/sets/garden.js';
-import { makeAnimal, APOSES, AFACES, ANIMALS } from '/lib/animal.js';
-import * as HOLD from '/lib/props/holdables.js';
-import { lawnChair } from '/lib/props/home.js';
-import { burger } from '/lib/props/home.js';
-import { makeSparkles } from '/lib/fx/hearts.js';
+import { THREE, makeCharacter, PRESETS, POSES, FACES, randomPerson, makeLoveAura, rng, clamp, smooth, lerp, easeOutBack, easeOutCubic, orbit, cam, shot, pick, regroup, pops, place, makeLovers, V, yawTo, D2R } from '../common.js';
+import { makeStage } from '../../../assets/library/stage.js';
+import { buildGarden } from '../../../assets/library/sets/garden.js';
+import { makeAnimal, APOSES, AFACES, ANIMALS } from '../../../assets/library/animal.js';
+import * as HOLD from '../../../assets/library/props/holdables.js';
+import { lawnChair } from '../../../assets/library/props/home.js';
+import { burger } from '../../../assets/library/props/home.js';
+import { makeSparkles } from '../../../assets/library/fx/hearts.js';
 
 const STAGE = { sky: ['#7fd0ff', '#fff6dc'], ground: null, fog: ['#dff2ff', 30, 80], shadow: { extent: 12 }, keyPos: [5, 9, 7] };
 
@@ -64,6 +64,8 @@ export default {
       shot(8.4, 8.8, orbit([0.2, 1.7, 0.8], 0, 1.9, 0.0, 34)),                                                            // hero eyes
       shot(8.8, 9.6, orbit([2.0, 0.95, 2.7], -8, 2.2, 0.15, 34), orbit([2.0, 0.95, 2.7], -4, 1.5, 0.15, 32)),            // kid voice + tablet drops
     ];
+    // slower edit: ~2 s shots, each holding the camera of the gag / voiced line it covers
+    S.shots = regroup(S.shots, [[0, 2.4, 0], [2.4, 4.0, 2.0], [4.0, 5.6, 4.4], [5.6, 7.2, 6.4], [7.2, 9.6, 8.0]]);
     return S;
   },
   frame(t, S, ctx) {

@@ -1,13 +1,14 @@
 // Render library items to PNG. Usage: LIB_DEPS=<dir with node_modules> NODE_PATH=$(npm root -g) node tools/shoot.mjs [outDir] [idFilterRegex] [w] [h]
 import { createRequire } from 'module'; import fs from 'fs'; import path from 'path';
-const { chromium } = createRequire(import.meta.url)('playwright');
+const req = createRequire(import.meta.url), tryReq = (n) => { try { return req(n); } catch { try { return req(req.resolve(n, { paths: [process.env.LIB_DEPS || ''] })); } catch { return null; } } };
+const { chromium } = tryReq('playwright') ?? tryReq('playwright-core');   // playwright-core uses the installed Chrome (channel below)
 import { startServer, LIB } from './server.mjs';
 const out = path.resolve(process.argv[2] || path.join(LIB, 'screenshots'));
 const filt = new RegExp(process.argv[3] || '.');
 const W = +process.argv[4] || 640, H = +process.argv[5] || 800;
 fs.mkdirSync(out, { recursive: true });
 const { srv, port } = await startServer();
-const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--no-sandbox'] });
+const browser = await chromium.launch({ channel: process.env.PW_CHANNEL || undefined, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--no-sandbox'] });
 const page = await browser.newPage({ viewport: { width: W, height: H } });
 page.on('console', (m) => { if (['error', 'warning'].includes(m.type())) console.log('[page]', m.text().slice(0, 300)); });
 page.on('pageerror', (e) => console.log('[pageerror]', e.message.slice(0, 400)));

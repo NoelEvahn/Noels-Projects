@@ -1,15 +1,16 @@
 // Episode 3 page: window.renderFrame(i, {scale}) -> JPEG data URL. Every frame is a pure function of the frame index.
 import * as THREE from 'three';
-import { makeRenderer, makeCamera, lookFrom, aimKey } from '/lib/stage.js';
+import { makeRenderer, makeCamera, lookFrom, aimKey } from '../../assets/library/stage.js';
 import * as TL from './timeline.js';
 import * as HUD from './hud.js';
 
 const q = new URLSearchParams(location.search);
 const SCALE = parseFloat(q.get('scale') || '1');
 const W = Math.round(1080 * SCALE), H = Math.round(1920 * SCALE);
-const gl = document.getElementById('gl'), out = document.getElementById('out');
-for (const c of [gl, out]) { c.style.width = W + 'px'; c.style.height = H + 'px'; }
-out.width = W; out.height = H; gl.style.display = 'none';
+// one visible canvas (VideoHub reads it directly); WebGL draws off-screen and is composited into it
+const gl = new OffscreenCanvas(W, H), out = document.getElementById('out');
+document.getElementById('gl')?.remove();
+out.width = W; out.height = H;
 const renderer = makeRenderer(gl, W, H);
 const camera = makeCamera(W, H, 45);
 const g2 = out.getContext('2d');
@@ -17,8 +18,8 @@ await document.fonts.load('100px Anton'); await document.fonts.load('800 40px In
 
 // ---- audio-derived data (optional): word timings, voice envelopes ----
 const fetchJson = async (u) => { try { const r = await fetch(u); return r.ok ? await r.json() : null; } catch { return null; } };
-const WORDS = (await fetchJson('/build/audio/words.json')) ?? {};
-const ENV = (await fetchJson('/build/audio/voice_env.json')) ?? {};
+const WORDS = (await fetchJson(new URL('../build/audio/words.json', import.meta.url))) ?? {};
+const ENV = (await fetchJson(new URL('../build/audio/voice_env.json', import.meta.url))) ?? {};
 const fallbackWords = (line, dur) => { const ws = line.text.split(' '); const per = dur / ws.length; return ws.map((w, i) => ({ w, t0: line.t + i * per, t1: line.t + (i + 1) * per })); };
 const wordsOf = (line, dur) => WORDS[line.id] ?? fallbackWords(line, dur);
 // mouth opening 0..1 for a voiced line at time t
@@ -28,15 +29,15 @@ export const voiceAge = (id, t) => { const v = TL.VOICES.find((x) => x.id === id
 const ctx = { THREE, W, H, mouth, voiceAge, TL, SCALE };
 const loaders = { s1: () => import('./scenes/s1.js'), s2: () => import('./scenes/s2.js'), s3: () => import('./scenes/s3.js'), s4: () => import('./scenes/s4.js'), s5: () => import('./scenes/s5.js'), s6: () => import('./scenes/s6.js'), s7: () => import('./scenes/s7.js') };
 const built = {};
-async function sceneFor(id) { if (!built[id]) { const m = await loaders[id](); const s = await m.default.build(ctx); built[id] = { mod: m.default, s }; } return built[id]; }
+for (const id of Object.keys(loaders)) { const m = await loaders[id](); built[id] = { mod: m.default, s: await m.default.build(ctx) }; }   // everything built up front: renderOut must be synchronous
 
 const noise = (n) => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); };
 const cache = { shake: 0 };
 
-window.renderFrame = async (i, opts = {}) => {
+function draw(i) {
   const t = i / TL.FPS;
   const sc = TL.sceneAt(t);
-  const { mod, s } = await sceneFor(sc.id);
+  const { mod, s } = built[sc.id];
   const r = mod.frame(t, s, ctx) || {};
   const cam = r.cam;
   // counter shake on the camera (tiny), stronger on tier hits
@@ -66,6 +67,10 @@ window.renderFrame = async (i, opts = {}) => {
   if (t >= TL.BEATS.title) HUD.drawTitleCard(g2, t);
   if (r.flash) HUD.drawFlash(g2, r.flash);
   g2.restore();
-  return out.toDataURL('image/jpeg', parseFloat(q.get('q') || '0.92'));
-};
+}
+// VideoHub contract: renderOut(t) draws second t synchronously; renderFrame(i) is kept for tools/render.mjs
+window.renderOut = (t) => draw(Math.min(TL.FRAMES - 1, Math.round(t * TL.FPS)));
+window.renderFrame = (i) => { draw(i); return out.toDataURL('image/jpeg', parseFloat(q.get('q') || '0.92')); };
+window.VH_SCENES = TL.SCENES.map((x) => ({ name: x.name, t0: x.t0, t1: x.t1 }));
+window.renderOut(0);
 window.READY = true;

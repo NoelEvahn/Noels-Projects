@@ -1,0 +1,6 @@
+vendor/
+build/
+render/
+snaps/
+node_modules/
+audio/mix.wav

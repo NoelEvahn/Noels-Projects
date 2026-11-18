@@ -374,6 +374,7 @@ function plant(ch) {
 }
 
 // ---------- face ----------
+const IRIS = [0x6b3f1f, 0x3d7fc4, 0x4f8a3c, 0x8a5a2b, 0x2f6a8a, 0x5a3a20];   // brown, blue, green, hazel, teal, dark brown
 function buildFace(ch, o) {
   const R = ch.R, h = ch.head, es = o.eyeSize;
   const F = { eyes: [], brows: [], lids: [] };
@@ -383,8 +384,14 @@ function buildFace(ch, o) {
     const eg = new THREE.Group(); eg.position.set(s * R * 0.335, R * 0.12, R * 0.8); eg.rotation.y = s * 0.22; h.add(eg);
     add(eg, sph(R * 0.3 * es, 32, 22), sclera, [0, 0, 0], [0, 0, 0], [1, 1.12, 0.6]);
     const pg = new THREE.Group(); pg.position.z = R * 0.3 * es * 0.6 * 0.88; eg.add(pg);
-    const pupil = add(pg, sph(R * 0.135 * es, 24, 16), pupilM, [0, 0, 0], [0, 0, 0], [1, 1, 0.45]);
-    add(pg, sph(R * 0.045 * es, 8, 6), mat(0xffffff, { emissive: 0xffffff, emissiveIntensity: 0.5 }), [R * 0.045 * es, R * 0.05 * es, R * 0.05 * es], [0, 0, 0], [1, 1, 0.5]);
+    // coloured iris ring (darker rim, lighter centre) + pupil + two catchlights: eyes read as eyes, not black buttons
+    const irisC = o.irisColor ?? IRIS[(o.seed ?? 1) % IRIS.length];
+    add(pg, sph(R * 0.17 * es, 28, 16), mat(shade(irisC, 0.55), { rough: 0.3 }), [0, 0, -R * 0.012 * es], [0, 0, 0], [1, 1, 0.4]);
+    add(pg, sph(R * 0.15 * es, 28, 16), mat(irisC, { rough: 0.25 }), [0, 0, -R * 0.004 * es], [0, 0, 0], [1, 1, 0.42]);
+    const pupil = add(pg, sph(R * 0.095 * es, 24, 16), pupilM, [0, 0, R * 0.006 * es], [0, 0, 0], [1, 1, 0.45]);
+    const glint = mat(0xffffff, { emissive: 0xffffff, emissiveIntensity: 0.6 });
+    add(pg, sph(R * 0.05 * es, 10, 8), glint, [R * 0.055 * es, R * 0.06 * es, R * 0.06 * es], [0, 0, 0], [1, 1, 0.5]);
+    add(pg, sph(R * 0.022 * es, 8, 6), glint, [-R * 0.06 * es, -R * 0.05 * es, R * 0.058 * es], [0, 0, 0], [1, 1, 0.5]);
     const lidPivot = new THREE.Group(); eg.add(lidPivot);
     const lid = add(lidPivot, sph(R * 0.312 * es, 28, 14, 0, Math.PI * 2, 0, Math.PI / 2), skinM, [0, 0, 0], [0, 0, 0], [1, 1.12, 0.62]); lid.castShadow = false;
     if (o.lashes) for (let k = 0; k < 3; k++) { const ang = (0.55 + k * 0.28); add(lidPivot, cap(R * 0.014, R * 0.07, 3, 5), lashM, [s * Math.sin(ang) * R * 0.3 * es, Math.cos(ang) * R * 0.3 * es * 1.12 * 0.95, R * 0.07], [0, 0, -s * (0.4 + k * 0.5) + (s > 0 ? 0 : 0)]); }

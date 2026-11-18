@@ -1,12 +1,12 @@
 // S4 — THE ENTIRE STATE (32–44.8): relief map glows pink, rapid cuts (marching band, traffic, bakery, office, school bus), then the scientists' lab. 65,536 -> 4,194,304.
-import { THREE, makeCharacter, PRESETS, POSES, FACES, randomPerson, rng, clamp, smooth, lerp, easeOutBack, easeOutCubic, orbit, cam, shot, pick, pops, place, V, D2R } from '../common.js';
-import { makeStage } from '/lib/stage.js';
-import { reliefMap, car, schoolBus } from '/lib/props/world.js';
-import { buildLab } from '/lib/sets/lab.js';
-import { makeAnimal, APOSES, ANIMALS } from '/lib/animal.js';
-import { makeHeartField, makeHeart } from '/lib/fx/hearts.js';
-import { mat, add, box, sph, cyl, cap, rbox, textBoard, heartGeo, canvasTex } from '/lib/util.js';
-import * as HOLD from '/lib/props/holdables.js';
+import { THREE, makeCharacter, PRESETS, POSES, FACES, randomPerson, rng, clamp, smooth, lerp, easeOutBack, easeOutCubic, orbit, cam, shot, pick, regroup, pops, place, V, D2R } from '../common.js';
+import { makeStage } from '../../../assets/library/stage.js';
+import { reliefMap, car, schoolBus } from '../../../assets/library/props/world.js';
+import { buildLab } from '../../../assets/library/sets/lab.js';
+import { makeAnimal, APOSES, ANIMALS } from '../../../assets/library/animal.js';
+import { makeHeartField, makeHeart } from '../../../assets/library/fx/hearts.js';
+import { mat, add, box, sph, cyl, cap, rbox, textBoard, heartGeo, canvasTex } from '../../../assets/library/util.js';
+import * as HOLD from '../../../assets/library/props/holdables.js';
 
 const SKY = { sky: ['#9fd8ff', '#fff3d6'], ground: null, fog: ['#e8f4ff', 60, 200], shadow: { extent: 16 }, keyPos: [6, 12, 8] };
 // each cut lives in its own group far apart so a single scene object can hold all of them; only one is visible at a time
@@ -72,6 +72,8 @@ export default {
       { ...shot(43.6, 44.4, oc('lab', [3.4, 2.8, 9], [0, 2.6, -5], 50)), g: 'lab' },                                                          // wide: pink tank overflows
       { ...shot(44.4, 44.8, oc('lab', [0.6, 2.2, 4.6], [1.0, 2.1, 1.0], 32)), g: 'lab' },                                                       // chief "Bombo."
     ];
+    // slower edit: ~2 s shots, each holding the camera of the gag / voiced line it covers
+    S.shots = regroup(S.shots, [[32.0, 34.4, 32.0], [34.4, 36.8, 35.2], [36.8, 39.2, 38.4], [39.2, 41.2, 40.0], [41.2, 43.2, 42.0], [43.2, 44.8, 44.4]]);
     return S;
   },
   frame(t, S, ctx) {

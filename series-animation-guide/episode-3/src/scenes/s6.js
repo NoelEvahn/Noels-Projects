@@ -1,14 +1,14 @@
 // S6 — AROUND THE WORLD (57.6–75.2): Earth's night lights turn pink; billboard tour of six cities; EVERYONE ON EARTH at 66.0; plaza montage; ghosts of everyone who ever lived.
-import { THREE, makeCharacter, PRESETS, POSES, FACES, randomPerson, rng, clamp, smooth, lerp, easeOutBack, easeOutCubic, orbit, cam, shot, pick, pops, place, V, D2R } from '../common.js';
-import { makeStage, gradientTexture } from '/lib/stage.js';
-import { buildSpace, SPACE_STAGE } from '/lib/sets/space.js';
-import { buildPlaza, plazaStage, PLAZA_CITIES } from '/lib/sets/plaza.js';
-import { ghostify } from '/lib/character.js';
-import { makeAnimal, APOSES, ANIMALS } from '/lib/animal.js';
-import { makeHeartField, makeLoveAura } from '/lib/fx/hearts.js';
-import { mat, add, cyl, tor } from '/lib/util.js';
+import { THREE, makeCharacter, PRESETS, POSES, FACES, randomPerson, rng, clamp, smooth, lerp, easeOutBack, easeOutCubic, orbit, cam, shot, pick, regroup, pops, place, V, D2R } from '../common.js';
+import { makeStage, gradientTexture } from '../../../assets/library/stage.js';
+import { buildSpace, SPACE_STAGE } from '../../../assets/library/sets/space.js';
+import { buildPlaza, plazaStage, PLAZA_CITIES } from '../../../assets/library/sets/plaza.js';
+import { ghostify } from '../../../assets/library/character.js';
+import { makeAnimal, APOSES, ANIMALS } from '../../../assets/library/animal.js';
+import { makeHeartField, makeLoveAura } from '../../../assets/library/fx/hearts.js';
+import { mat, add, cyl, tor } from '../../../assets/library/util.js';
 import { counterText, tickAge } from '../timeline.js';
-import { bubbles } from '/lib/props/lab.js';
+import { bubbles } from '../../../assets/library/props/lab.js';
 
 const SPACE_BG = gradientTexture('#02030a', '#0a1230');
 const OFF = (i) => [400 * (i + 1), 0, 0];
@@ -63,6 +63,8 @@ export default {
       { ...shot(74.0, 74.4, E(0, 3.0, 20, 50, 0.5), E(0, 3.0, 18, 50, 0.5)), g: 'space' },
       { ...shot(74.4, 75.2, orbit([0, 1.4, 7.2], 0, 4.2, 0.2, 36), orbit([0, 1.4, 7.2], 0, 3.2, 0.2, 34), { ease: 'in' }), g: 'space' },   // caveman ghost "bombo..."
     ];
+    // slower edit: ~2 s shots, each holding the camera of the gag / voiced line it covers
+    S.shots = regroup(S.shots, [[57.6, 59.2, 57.6], [59.2, 61.2, 59.2], [61.2, 63.6, 62.4], [63.6, 65.6, 64.0], [65.6, 68.0, 66.0], [68.0, 69.6, 68.4], [69.6, 71.2, 70.0], [71.2, 73.6, 71.6], [73.6, 75.2, 74.4]]);
     return S;
   },
   frame(t, S, ctx) {
