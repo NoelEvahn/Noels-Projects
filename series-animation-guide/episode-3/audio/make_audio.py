@@ -96,7 +96,7 @@ for vid, t in VOICES:
     duck_v[a:b] = 1
     if vid == 'crowd_world': place(voice, load(f'{AUD}/voices/slowmo_scream.wav'), t)
 for nid, t in NARR + ROASTS:
-    y = load(f'{AUD}/narr/{nid}.wav'); y = norm_lufs(y, -16.5 if nid.startswith('n') else -18.5); place(narr, y, t); duck_n[int(t * SR):min(N, int(t * SR) + len(y))] = 1
+    y = load(f'{AUD}/narr/{nid}.wav'); y = norm_lufs(y, -17.5 if nid.startswith('n') else -19.0); place(narr, y, t); duck_n[int(t * SR):min(N, int(t * SR) + len(y))] = 1
 def smooth_env(x, atk=0.02, rel=0.25):
     out = np.zeros_like(x); v = 0.0; ka, kr = np.exp(-1 / (atk * SR)), np.exp(-1 / (rel * SR))
     for i in range(len(x)):

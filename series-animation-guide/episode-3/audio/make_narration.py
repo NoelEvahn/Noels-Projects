@@ -6,7 +6,15 @@ from common import *
 KDIR = os.environ.get('KOKORO_DIR', os.path.join(HERE, '../../../../series-deps/models'))
 from kokoro_onnx import Kokoro
 tts = Kokoro(os.path.join(KDIR, 'kokoro-v1.0.onnx'), os.path.join(KDIR, 'voices-v1.0.bin'))
-KVOICE = os.environ.get('KOKORO_VOICE', 'bm_george')
+KVOICE = os.environ.get('KOKORO_VOICE', 'bm_george'); KLANG = 'en-gb' if KVOICE.startswith('b') else 'en-us'
+def polish(y):
+    # voice clean-up: rumble cut, de-ess (tame 'sss' hiss, the loud 'shh' the user heard), gentle warmth, soft top, tiny room
+    y = highpass(y, 80)
+    hf = highpass(y, 4500); env = np.sqrt(np.maximum(lowpass(hf ** 2, 30), 0) + 1e-10); thr = np.percentile(env, 70)
+    g = np.minimum(1.0, (thr / env) ** 0.8); y = y - hf + hf * g
+    y = y + 0.18 * lowpass(y, 250)          # a little body in the low-mids
+    y = lowpass(y, 10500)
+    return reverb(y, SR, 0.35, 0.06, 3)[: len(y) + int(0.15 * SR)]
 src = open(os.path.join(os.path.dirname(__file__), '../src/timeline.js')).read()
 def grab(name):
     blk = re.search(r'export const %s = \[(.*?)\n\];' % name, src, re.S).group(1)
@@ -17,15 +25,14 @@ from faster_whisper import WhisperModel
 asr = WhisperModel('tiny.en', device='cpu', compute_type='int8')
 os.makedirs(f'{AUD}/narr', exist_ok=True); WORDS = {}; report = []
 for L in LINES:
-    y, sr = tts.create(L['text'], voice=KVOICE, speed=1.0, lang='en-gb')
-    y = librosa.resample(y, orig_sr=sr, target_sr=SR)
-    nz = np.where(np.abs(y) > 0.01)[0]; y = y[max(0, nz[0] - int(0.02 * SR)): min(len(y), nz[-1] + int(0.08 * SR))]
-    tempo = 1.0   # natural pace; only sped up if a line would overrun its limit
-    lim = LIMITS.get(L['id'])
-    for _ in range(4):
-        z = rubberband(y, SR, tempo=tempo); dur = len(z) / SR
-        if lim is None or L['t'] + dur <= lim: break
-        tempo *= 1.06
+    # natural speed; if a line would overrun its slot, ask Kokoro to read faster (clean) instead of time-stretching (robotic)
+    lim = LIMITS.get(L['id']); speed = 1.0
+    for _ in range(5):
+        y, sr = tts.create(L['text'], voice=KVOICE, speed=speed, lang=KLANG)
+        y = librosa.resample(y, orig_sr=sr, target_sr=SR); nz = np.where(np.abs(y) > 0.01)[0]; y = y[max(0, nz[0] - int(0.02 * SR)): min(len(y), nz[-1] + int(0.08 * SR))]
+        if lim is None or L['t'] + len(y) / SR <= lim: break
+        speed = min(1.3, speed * (len(y) / SR) / max(0.5, lim - L['t']) * 1.02)
+    tempo = speed; z = polish(y); dur = len(z) / SR
     z = fade(z, 0.005, 0.03)
     z16 = librosa.resample(z, orig_sr=SR, target_sr=16000).astype('float32')
     segs, _ = asr.transcribe(z16, word_timestamps=True, language='en'); ws = [w for s in segs for w in s.words]
