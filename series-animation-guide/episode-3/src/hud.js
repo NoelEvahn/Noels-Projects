@@ -42,13 +42,14 @@ const tagTimes = TAGS.map((x) => x[0]);
 
 export function drawCatIcon(g, cx, cy, s = 1) { g.save(); g.translate(cx, cy); g.scale(s, s); g.fillStyle = '#f08a2e'; g.beginPath(); g.arc(0, 0, 17, 0, 7); g.fill(); g.beginPath(); g.moveTo(-16, -6); g.lineTo(-12, -24); g.lineTo(-3, -14); g.fill(); g.beginPath(); g.moveTo(16, -6); g.lineTo(12, -24); g.lineTo(3, -14); g.fill(); g.fillStyle = '#c4e05a'; for (const sd of [-1, 1]) { g.beginPath(); g.ellipse(sd * 7, -1, 4.5, 4, 0, 0, 7); g.fill(); } g.fillStyle = '#f08a2e'; g.fillRect(-12, -6, 24, 3.5); g.restore(); }
 // Gerald's chip: never changes while the counter explodes. Drawn under the tag line.
-export function drawGeraldChip(g, y = 470) {
+export function drawGeraldChip(g, y = 470, t = 0) {
+  const yes = t >= BEATS.geraldYes, pop = yes ? back(Math.min(1, (t - BEATS.geraldYes) / 0.3)) : 1;
   const w = 560, h = 46, x = W / 2 - w / 2;
   g.save(); g.fillStyle = 'rgba(20,20,26,0.72)'; g.strokeStyle = '#ff9a3d'; g.lineWidth = 4; g.beginPath(); g.roundRect(x, y, w, h, 28); g.fill(); g.stroke();
   // little cat head icon
   const cx = x + 40, cy = y + h / 2 + 2; g.fillStyle = '#f08a2e'; g.beginPath(); g.arc(cx, cy, 17, 0, 7); g.fill(); g.beginPath(); g.moveTo(cx - 16, cy - 6); g.lineTo(cx - 12, cy - 24); g.lineTo(cx - 3, cy - 14); g.fill(); g.beginPath(); g.moveTo(cx + 16, cy - 6); g.lineTo(cx + 12, cy - 24); g.lineTo(cx + 3, cy - 14); g.fill();
   g.fillStyle = '#c4e05a'; for (const s of [-1, 1]) { g.beginPath(); g.ellipse(cx + s * 7, cy - 1, 4.5, 4, 0, 0, 7); g.fill(); } g.fillStyle = '#f08a2e'; g.fillRect(cx - 12, cy - 6, 24, 3.5);   // half-lids
-  g.textAlign = 'left'; g.textBaseline = 'middle'; g.font = '800 24px Inter, sans-serif'; g.fillStyle = '#fff'; g.fillText('GERALD', x + 72, y + h / 2 + 1); g.fillStyle = '#ffb870'; g.fillText('· LOVES YOU:', x + 200, y + h / 2 + 1); g.fillStyle = '#ff5a5a'; g.fillText('NO', x + 440, y + h / 2 + 1);
+  g.textAlign = 'left'; g.textBaseline = 'middle'; g.font = '800 24px Inter, sans-serif'; g.fillStyle = '#fff'; g.fillText('GERALD', x + 72, y + h / 2 + 1); g.fillStyle = '#ffb870'; g.fillText('· LOVES YOU:', x + 200, y + h / 2 + 1); if (yes) { g.save(); g.translate(x + 470, y + h / 2 + 1); g.scale(pop, pop); g.fillStyle = '#ff5c9a'; g.textAlign = 'center'; g.fillText('YES ♥', 0, 0); g.restore(); } else { g.fillStyle = '#ff5a5a'; g.fillText('NO', x + 440, y + h / 2 + 1); }
   g.restore();
 }
 
@@ -110,9 +111,9 @@ export function drawTitleCard(g, t) {
   g.save(); g.translate(0, 0); g.scale(k, k); for (const [i, l] of lines.entries()) { const px = fitFont(g, l, 'Anton, Impact, sans-serif', 150, W - 2 * M); g.font = `${px}px Anton, Impact, sans-serif`; strokeFill(g, l, 0, y, i === 3 ? '#ffd21f' : '#ffffff', '#101014', 16); y += 160; } g.restore();
   const fa = Math.min(1, Math.max(0, (a - 0.3) / 0.3)); g.globalAlpha = fa;
   g.font = '800 44px Inter, sans-serif'; strokeFill(g, 'FINAL COUNT', 0, 1230, '#9be7ff', '#000', 8);
-  const px = fitFont(g, '17,592,186,044,416', 'Anton, Impact, sans-serif', 130, W - 2 * M); g.font = `${px}px Anton, Impact, sans-serif`; strokeFill(g, '17,592,186,044,416', 0, 1330, '#ffd21f', '#101014', 14);
+  const fc = counterText(BEATS.title); const px = fitFont(g, fc, 'Anton, Impact, sans-serif', 130, W - 2 * M); g.font = `${px}px Anton, Impact, sans-serif`; strokeFill(g, fc, 0, 1330, '#ffd21f', '#101014', 14);
   g.font = '800 44px Inter, sans-serif'; strokeFill(g, 'PEOPLE WHO LOVE YOU', 0, 1425, '#fff', '#000', 8);
-  g.font = '800 38px Inter, sans-serif'; strokeFill(g, 'NOT COUNTED: 1 CAT', 20, 1500, '#ffb27a', '#000', 8); drawCatIcon(g, -250, 1498, 1.5);
+  g.font = '800 38px Inter, sans-serif'; strokeFill(g, 'FINALLY COUNTED: 1 CAT', 20, 1500, '#ffb27a', '#000', 8); drawCatIcon(g, -250, 1498, 1.5);
   g.restore();
 }
 export function drawBanner(g, b, age) { if (age < 0) return; const k = back(age / 0.25); g.save(); g.translate(W / 2, b.y ?? 1180); g.scale(k, k); g.rotate(b.rot ?? -0.02); g.textAlign = 'center'; g.textBaseline = 'middle'; const px = fitFont(g, b.text, 'Anton, Impact, sans-serif', b.size ?? 120, W - 2 * M - 20); g.font = `${px}px Anton, Impact, sans-serif`; strokeFill(g, b.text, 0, 0, b.fill ?? '#ffffff', '#101014', Math.max(10, px * 0.12)); g.restore(); }

@@ -58,8 +58,8 @@ function draw(i) {
   g2.drawImage(gl, 0, 0, W, H);
   g2.save(); g2.scale(SCALE, SCALE);
   if (!r.hideHud) {
-    HUD.drawClock(g2, Math.min(t, 89.99)); const base = HUD.drawCounter(g2, Math.min(t, 89.99));
-    HUD.drawGeraldChip(g2, 290 + base * 0.58 + 70 + 24);
+    HUD.drawClock(g2, Math.min(t, TL.DUR - 0.01)); const base = HUD.drawCounter(g2, Math.min(t, TL.DUR - 0.01));
+    HUD.drawGeraldChip(g2, 290 + base * 0.58 + 70 + 24, t);
   }
   // captions
   if (r.banner) HUD.drawBanner(g2, r.banner, t - (r.banner.t0 ?? 0));

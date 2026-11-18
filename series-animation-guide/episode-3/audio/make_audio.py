@@ -3,7 +3,8 @@ import numpy as np, soundfile as sf, json, os, re, glob, subprocess
 import scipy.signal as ss
 from common import *
 rng = np.random.default_rng(7)
-N = int(90 * SR); T = np.arange(N) / SR
+DUR = 100.0; CLIP0, CLIP1, YES, TITLE = 90.0, 96.8, 89.2, 98.6   # ending: Gerald's clap clip plays with only music under it
+N = int(DUR * SR); T = np.arange(N) / SR
 src = open(os.path.join(os.path.dirname(__file__), '../src/timeline.js')).read()
 def js_list(name):
     m = re.search(r'export const %s = \[(.*?)\n\];' % name, src, re.S); return m.group(1)
@@ -37,7 +38,7 @@ def reverse(y): return y[::-1]
 sfx = np.zeros((N, 2))
 penta = [0, 2, 4, 7, 9]
 # doubling chimes (45) + soft bass hit; tier hits get bigger
-for k, tick in enumerate(np.arange(0, 90, 2.0)):
+for k, tick in enumerate(np.arange(0, DUR, 2.0)):
     if 77.6 <= tick < 80.0: continue      # true silence window: the counter changes without a sound
     tier = TIERS.get(int(tick), 0); f = 659.3 * 2 ** ((penta[k % 5] + 12 * (k // 5 % 2)) / 12) * (1 + 0.0 * k)
     g = 0.5 + 0.2 * tier; place(sfx, chime(f, 0.32 + 0.2 * tier, g), tick); place(sfx, thump(85, 0.2, 0.45 + 0.15 * tier), tick)
@@ -73,10 +74,11 @@ place(sfx, boom(2.6, 1.0), 80.0); place(sfx, whoosh(1.6, True, 0.7), 80.0); plac
 for i, c in enumerate(np.arange(80.8, 83.6, 0.4)): place(sfx, whoosh(0.35, True, 0.4 + 0.02 * i), c - 0.12); place(sfx, chime(440 * 2 ** (i / 6), 0.3, 0.35), c)
 place(sfx, boom(1.2, 0.45), 83.55)
 place(sfx, np.zeros(10), 87.6)
-place(sfx, scratch(0.55) * 0.9, 88.8); place(sfx, boom(1.8, 0.8), 88.8 + 0.05); place(sfx, chime(392, 1.2, 0.6) + chime(587, 1.2, 0.5), 88.85)
+place(sfx, chime(1046, 1.0, 0.5) + chime(1568, 1.0, 0.4), YES); place(sfx, pop(0.4), YES)   # Gerald: heart eyes
+place(sfx, chime(392, 1.4, 0.45) + chime(587, 1.4, 0.4) + chime(784, 1.4, 0.3), TITLE)    # title card
 # ------------------------------------------------------------------ music
 M = read(os.path.join(AUD, 'music_stretched.wav')); t0 = json.load(open(os.path.join(AUD, '../music_stretch.json')))['t0']
-mus = M[int(t0 * SR): int((t0 + 90) * SR)].copy(); mus = np.pad(mus, ((0, N - len(mus)), (0, 0)))
+mus = M[int(t0 * SR): int((t0 + DUR) * SR)].copy(); mus = np.pad(mus, ((0, N - len(mus)), (0, 0)))
 mus = norm_lufs(mus, -17)
 fi = int(2.0 * SR); mus[:fi] *= (0.3 + 0.7 * np.sin(np.linspace(0, np.pi / 2, fi)) ** 2)[:, None]   # user: the first second was very loud -> music eases in
 # low-pass sweep 76.0 -> 77.6, digital silence 77.6 -> 80.0, slam at 80.0; hard cut 87.6 -> 88.8; one bar back at 88.8 with a tail
@@ -86,7 +88,10 @@ for i in range(8):
 mus[a:b] *= np.linspace(1, 0.35, b - a)[:, None]
 mus[b:int(80.0 * SR)] = 0.0
 mus[int(87.6 * SR):int(88.8 * SR)] = 0.0
-tail = int(1.2 * SR); mus[int(88.8 * SR) + int(1.6 * SR):] = 0.0 if int(88.8 * SR) + int(1.6 * SR) < N else mus[int(88.8 * SR) + int(1.6 * SR):]
+duck = np.ones(N); r = int(0.3 * SR); a0, a3, a1 = int(CLIP0 * SR), int((CLIP0 + 3.0) * SR), int(CLIP1 * SR)   # the clip's own sound is in its first 3 s
+duck[a0:a3] = 0.36; duck[a3:a1] = np.linspace(0.36, 0.85, a1 - a3) ** 0.3; duck[a0 - r:a0] = np.linspace(1, 0.36, r); duck[a1:a1 + r] = np.linspace(0.85, 1, r)
+mus *= duck[:, None]   # music sits under Gerald's clip
+fo = int((DUR - TITLE) * SR); mus[-fo:] *= np.linspace(1, 0, fo)[:, None] ** 1.5   # fade out under the title card
 mus[int(80.0 * SR):int(80.0 * SR) + int(0.012 * SR)] *= np.linspace(0, 1, int(0.012 * SR))[:, None]
 mus[int(88.8 * SR):int(88.8 * SR) + int(0.01 * SR)] *= np.linspace(0, 1, int(0.01 * SR))[:, None]
 # ------------------------------------------------------------------ voices, narration, roasts
@@ -106,6 +111,8 @@ def smooth_env(x, atk=0.02, rel=0.25):
 g_duck = 10 ** (-5 * smooth_env(duck_n[::48].repeat(48)[:N] if False else duck_n) / 20) * 10 ** (-2.5 * smooth_env(duck_v) / 20)
 sfx *= SFX_GAIN
 sfx[:int(2.4 * SR)] = 0.0   # user: no SFX at the very start of the film
+sfx[int((CLIP0 - 0.1) * SR):int(CLIP1 * SR)] = 0.0   # only the clip and the music during Gerald's clap
+clip = norm_lufs(read(os.path.join(AUD, 'clip.wav')), -16.0); place(narr, clip[:int((CLIP1 - CLIP0) * SR)], CLIP0)
 mix = mus * g_duck[:, None] + voice + narr + sfx
 mix[int(77.6 * SR):int(80.0 * SR)] = mus[int(77.6 * SR):int(80.0 * SR)] * 0 + (sfx[int(77.6 * SR):int(80.0 * SR)] + narr[int(77.6 * SR):int(80.0 * SR)])
 # ------------------------------------------------------------------ master: -14 LUFS, limiter ceiling ~ -3.2 dB, then verify true peak after AAC elsewhere

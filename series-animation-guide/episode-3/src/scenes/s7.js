@@ -14,7 +14,8 @@ const HILL_BG = gradientTexture(HILL_STAGE.sky[0], HILL_STAGE.sky[2], HILL_STAGE
 const SPACE_BG = gradientTexture('#02030a', '#0a1230');
 const GBG = gradientTexture('#8fd3ff', '#fff6dc');
 const OFFG = [0, 0, 600];   // garden group offset
-const FREEZE = 88.8;
+const FREEZE = 100;   // the world keeps moving under the title card now (walk-off)
+export const GERALD_YES = 89.2, CLIP_T0 = 90.0, CLIP_T1 = 96.8, DAP = 96.0;   // the ending: Gerald finally loves him
 
 export default {
   async build(ctx) {
@@ -47,6 +48,12 @@ export default {
     S.g = { hero: mk('hero'), mum: mk('mum'), dad: mk('dad'), kid: mk('kid'), grandma: mk('grandma') };
     S.gNb = ['neighbourMan', 'neighbourWoman', 'neighbourTeen', 'neighbourGranny'].map((n, i) => { const c = mk(n); const left = i < 2; c.root.position.set(left ? -8.5 : 8.5, 0.35, left ? -1.6 + i * 3.2 : 1.8 - (i - 2) * 3.4); c.root.rotation.y = left ? Math.PI / 2 : -Math.PI / 2; return c; });
     S.gCat = makeAnimal('cat', ANIMALS.gerald); gg.add(S.gCat.root); S.gCat.root.position.set(1.3, 0, 3.4); S.gCat.root.rotation.y = 0.0;
+    // Gerald's clap clip (user's green-screen video, keyed by audio/make_clip.py) on a camera-facing card on the lawn
+    const CH = 1.65, n = (await (await fetch(new URL('../../build/clip/count.json', import.meta.url))).json()).n;
+    S.clipFrames = await Promise.all(Array.from({ length: n }, async (_, i) => createImageBitmap(await (await fetch(new URL(`../../build/clip/f${String(i).padStart(3, '0')}.png`, import.meta.url))).blob(), { imageOrientation: 'flipY', premultiplyAlpha: 'none' })));
+    const ctex = new THREE.Texture(S.clipFrames[0]); ctex.colorSpace = THREE.SRGBColorSpace; ctex.flipY = false; ctex.needsUpdate = true; S.ctex = ctex; S.clipI = -1;
+    const card = new THREE.Mesh(new THREE.PlaneGeometry(CH * 480 / 723, CH), new THREE.MeshBasicMaterial({ map: ctex, transparent: true, alphaTest: 0.08, toneMapped: false, side: THREE.DoubleSide }));
+    const cardG = new THREE.Group(); card.position.y = CH / 2 - 0.184 * CH; cardG.add(card); cardG.position.set(1.4, 0, 2.75); gg.add(cardG); S.clipCard = cardG;
     S.gLovers = makeLovers(gg); for (const k of ['mum', 'dad', 'kid', 'grandma']) S.gLovers.add(S.g[k], 0, 0.42); S.gNb.forEach((c) => S.gLovers.add(c, 0, 0.42));
     // shots
     const HC = [0, hillH(0, 0), 0];
@@ -83,8 +90,12 @@ export default {
       { ...shot(88.8, 90.0, G([-0.6, 1.9, 5.2], [0.4, 1.7, 2.6], 30), G([-0.5, 1.9, 4.6], [0.4, 1.7, 2.6], 28)), g: 'garden' },            // FREEZE: title card
     ];
     // slower edit: ~2 s shots, each holding the camera of the gag / voiced line it covers
-    S.shots = regroup(S.shots, [[75.2, 77.6, 76.0], [77.6, 79.6, 78.4], [79.6, 81.2, 80.0], [81.2, 82.0, 81.6], [82.0, 82.8, 82.0], [82.8, 83.6, 83.2], [83.6, 85.6, 84.4], [85.6, 87.2, 86.6], [87.2, 88.8, 88.0], [88.8, 90.0, 88.8]]);
-    S.shots.forEach((s) => { if (s.g === 'earth' || s.g === 'cosmos') s.wide = true; }); S.shots[S.shots.length - 1].close = 1;   // space pull-backs keep their scale; title-card close-up as authored
+    S.shots = regroup(S.shots, [[75.2, 77.6, 76.0], [77.6, 79.6, 78.4], [79.6, 81.2, 80.0], [81.2, 82.0, 81.6], [82.0, 82.8, 82.0], [82.8, 83.6, 83.2], [83.6, 85.6, 84.4], [85.6, 87.2, 86.6], [87.2, 88.8, 88.0], [88.8, 90.0, 88.8], [90.0, 96.8, 88.8], [96.8, 100.0, 88.8]]);
+    S.shots.forEach((s) => { if (s.g === 'earth' || s.g === 'cosmos') s.wide = true; }); // space pull-backs keep their scale
+    const nS = S.shots.length;
+    S.shots[nS - 3] = { ...S.shots[nS - 3], a: G([-5.0, 1.75, 2.1], [-7.1, 1.45, 1.6], 36), b: G([-5.3, 1.72, 2.0], [-7.1, 1.47, 1.6], 32), close: 1, g: 'garden' };   // Gerald turns: heart eyes
+    S.shots[nS - 2] = { ...S.shots[nS - 2], a: G([0.95, 1.15, 7.9], [0.95, 1.0, 2.7], 40), b: G([0.95, 1.1, 7.3], [0.95, 1.0, 2.7], 40), close: 1, g: 'garden' };     // the clap, then the dap
+    S.shots[nS - 1] = { ...S.shots[nS - 1], a: G([-3.2, 1.3, 7.4], [-0.6, 0.85, 3.0], 42), b: G([-4.2, 1.3, 6.9], [-2.6, 0.85, 3.3], 42), close: 1, g: 'garden' };    // paw in hand, they walk off
     S.HC = HC; return S;
   },
   frame(t, S, ctx) {
@@ -123,14 +134,33 @@ export default {
     if (key === 'garden') {
       const g = S.g; const age = (tt - 86.0);
       const hx = lerp(5.5, 0.4, easeOutCubic(clamp(age / 1.2))); const walking = age < 1.2;
-      place(g.hero, hx, 0, 2.6, -0.4 + (walking ? 0 : 0.3)); g.hero.pose(walking ? POSES.walk(tt, 6) : tt < 87.6 ? { ...POSES.dust(tt), lean: 0.03 } : { ...POSES.deadpan(tt) }); g.hero.face(tt < 88.0 ? { smile: 0, lid: 0.35 } : { smile: 0, lid: 0.35, open: mo('hero_casual', tt) * 0.5 });
+      const wk = Math.max(0, tt - CLIP_T1), wx = 0.4 - wk * 1.15, wz = 2.6 + wk * 0.3;
+      place(g.hero, tt >= CLIP_T1 ? wx : hx, 0, tt >= CLIP_T1 ? wz : 2.6, tt >= CLIP_T1 ? -Math.PI / 2 - 0.25 : tt >= 88.8 ? Math.PI / 2 * 0.75 : -0.4 + (walking ? 0 : 0.3)); g.hero.pose(walking ? POSES.walk(tt, 6) : tt < 87.6 ? { ...POSES.dust(tt), lean: 0.03 } : { ...POSES.deadpan(tt) }); g.hero.face(tt < 88.0 ? { smile: 0, lid: 0.35 } : { smile: 0, lid: 0.35, open: mo('hero_casual', tt) * 0.5 });
+      if (tt >= 88.8) {   // the ending: he watches Gerald clap, falls for it, fist-bumps the paw, they walk off together
+        const love = easeOutBack(clamp((tt - 91.0) / 0.4)), dap = clamp((tt - (DAP - 0.35)) / 0.35) * (1 - clamp((tt - (DAP + 0.5)) / 0.3));
+        if (tt < CLIP_T1) g.hero.pose({ ...POSES.idle(tt), aRf: 1.35 * dap, aRe: 0.25 * dap, aRs: 0.12, hR: dap > 0.1 ? 'fist' : 'relaxed', lean: 0.06 * dap, hy: -0.2 });
+        else g.hero.pose({ ...POSES.walk(tt, 6), aLf: 0.15, aLs: 0.42, aLe: 0.15, hL: 'grip', hy: 0.35 });
+        g.hero.face(tt < 91.0 ? { ...FACES.shock, open: 0.3 } : { ...FACES.love, hearts: love, open: tt > 92 && tt < 96.6 ? 0.3 : 0 });
+      }
       place(g.mum, 3.0, 0, 0.0, 0.0); g.mum.pose({ ...POSES.sitOn(tt, 0.34), aRf: 0.5, aLf: 0.5 }); g.mum.face(FACES.shock);
       place(g.dad, -2.3, 0, -2.4, 0.2); g.dad.pose({ ...POSES.shock(tt), aRs: 0.4, aLs: 0.3 }); g.dad.face(FACES.shock);
       place(g.kid, 1.9, 0, 1.4, 0.3); g.kid.pose(POSES.shock()); g.kid.face(FACES.shock);
       place(g.grandma, -3.6, 0, 1.2, 0.9); g.grandma.pose({ ...POSES.sitOn(tt, 0.34 / 0.92), aRs: 1.6 + Math.sin(tt * 7) * 0.3, aRe: 0.6, hR: 'open' }); g.grandma.face(FACES.love);
       S.gNb.forEach((n, i) => { n.pose(POSES.cheer(tt + i)); n.face(FACES.happy); });
       S.gLovers.update(tt, c.pos, c);
-      S.gCat.pose(tt >= 88.4 ? { ...APOSES.lookAway(tt), hy: 0.9 } : APOSES.stand(tt)); S.gCat.face({ lid: 0.5 }); place(S.gCat, -7.1, 1.15 + 0.0, 1.6, 1.25); S.gCat.root.position.y = 1.15; S.gCat.pose(tt >= 88.4 ? { ...APOSES.loaf(tt), hy: 0.9 } : APOSES.loaf(tt)); S.gCat.root.position.y = 1.15 + 0.115;
+      if (tt >= CLIP_T1) {   // paw in hand: Gerald walks on three legs, front paw up in the hero's hand, heart eyes
+        S.gCat.root.position.set(wx + 0.05, 0, wz + 0.42); S.gCat.root.rotation.y = -Math.PI / 2 - 0.25; S.gCat.root.visible = true;
+        S.gCat.pose({ ...APOSES.walk(tt, 9), legFR: -1.25, pitch: -0.22, hy: -0.5, tailBase: 1.3, tailWave: 0.5 }); S.gCat.face({ ...{ lid: 0, hearts: 1, open: 0 } });
+      } else if (tt >= CLIP_T0) S.gCat.root.visible = false;
+      else S.gCat.root.visible = true;
+      if (tt < CLIP_T0) {
+        const turn = smooth(clamp((tt - 88.8) / 0.35)), hy = 0.9 * (1 - turn);
+        S.gCat.face(tt >= GERALD_YES ? { lid: 0, hearts: easeOutBack(clamp((tt - GERALD_YES) / 0.35)), open: 0.5 } : tt >= 88.8 ? { lid: 0.5 * (1 - turn) } : { lid: 0.5 });
+        place(S.gCat, -7.1, 1.15 + 0.115, 1.6, 1.25); S.gCat.pose(tt >= 88.4 ? { ...APOSES.loaf(tt), hy } : APOSES.loaf(tt)); S.gCat.root.position.y = 1.15 + 0.115;
+      }
+      // the clip card: frame = 30 fps from CLIP_T0, turned to face the camera
+      S.clipCard.visible = tt >= CLIP_T0 && tt < CLIP_T1;
+      if (S.clipCard.visible) { const fi = Math.min(S.clipFrames.length - 1, Math.floor((tt - CLIP_T0) * 30 + 1e-6)); if (fi !== S.clipI) { S.ctex.image = S.clipFrames[fi]; S.ctex.needsUpdate = true; S.clipI = fi; } const cp = S.clipCard.position; S.clipCard.rotation.y = Math.atan2(c.pos[0] - OFFG[0] - cp.x, c.pos[2] - OFFG[2] - cp.z); }
       S.gd.update(tt);
     }
     const r = { cam: c, keyFocus: key === 'earth' ? [0, 0, 900] : key === 'cosmos' ? [0, 0, 1300] : key === 'garden' ? [OFFG[0], 1.4, OFFG[2]] : [0, y0 + 2, 6], keyDist: key === 'garden' ? 10 : 14 };

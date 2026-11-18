@@ -1,11 +1,11 @@
 // Single source of truth for episode 3: scene bounds, counter maths, tags, narration, roasts, voiced moments, (sfx cues are added by scenes).
 // Times in seconds on the 0.4 s beat grid (150 BPM). Pure data + pure functions: used by the page AND by the audio build.
-export const FPS = 30, DUR = 90, FRAMES = 2700;
+export const FPS = 30, DUR = 100, FRAMES = 3000;
 export const TITLE = 'WHAT IF EVERY 2 SECONDS, TWICE AS MANY PEOPLE LOVED YOU?';
 export const SCENES = [
   { id: 's1', name: 'Garden BBQ', t0: 0, t1: 9.6 }, { id: 's2', name: 'The street', t0: 9.6, t1: 20.8 }, { id: 's3', name: 'Talent show', t0: 20.8, t1: 32.0 },
   { id: 's4', name: 'State + lab', t0: 32.0, t1: 44.8 }, { id: 's5', name: 'Cloud Nine', t0: 44.8, t1: 57.6 }, { id: 's6', name: 'Around the world', t0: 57.6, t1: 75.2 },
-  { id: 's7', name: 'Final hug', t0: 75.2, t1: 90.0 },
+  { id: 's7', name: 'Final hug + Gerald', t0: 75.2, t1: 100.0 },
 ];
 export const sceneAt = (t) => SCENES.find((s) => t < s.t1) ?? SCENES[SCENES.length - 1];
 
@@ -22,7 +22,7 @@ export const TAGS = [
   [0, 'JUST GRANDMA'], [4, 'A FAMILY'], [8, 'A BBQ PARTY'], [10, '≈ A BLOCK PARTY'], [14, '≈ A STREET'], [20, '≈ A VILLAGE'], [24, '≈ A THEATRE'], [28, '≈ AN ARENA'], [32, '≈ A STADIUM'],
   [34, '≈ A SMALL CITY'], [38, '≈ A BIG CITY'], [40, 'ONE MILLION'], [44, '≈ A STATE'], [48, '≈ A COUNTRY'], [52, '≈ A BIG COUNTRY'], [54, 'CLOUD NINE'], [60, 'ONE BILLION'],
   [64, '≈ HALF THE WORLD'], [66, 'EVERYONE ON EARTH'], [68, '≈ 2 EARTHS'], [70, '≈ 4 EARTHS'], [72, '≈ 8 EARTHS'], [74, 'MORE THAN EVERYONE WHO EVER LIVED'], [76, '≈ ALL STARS IN THE MILKY WAY'],
-  [80, 'ONE TRILLION'], [84, 'MORE THAN ALL THE TREES ON EARTH'], [88, '≈ 2,100 EARTHS'],
+  [80, 'ONE TRILLION'], [84, 'MORE THAN ALL THE TREES ON EARTH'], [88, '≈ 2,100 EARTHS'], [90, '+ 1 CAT'], [92, '≈ 8,600 EARTHS'], [96, '≈ 34,000 EARTHS'],
 ];
 export const tagAt = (t) => { let r = ''; for (const [s, x] of TAGS) if (t >= s) r = x; return r; };
 
@@ -53,4 +53,4 @@ export const VOICES = [
 ];
 export const SLOWMO_SCREAM = { id: 'slowmo_scream', t: 84.4 };
 // special beats (seconds)
-export const BEATS = { silenceStart: 77.6, slam: 80.0, roomSilence: 87.6, freeze: 88.8, title: 88.8 };
+export const BEATS = { silenceStart: 77.6, slam: 80.0, roomSilence: 87.6, geraldYes: 89.2, clip0: 90.0, clip1: 96.8, freeze: 98.6, title: 98.6 };

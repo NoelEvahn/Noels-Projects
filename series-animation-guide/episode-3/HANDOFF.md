@@ -43,3 +43,10 @@ Tag figures (≈8.3B population, ≈117B people ever lived) were not web-checked
 5. **Cloud Nine (44.8–57.6 s, 8.4 M → 268 M):** the whole country ties heart balloons to him and he floats up to cloud nine.
 6. **The world (57.6–75.2 s, 537 M → 137 B):** his face on every billboard on Earth, the planet turns pink, he runs out of living people and the ghosts join in.
 7. **Finale (75.2–90 s):** silence, one hug that ripples across the planet and out into space; back home, Gerald still says no.
+
+## 2026-11-19: fans, rush, new ending (100 s)
+- Heart eyes: `face({ hearts: k })` / `FACES.love` / `FACES.lovestruck`; Gerald `face({ hearts: k })` / `AFACES.love`. Modelled hearts, no textures.
+- S2: fans see the hero (heart eyes pop), fall into slots behind him, then chase him; the camera tracks the hero (`follow` shots). Fans near the lens are hidden.
+- S3: 14 fans rush the stage when the act ends (30.4).
+- Ending: Gerald gets heart eyes (89.2, chip says YES), his clap clip plays on the lawn 90.0-96.8 (`media/gerald_clap.mov`, keyed by `audio/make_clip.py` into `build/clip/`), fist bump at 96.0, then Gerald and the hero walk off paw in hand. Title card 98.6, film is 100 s.
+- Audio: only the clip sound and the music during the clip; music fades out under the title.

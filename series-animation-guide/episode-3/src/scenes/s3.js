@@ -1,5 +1,5 @@
 // S3 — TALENT SHOW (20.8–32.0): the hero wanders onto a magician's act; the audience pivots; golden buzzer; result board. Count 2,048 -> 32,768.
-import { THREE, makeCharacter, PRESETS, POSES, FACES, rng, clamp, smooth, lerp, easeOutBack, easeOutCubic, orbit, cam, shot, pick, regroup, pops, place, V, D2R } from '../common.js';
+import { THREE, makeCharacter, PRESETS, POSES, FACES, randomPerson, rng, clamp, smooth, lerp, easeOutBack, easeOutCubic, orbit, cam, shot, pick, regroup, pops, place, V, D2R } from '../common.js';
 import { makeStage } from '../../../assets/library/stage.js';
 import { buildTheatre } from '../../../assets/library/sets/theatre.js';
 import { makeAnimal, APOSES, ANIMALS } from '../../../assets/library/animal.js';
@@ -40,6 +40,9 @@ export default {
     S.hf = makeHeartField(90, { color: 0xff3f7f, emissive: 0.5 }); scene.add(S.hf);
     const r = rng(8); S.hearts = Array.from({ length: 90 }, (_, i) => { const si = Math.floor(r() * sp.length); return { si, born: 23.6 + (i / 90) * 7.4, ph: r() * 6 }; });
     const seatW = (i) => [sp[i][0] + th.anchors.seats.position.x, sp[i][1] + th.anchors.seats.position.y, sp[i][2] + th.anchors.seats.position.z]; S.seatW = seatW;
+    // the rush: when the act ends, front-row fans jump up (heart eyes) and run to the stage reaching for him
+    const rr = rng(77); S.rush = Array.from({ length: 14 }, (_, i) => { const c = randomPerson(rr); scene.add(c.root); const sd = i % 2 ? 1 : -1, k = Math.floor(i / 2);
+      return { c, from: [sd * (3.7 + (k % 3) * 0.9), 0, 2.3 + (k % 2) * 0.5], to: [sd * (0.5 + (k % 4) * 0.62), 0, -7.35 + Math.floor(k / 4) * 0.75], t0: 30.4 + (i % 5) * 0.12, ph: rr() * 6 }; });
     // shots (28 units from 20.8)
     const J = th.anchors.judges.map((j) => j.root.position);
     S.shots = [
@@ -67,6 +70,7 @@ export default {
     ];
     // slower edit: ~2 s shots, each holding the camera of the gag / voiced line it covers
     S.shots = regroup(S.shots, [[20.8, 22.4, 20.8], [22.4, 24.0, 27.2], [24.0, 25.6, 24.8], [25.6, 27.2, 25.6], [27.2, 28.8, 28.4], [28.8, 30.4, 29.2], [30.4, 32.0, 31.2]]);
+    S.shots[6] = { ...S.shots[6], a: cam([1.6, 3.3, -1.6], [0, 1.95, -9.0], 42), b: cam([1.3, 3.1, -2.6], [0, 2.0, -9.0], 40), close: 1 };   // the rush: side-on, hero on stage, fans flood in
     return S;
   },
   frame(t, S, ctx) {
@@ -94,7 +98,7 @@ export default {
     // golden buzzer press at 28.0
     S.buzzer.children[1].position.y = t >= 28.0 && t < 28.3 ? 0.09 : 0.12;
     // boards
-    S.bA.visible = t < 24.0; S.bB.visible = t >= 24.0; S.bR.visible = t >= 29.6 && t < 31.6;
+    S.bA.visible = t < 24.0; S.bB.visible = t >= 24.0; S.bR.visible = t >= 29.6 && t < 30.4;
     S.bB.scale.setScalar(t >= 24.0 ? 1 + Math.max(0, 0.15 - (t - 24.0)) * 1.2 : 1);
     // confetti
     S.confL.update(t - 28.0); S.confR.update(t - 28.0); S.confR2.update(t - 31.0);
@@ -102,6 +106,12 @@ export default {
     S.cat.pose(APOSES.sit(t)); S.cat.face({ lid: 0.5 }); S.cat.root.rotation.y = Math.PI; S.cat.root.position.set(S.catSeat[0], S.catSeat[1] - 0.2, S.catSeat[2]);
     // hearts from audience
     S.hf.update((i) => { const h = S.hearts[i]; const a = t - h.born; if (a < 0) return null; const w = S.seatW(h.si); const k = easeOutBack(clamp(a / 0.5)); return { x: w[0], y: w[1] + 2.15 + (a % 2) * 0.25, z: w[2], s: 0.32 * k, ry: Math.PI + Math.sin(t + h.ph) * 0.3 }; });
+    S.rush.forEach((f, i) => { const k = clamp((f.t0 - t) > 0 ? 0 : (t - f.t0) / 1.4), e = easeOutCubic(k); const c0 = f.c; c0.root.visible = t >= 30.2;
+      const x = lerp(f.from[0], f.to[0], e), z = lerp(f.from[2], f.to[2], e); place(c0, x, 0, z, Math.atan2(S.hero.root.position.x - x, S.hero.root.position.z - z));
+      if (Math.hypot(x - c.pos[0], z - c.pos[2]) < 1.1) c0.root.visible = false;
+      c0.pose(t < f.t0 ? { ...POSES.cheer(t + f.ph) } : k < 1 ? { ...POSES.run(t + f.ph, 10), aLf: 1.4, aRf: 1.5, aLe: 0.2, aRe: 0.2, hL: 'open', hR: 'open' } : { ...POSES.stretchUp(t), aLs: 2.6 + Math.sin(t * 8 + i) * 0.25, aRs: 2.6 - Math.sin(t * 8 + i) * 0.25, bob: Math.abs(Math.sin(t * 7 + f.ph)) * 0.08 });
+      c0.face({ ...FACES.lovestruck, hearts: easeOutBack(clamp((t - 30.2) / 0.35)), open: 0.6 }); });
+    if (t >= 30.4) S.host.root.visible = false;
     return { cam: c, keyFocus: [0, 1.5, -4], keyDist: 14 };
   },
 };

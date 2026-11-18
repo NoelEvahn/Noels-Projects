@@ -8,7 +8,8 @@
 //   hero.carry(boxMesh);           // two-handed carry in front of the chest (use with POSES.carry)
 //   hero.pose({...POSES.sit(0, 0.45)}); hero.plant();   // plant() drops the body so the lowest foot touches y=0
 import * as THREE from 'three';
-import { mat, add, sph, box, cyl, cap, cone, tor, rbox, shade, C } from './util.js';
+import { mat, add, sph, box, cyl, cap, cone, tor, rbox, shade, heartGeo, C } from './util.js';
+const HEART_EYE = heartGeo(0.3, 0.08), HEART_EYE_M = mat(0xff2d55, { rough: 0.35, emissive: 0xff2d55, emissiveIntensity: 0.25 });
 import { buildHair } from './hair.js';
 
 const HEAD_R = 0.33;
@@ -382,7 +383,8 @@ function buildFace(ch, o) {
   const lashM = mat(0x1a1210);
   for (const s of [-1, 1]) {
     const eg = new THREE.Group(); eg.position.set(s * R * 0.31, R * 0.1, R * 0.8); eg.rotation.y = s * 0.2; h.add(eg);
-    add(eg, sph(R * 0.3 * es, 32, 22), sclera, [0, 0, 0], [0, 0, 0], [1, 1.12, 0.6]);
+    const scl = add(eg, sph(R * 0.3 * es, 32, 22), sclera, [0, 0, 0], [0, 0, 0], [1, 1.12, 0.6]);
+    const heart = add(eg, HEART_EYE, HEART_EYE_M, [0, R * 0.01 * es, R * 0.14 * es], [0, 0, 0], [1, 1, 1]); heart.visible = false; heart.castShadow = false;   // love: the eye becomes a heart
     const pg = new THREE.Group(); pg.position.z = R * 0.3 * es * 0.6 * 0.9; eg.add(pg);
     // series look: plain black dot pupil, no iris colour, no catchlights
     const pupil = add(pg, sph(R * 0.115 * es, 24, 16), pupilM, [0, 0, 0], [0, 0, 0], [1, 1, 0.45]);
@@ -391,7 +393,7 @@ function buildFace(ch, o) {
     if (o.lashes) for (let k = 0; k < 3; k++) { const ang = (0.55 + k * 0.28); add(lidPivot, cap(R * 0.014, R * 0.07, 3, 5), lashM, [s * Math.sin(ang) * R * 0.3 * es, Math.cos(ang) * R * 0.3 * es * 1.12 * 0.95, R * 0.07], [0, 0, -s * (0.4 + k * 0.5) + (s > 0 ? 0 : 0)]); }
     const brow = new THREE.Group(); brow.position.set(s * R * 0.335, R * 0.5, R * 0.87); brow.rotation.y = s * 0.3; h.add(brow);
     add(brow, cap(R * 0.095, R * 0.24, 5, 12), mat(o.brow, { rough: 0.8 }), [0, 0, 0], [0, 0, Math.PI / 2]);
-    F.eyes.push({ eg, pupil, pg, s, es }); F.lids.push(lidPivot); F.brows.push({ g: brow, s, baseY: R * 0.52 });
+    F.eyes.push({ eg, pupil, pg, s, es, scl, heart }); F.lids.push(lidPivot); F.brows.push({ g: brow, s, baseY: R * 0.52 });
     // cheeks
     if (o.blush > 0) add(h, sph(R * 0.14, 12, 8), mat(new THREE.Color(o.skin).lerp(new THREE.Color(0xff6a7a), 0.28 * o.blush).getHex(), { rough: 0.7 }), [s * R * 0.58, -R * 0.2, R * 0.74], [0, s * 0.5, 0], [1, 0.7, 0.35]);
     if (o.freckles) for (let k = 0; k < 4; k++) add(h, sph(R * 0.022, 6, 5), mat(0x9a5a3a), [s * R * (0.45 + (k % 2) * 0.1), -R * (0.05 + (k >> 1) * 0.07), R * 0.9], [0, 0, 0], [1, 1, 0.3]);
@@ -409,7 +411,7 @@ function buildFace(ch, o) {
 // Film clock for automatic secondary motion (blinks, breathing). The page sets CLOCK.t once per frame before drawing,
 // so every character stays a pure function of time. Faces may pass blink:false to hold the eyes (e.g. a stare).
 export const CLOCK = { t: 0 };
-const FACE_DEFAULT = { open: 0, smile: 0.25, brow: 0, browTilt: 0, pupil: [0, 0], pupilSize: 1, eye: 1, lid: 0, wide: 1, teeth: false };
+const FACE_DEFAULT = { open: 0, smile: 0.25, brow: 0, browTilt: 0, pupil: [0, 0], pupilSize: 1, eye: 1, lid: 0, wide: 1, teeth: false, hearts: 0 };
 function applyFace(ch, f) {
   const o = { ...FACE_DEFAULT, ...f }, R = ch.R, F = ch.F;
   if (f.blink !== false) { const bp = (CLOCK.t + (ch.opts.seed ?? 1) * 1.37) % 3.3; if (bp < 0.14) o.lid = Math.max(o.lid, 1 - Math.abs(bp - 0.07) / 0.07 * 0.15); }
@@ -418,6 +420,8 @@ function applyFace(ch, f) {
     e.eg.scale.setScalar(o.eye);
     e.pg.position.x = o.pupil[0] * R * 0.12; e.pg.position.y = o.pupil[1] * R * 0.12;
     e.pupil.scale.set(o.pupilSize, o.pupilSize, 0.45);
+    const hk = o.hearts, hp = hk > 0 ? 1 + 0.08 * Math.sin(CLOCK.t * 9 + i) : 0;   // heart eyes: scale 0..1 (pop in with easeOutBack), gentle throb
+    e.heart.visible = hk > 0.01; e.heart.scale.set(R * 0.4 * e.es * hk * hp, R * 0.4 * e.es * hk * hp, R * 0.2 * e.es); e.scl.visible = e.pupil.visible = hk < 0.6;
     F.lids[i].rotation.x = -Math.PI / 2 + o.lid * Math.PI * 1.02;
     const b = F.brows[i];
     b.g.position.y = b.baseY + o.brow * R * 0.18 + (o.eye - 1) * R * 0.12;
@@ -508,7 +512,8 @@ export const FACES = {
   smug: { smile: 0.5, lid: 0.35, brow: 0.2, browTilt: -0.3 },
   angry: { open: 0.4, brow: -0.6, browTilt: -0.8, teeth: true, smile: 0, lid: 0.15 },
   sad: { smile: -0.6, brow: 0.3, browTilt: 0.6 },
-  love: { smile: 0.9, brow: 0.5, eye: 1.25, pupilSize: 1.5, wide: 1.3 },
+  love: { smile: 0.9, brow: 0.5, eye: 1.1, wide: 1.3, hearts: 1, lid: 0 },
+  lovestruck: { open: 0.45, brow: 0.7, eye: 1.15, wide: 1.2, hearts: 1, lid: 0 },
   excited: { open: 0.65, brow: 0.8, eye: 1.2, teeth: true, wide: 1.2 },
   sleepy: { smile: 0.1, lid: 0.7 },
 };

@@ -2,7 +2,8 @@
 // Same API as the other animals: root, pose(APOSES.*), face({lid, look, pupil}), head, tail, eyes. Faces +Z, auto-grounded.
 // Rig: hips (pitch for sitting) -> torso along +Z -> chest (front legs, neck -> head); back legs at the hips; tail chain.
 import * as THREE from 'three';
-import { mat, add, sph, cyl, cap, cone, tor } from './util.js';
+import { mat, add, sph, cyl, cap, cone, tor, heartGeo } from './util.js';
+const HEART_EYE = heartGeo(0.3, 0.08), HEART_EYE_M = mat(0xff2d55, { rough: 0.35, emissive: 0xff2d55, emissiveIntensity: 0.25 });
 import { AJ, APOSES, plantA, applyAFace } from './animal.js';
 
 const tri = (w, h, d) => {
@@ -62,7 +63,8 @@ export function buildCat(o) {
     const pupil = add(pg, sph(er * 0.46, 16, 12), mat(0x0a0a0e, { rough: 0.3 }), [0, 0, 0], [0, 0, 0], [1, 1, 0.4]);
     const lp = new THREE.Group(); eg.add(lp);
     add(lp, sph(er * 1.06, 22, 10, 0, Math.PI * 2, 0, Math.PI / 2), fur, [0, 0, 0], [0, 0, 0], [1.02, 1.1, 0.66]).castShadow = false;
-    eyes.push({ eg, pg, pupil, lp, s, bx: 1, by: 1 });
+    const heart = add(eg, HEART_EYE, HEART_EYE_M, [0, 0, er * 0.42], [0, 0, 0], [er * 2.3, er * 2.3, er * 0.9]); heart.visible = false; heart.castShadow = false;
+    eyes.push({ eg, pg, pupil, lp, s, bx: 1, by: 1, heart, hs: er * 2.3 });
   }
   // ears: flat rounded triangles with pink insides and a cream tuft
   const ears = [];
