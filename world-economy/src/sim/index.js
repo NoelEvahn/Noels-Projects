@@ -117,20 +117,23 @@ export function createSim({ bus = null, strict = false } = {}) {
     if (minute % 10 === 0) ctx.needs.tick10();
     ctx.jobs.tickMinute();
     if (minute % 5 === 0) ctx.tutorial.evaluate();
-    if (minute !== 0) ctx.biz.pump(2);
+    if (minute !== 0) {
+      ctx.biz.pump(2);
+      // the rest of the midnight work is spread over the first minutes of the day so no single tick carries it all (Stage 4b frame-hitch fix)
+      if (minute === 1) ctx.inv.spoilage();
+      else if (minute === 2) ctx.bank.daily();
+      else if (minute === 3) { const h = (st.flags.nwHistory ||= []); h.push(ctx.reports.netWorth().total); if (h.length > 60) h.shift(); }
+    }
     if (minute % 60 !== 0) return;
     const hour = minute / 60;
     ctx.market.hourly(hour);
     ctx.biz.hourly(hour, gt.total);
     ctx.invest.hourly();
     if (minute === 0) {
-      ctx.inv.spoilage();
       ctx.biz.daily();
       ctx.property.daily();
-      ctx.bank.daily();
       ctx.jobs.daily();
       ctx.market.dailyActivity();
-      const h = (st.flags.nwHistory ||= []); h.push(ctx.reports.netWorth().total); if (h.length > 60) h.shift();
       if ((gt.day - 1) % 7 === 0) { ctx.bank.weekly(); ctx.tax.weekly(); ctx.property.weekly(); ctx.biz.weekly(); ctx.invest.weekly(); ctx.emit('time:week:sim', { week: Math.floor((gt.day - 1) / 7) + 1 }); }
       ctx.biz.pump(4);
       st.flags.autosaveDue = true;
