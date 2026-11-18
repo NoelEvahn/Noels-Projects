@@ -45,6 +45,28 @@ export function createEconomyLink({ sim, game, bus, clock }) {
     },
     weather: () => ({ type: game.env.weather.type, intensity: game.env.weather.intensity }),
     vehicleInUse: (vehId) => { const e = entityOf.get(vehId); const v = e !== undefined ? game.vehicles.get(e) : null; return !!v && game.player.vehicleId === e; },
+    /** phone delivery / tow (Sim veh.deliver, veh.tow): decide where the vehicle goes and move it (or let the next sync spawn it there) */
+    placeVehicle(vehId, kind, opts = {}) {
+      const ov = sim.select('veh.owned').find((x) => x.id === vehId); if (!ov) return null;
+      const eid = entityOf.get(vehId), gv = eid !== undefined ? game.vehicles.get(eid) : null, boat = ov.model.startsWith('boat.');
+      const from = gv ? [gv.sim.x, 0, gv.sim.z] : (ov.pos || here());
+      const dock = (poiId) => { const q = World.poi(poiId); if (!q) return null; const d = q.data && q.data.dock; return { x: d ? d.x : q.pos[0], z: d ? d.z + 8 : q.pos[2], yaw: 0 }; };
+      let spot = null;
+      if (kind === 'tow') {
+        if (boat) spot = dock('poi.ocean.boatyard') || dock('poi.ocean.marina');
+        else { let best = null, bd = 1e18; for (const q of World.pois({ type: 'fuel' })) { const d = (q.pos[0] - from[0]) ** 2 + (q.pos[2] - from[2]) ** 2; if (d < bd) { bd = d; best = q; } } spot = best ? game.roadSpot(best.pos[0], best.pos[2]) : null; }
+      } else if (opts.home) {
+        const hp = World.poi(homePoi(opts.home)); if (hp) spot = boat ? dock(hp.data && hp.data.dock ? hp.id : 'poi.ocean.marina') : game.roadSpot(hp.pos[0], hp.pos[2]);
+      } else {
+        const p = here(), yaw = game.camera.yaw, fx = p[0] + Math.sin(yaw) * 9, fz = p[2] - Math.cos(yaw) * 9;
+        if (boat) { const cands = ['poi.ocean.marina', 'poi.lake.fish.dock', 'poi.ocean.harbor'].map(dock).filter(Boolean); cands.sort((a, b) => Math.hypot(a.x - p[0], a.z - p[2]) - Math.hypot(b.x - p[0], b.z - p[2])); spot = cands[0] || null; }
+        else spot = game.roadSpot(fx, fz);
+      }
+      if (!spot) return null;
+      if (gv) game.relocateVehicle(eid, spot.x, spot.z, spot.yaw);
+      const y = boat ? 0 : World.groundAt(spot.x, 500, spot.z).y;
+      return { pos: [spot.x, y, spot.z], yaw: spot.yaw };
+    },
     setTime: (h) => { if (clock) { clock.setHour(h); game.env.timeOfDay = clock.hourFloat; } },
   };
   function homePoi(propId) { const ls = sim.select('prop.owned').find((p) => p.id === propId); return ls ? (propId.startsWith('prop_') ? propPoi(propId) : 'poi.city.hostel') : 'poi.city.hostel'; }

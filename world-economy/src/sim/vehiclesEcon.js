@@ -1,5 +1,6 @@
 // Vehicle ownership economy (Annex D 10): buy/sell, fuel, wear, repair. Positions are kept by the game layer via veh.setPos.
 import { VEHICLE_ECON, DEALERS, PAINTS } from '../data/vehicles.js';
+import { PROPERTY_BY_ID } from '../data/properties.js';
 import { BALANCE } from '../data/balance.js';
 import { ACCOUNTS, TX } from '../data/ids.js';
 import { ok, fail, ERR, posInt, clamp, payerAccount, payUp } from './util.js';
@@ -77,19 +78,34 @@ export function createVehicles(ctx) {
       if (!r.ok) return r;
       v.condition = 1; ctx.emit('veh:changed', { vehId }); return ok({ cost });
     },
+    /** Phone delivery (Annex D 10): the vehicle appears next to the player; with a free home garage (cars) or berth (boats) slot it is brought from home for $10.
+     *  The game layer moves or spawns the vehicle through Sim.setServices({placeVehicle}); the sim keeps the new position in `pos`. */
     'veh.deliver': ({ vehId }) => {
       const v = get(vehId); if (!v) return fail(ERR.NOT_FOUND);
       if (v.bizId) return fail(ERR.BUSY);
-      const fee = ctx.property.homeId() && v.home ? BALANCE.vehHomeDeliver : BALANCE.vehDeliveryFee;
+      if (ctx.services.vehicleInUse && ctx.services.vehicleInUse(vehId)) return fail(ERR.BUSY, 'in use');
+      const boat = isBoat(v.model), home = ctx.property.homeId(), def = home ? PROPERTY_BY_ID[home] : null;
+      const slots = def ? (boat ? def.berthSlots : def.garageSlots) : 0;
+      const used = S().filter((x) => x !== v && x.home && isBoat(x.model) === boat).length;
+      const atHome = !!def && slots > used;
+      const fee = atHome ? BALANCE.vehHomeDeliver : BALANCE.vehDeliveryFee;
       const r = ctx.ledger.charge({ amount: fee, to: 'ext:services', type: TX.FEE, memo: 'Vehicle delivery', ref: v.id, method: 'auto' });
       if (!r.ok) return r;
-      ctx.emit('veh:changed', { vehId, deliver: true }); return ok({ fee });
+      v.home = atHome;
+      const placed = ctx.services.placeVehicle ? ctx.services.placeVehicle(vehId, 'deliver', { home: atHome ? home : null }) : null;
+      if (placed && placed.pos) { v.pos = placed.pos.map((n) => Math.round(n * 100) / 100); v.yaw = Math.round((placed.yaw || 0) * 1000) / 1000; }
+      ctx.emit('veh:changed', { vehId, deliver: true, pos: v.pos }); return ok({ fee, atHome });
     },
+    /** Phone tow: the tow truck takes the vehicle to the nearest fuel stop (boats: nearest boat fuel dock) with 5 L in the tank. */
     'veh.tow': ({ vehId }) => {
       const v = get(vehId); if (!v) return fail(ERR.NOT_FOUND);
+      if (ctx.services.vehicleInUse && ctx.services.vehicleInUse(vehId)) return fail(ERR.BUSY, 'in use');
       const r = ctx.ledger.charge({ amount: BALANCE.fineTow, to: 'ext:services', type: TX.FEE, memo: 'Tow', ref: v.id, method: 'auto' });
       if (!r.ok) return r;
-      v.fuel = Math.max(v.fuel, Math.min(5, VEHICLE_ECON[v.model].tank)); ctx.emit('veh:changed', { vehId, tow: true }); return ok({ fee: BALANCE.fineTow });
+      v.fuel = Math.max(v.fuel, Math.min(5, VEHICLE_ECON[v.model].tank)); v.home = false;
+      const placed = ctx.services.placeVehicle ? ctx.services.placeVehicle(vehId, 'tow', {}) : null;
+      if (placed && placed.pos) { v.pos = placed.pos.map((n) => Math.round(n * 100) / 100); v.yaw = Math.round((placed.yaw || 0) * 1000) / 1000; }
+      ctx.emit('veh:changed', { vehId, tow: true, pos: v.pos }); return ok({ fee: BALANCE.fineTow });
     },
     /** game-driven usage: distance, throttle factor and collision impulse */
     'veh.use': ({ vehId, km = 0, throttle = 1, impulse = 0 }) => {

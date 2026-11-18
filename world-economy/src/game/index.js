@@ -61,6 +61,23 @@ export function createGame() {
     return ent;
   }
   G.spawnVehicle = spawnVehicle; G.spawnBoat = spawnBoat; G.spawnRoadVehicle = spawnRoadVehicle;
+  /** Stage 4b: a parkable spot on the right-hand side of the road nearest to (x, z): {x, z, yaw}. null when no drivable road is within 300 m. */
+  G.roadSpot = function (x, z) {
+    let hit; try { hit = World.data.roadIndex.nearest(x, z, 300, (e) => e.drive && !e.walkOnly && e.cls !== 'track' && e.cls !== 'path'); } catch (e) { hit = null; }
+    if (!hit) return null;
+    const e = hit.edge, i = Math.min(hit.i, e.n - 2), dx = e.pts[i * 3 + 3] - e.pts[i * 3], dz = e.pts[i * 3 + 5] - e.pts[i * 3 + 2], l = Math.hypot(dx, dz) || 1;
+    const lat = e.carriage / 2 - (e.cls === 'street' || e.cls === 'boulevard' ? 1.2 : 1.5);
+    return { x: hit.x + (-dz / l) * -lat, z: hit.z + (dx / l) * -lat, yaw: Math.atan2(dx, -dz) };
+  };
+  /** Stage 4b: move an existing vehicle or boat entity to a new pose, at rest (phone delivery and tow). */
+  G.relocateVehicle = function (entityId, x, z, yaw) {
+    const v = vehicles.get(entityId); if (!v) return false;
+    const s = v.sim; s.x = x; s.z = z; s.yaw = yaw; s.speed = 0; s.vlat = 0; s.vy = 0; s.pitch = 0; s.roll = 0;
+    if (v.kind === 'boat') { const wa = World.waterAt(x, z, 0); if (wa) s.y = wa.height; s.throttle = 0; }
+    else s.y = World.groundAt(x, 500, z).y;
+    snapPose(v.ent, s.x, s.y, s.z, s.yaw);
+    return true;
+  };
 
   let econ = null;
   G.init = function ({ bus: b, input: inp, settings: s, clock: c, sim }) {

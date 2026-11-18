@@ -51,3 +51,27 @@ test('owned vehicles spawn on purchase, burn fuel by distance and are removed on
   g.game.exitVehicle(); assert.equal(g.sim.cmd('veh.sell', { vehId: v.data.vehId }).ok, true);
   assert.equal(g.game.economy.entityOf.has(v.data.vehId), false); invariant(g.sim);
 });
+test('veh.deliver brings an owned vehicle (existing or not yet spawned) next to the player; veh.tow moves it to a fuel stop; busy while driven', () => {
+  const g = boot(); g.sim.cmd('debug.grant', { cents: 3000000 }); g.game.teleport(World.poi('poi.city.bank').pos); g.sim.cmd('bank.deposit', { amount: 2000000 });
+  g.game.teleport(World.poi('poi.city.usedcars').pos);
+  const v = g.sim.cmd('veh.buy', { modelId: 'veh.hatch_used', used: true, poiId: 'poi.city.usedcars', payFrom: 'card' }); assert.equal(v.ok, true, JSON.stringify(v));
+  const eid = g.game.economy.entityOf.get(v.data.vehId), ent = g.game.entities.get(eid);
+  const dist = (p, q) => Math.hypot(p[0] - q[0], p[2] - q[2]);
+  // far away: delivery moves the same entity to within 20 m of the player and records the position in the sim
+  const far = World.poi('poi.city.hardware').pos; g.game.teleport(far);
+  assert.ok(dist(ent.pos, far) > 30, 'vehicle starts away from the player');
+  const d = g.sim.cmd('veh.deliver', { vehId: v.data.vehId }); assert.equal(d.ok, true, JSON.stringify(d)); g.bus.flush();
+  { const rs = g.game.roadSpot(far[0], far[2]); assert.ok(rs && dist(ent.pos, far) < 90, 'delivered to the nearest road beside the player: ' + dist(ent.pos, far).toFixed(1) + ' m'); }
+  const rec = g.sim.select('veh.owned').find((x) => x.id === v.data.vehId); assert.ok(rec.pos && dist(rec.pos, ent.pos) < 1, 'sim keeps the delivered position');
+  // a vehicle that is not in the world yet (loaded from a save) is spawned at the destination
+  g.game.economy.entityOf.delete(v.data.vehId); g.game.vehicles.delete(eid); g.game.entities.destroy(eid);
+  g.game.teleport(World.poi('poi.city.cityhall').pos); g.sim.cmd('veh.deliver', { vehId: v.data.vehId }); g.bus.flush();
+  const eid2 = g.game.economy.entityOf.get(v.data.vehId); assert.ok(eid2 !== undefined, 'spawned by delivery'); assert.ok(dist(g.game.entities.get(eid2).pos, World.poi('poi.city.cityhall').pos) < 70);
+  // tow: to the nearest fuel stop, with fuel in the tank
+  g.sim.ctx.state.vehicles[0].fuel = 0; g.game.teleport(World.poi('poi.lake.store').pos); g.sim.cmd('veh.tow', { vehId: v.data.vehId }); g.bus.flush();
+  const e3 = g.game.entities.get(g.game.economy.entityOf.get(v.data.vehId)); const fuels = World.pois({ type: 'fuel' }).map((q) => dist(q.pos, e3.pos)); assert.ok(Math.min(...fuels) < 30, 'towed to a fuel stop: ' + Math.min(...fuels).toFixed(1) + ' m');
+  assert.ok(g.sim.select('veh.owned')[0].fuel >= 5);
+  // driving it blocks both services
+  g.game.enterVehicle(g.game.economy.entityOf.get(v.data.vehId)); assert.equal(g.sim.cmd('veh.deliver', { vehId: v.data.vehId }).error, 'ERR.BUSY'); assert.equal(g.sim.cmd('veh.tow', { vehId: v.data.vehId }).error, 'ERR.BUSY');
+  invariant(g.sim);
+});
