@@ -82,10 +82,12 @@ export function createDetail2({ scene }) {
   const weeds = mk(artGeometry(plantGeometry('veg.lawn').leaf), MatLib.get('mat.groundcover'), 900, 'd2.weeds', true);
   const WEED_T = [[0.62, 0.78, 0.5], [0.8, 0.86, 0.5], [0.95, 0.85, 0.52], [0.55, 0.7, 0.46]];
   // wires: one dynamic mesh (two crossed ribbons per segment), rebuilt with the lists
-  const wireVerts = MAX_SPANS * 4 * SEGS * 8, wirePos = new Float32Array(wireVerts * 3), wireIdx = new Uint32Array(MAX_SPANS * 4 * SEGS * 24); // both windings: the wire uses the single-sided glow program
+  const wireVerts = MAX_SPANS * 4 * SEGS * 8, wirePos = new Float32Array(wireVerts * 3), wireIdx = new Uint32Array(MAX_SPANS * 4 * SEGS * 24); // both windings: the blob program is single-sided
   for (let q = 0, v = 0, i = 0; q < MAX_SPANS * 4 * SEGS; q++, v += 8) for (const o of [0, 4]) { wireIdx[i++] = v + o; wireIdx[i++] = v + o + 1; wireIdx[i++] = v + o + 2; wireIdx[i++] = v + o; wireIdx[i++] = v + o + 2; wireIdx[i++] = v + o + 3; wireIdx[i++] = v + o; wireIdx[i++] = v + o + 2; wireIdx[i++] = v + o + 1; wireIdx[i++] = v + o; wireIdx[i++] = v + o + 3; wireIdx[i++] = v + o + 2; }
   const wireGeo = new THREE.BufferGeometry(); wireGeo.setAttribute('position', new THREE.BufferAttribute(wirePos, 3).setUsage(THREE.DynamicDrawUsage)); wireGeo.setIndex(new THREE.BufferAttribute(wireIdx, 1)); wireGeo.setDrawRange(0, 0);
-  const wire = new THREE.Mesh(wireGeo, MatLib.get('mat.wire')); wire.frustumCulled = false; wire.name = 'd2.wires'; wire.visible = false; group.add(wire);
+  { const wc = decalCell('wire'), uv = new Float32Array(wireVerts * 2); for (let i = 0; i < wireVerts; i++) { uv[i * 2] = (wc[0] + wc[2]) / 2; uv[i * 2 + 1] = (wc[1] + wc[3]) / 2; } wireGeo.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); }
+  // one-instance InstancedMesh on the blob program (a plain Mesh would compile a second variant); the decal cell is solid dark grey
+  const wire = new THREE.InstancedMesh(wireGeo, MatLib.get('mat.blob'), 1); wire.setMatrixAt(0, new THREE.Matrix4()); wire.count = 1; wire.frustumCulled = false; wire.matrixAutoUpdate = false; wire.name = 'd2.wires'; wire.visible = false; wire.renderOrder = 3; wire.castShadow = false; wire.receiveShadow = false; group.add(wire);
 
   const frustum = new THREE.Frustum(), pv = new THREE.Matrix4(), sph = new THREE.Sphere();
   function fillM(a, o, x, y, z, yaw, sx, sy, sz) {

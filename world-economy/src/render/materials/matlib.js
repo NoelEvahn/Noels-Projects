@@ -63,8 +63,6 @@ const MAKERS = {
   'mat.blob': () => blobLike(0),
   // expanding ripple rings on water (piles, ducks): same program as mat.blob (uRing = 1): the vertex shader grows each instance on a 2.8 s cycle (phase from its position) and fades it out
   'mat.ripple': () => blobLike(1),
-  // overhead wires: the unlit glow material (same program) tinted dark grey
-  'mat.wire': () => { const m = new THREE.MeshBasicMaterial({ color: 0x2a2c30, fog: true, toneMapped: true }); patchMaterial(m, { key: ':glow' }); return m; },
   'mat.particle': () => { const m = new THREE.MeshBasicMaterial({ map: particleAtlas, transparent: true, depthWrite: false, fog: true, vertexColors: true }); patchMaterial(m, { key: ':pt' }); return m; },
   // Stage 2 materials (kept for the blockout fallback path)
   'mat.blockout': () => { const m = std({ vertexColors: true, roughness: 0.92 }); patchMaterial(m, { key: ':bo' }); lit.add(m); return m; },

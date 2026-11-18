@@ -30,7 +30,7 @@ export function createChunkManager({ scene, far, getRadii }) {
     for (const it of D.byChunk[cz * NC + cx]) {
       const b = Builders.get(it.archetype); if (!b) continue;
       dctx.seed = it.seed;
-      for (const batch of b(it, dctx).batches) appendBatch(gbFor(batch.geometry.art && MatLib.has(batch.materialId) ? batch.materialId : 'mat.world'), batch.geometry, it.x, it.y, it.z, it.rotY);
+      for (const batch of b(it, dctx).batches) appendBatch(gbFor(batch.geometry.art && MatLib.has(batch.materialId) ? batch.materialId : 'mat.world', batch.geometry.art ? batch.geometry.position.length / 3 : 0), batch.geometry, it.x, it.y, it.z, it.rotY);
       if (++n % 16 === 0) yield;
     }
   };
@@ -50,7 +50,8 @@ export function createChunkManager({ scene, far, getRadii }) {
     const tw = takeT(); const gbs = new Map();
     // one writer per material; a writer is split at 24k vertices so each mesh finalises inside one slice and uploads < 1 MB
     let split = 0;
-    const gbFor = (id) => { let g = gbs.get(id); if (g && g.vn > 24000) { gbs.set(id + '#' + (++split), g); g = null; } if (!g) { g = takeG(); gbs.set(id, g); } return g; };
+    // nv: vertices about to be appended; a writer never grows past 24k vertices because of one big batch (the 'final' step of a 47k writer cost 18 ms)
+    const gbFor = (id, nv = 0) => { let g = gbs.get(id); if (g && g.vn > 0 && (g.vn > 24000 || g.vn + nv > 24000)) { gbs.set(id + '#' + (++split), g); g = null; } if (!g) { g = takeG(); gbs.set(id, g); } return g; };
     try { return yield* buildInner(tw, gbFor, gbs, cx, cz, lod); }
     finally { tPool.push(tw); for (const g of gbs.values()) gPool.push(g); }
   }
@@ -75,8 +76,9 @@ export function createChunkManager({ scene, far, getRadii }) {
         if (b.gen) yield;
         for (const batch of r.batches) {
           const mid = batch.geometry.art && MatLib.has(batch.materialId) ? batch.materialId : 'mat.world';
-          if (r.worldSpace) appendBatch(gbFor(mid), batch.geometry, 0, 0, 0, 0);
-          else appendBatch(gbFor(mid), batch.geometry, pl.x, pl.y, pl.z, pl.rotY);
+          const nv = batch.geometry.art ? batch.geometry.position.length / 3 : 0;
+          if (r.worldSpace) appendBatch(gbFor(mid, nv), batch.geometry, 0, 0, 0, 0);
+          else appendBatch(gbFor(mid, nv), batch.geometry, pl.x, pl.y, pl.z, pl.rotY);
         }
       }
       if (lod === 0 || ++n % 4 === 0) yield;

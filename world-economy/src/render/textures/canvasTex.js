@@ -151,7 +151,7 @@ export function makeParticleAtlas(size = 512) {
   { const [x, y] = at(7); const gr = g.createLinearGradient(x, y - ch / 2, x, y + ch / 2); gr.addColorStop(0, 'rgba(220,230,245,0)'); gr.addColorStop(0.5, 'rgba(220,230,245,0.7)'); gr.addColorStop(1, 'rgba(220,230,245,0)'); g.fillStyle = gr; g.fillRect(x - cw * 0.04, y - ch / 2, cw * 0.08, ch); }
   return tex(c, size);
 }
-export const DECAL_CELLS = ['pool', 'puddle', 'oil', 'tyre', 'blob', 'lilypad', 'lily', 'bushblob', 'ring', 'fish', 'foam', 'mud'];
+export const DECAL_CELLS = ['pool', 'puddle', 'oil', 'tyre', 'blob', 'lilypad', 'lily', 'bushblob', 'ring', 'fish', 'foam', 'mud', 'wire'];
 /** decal atlas: 4 x 4 grid of square cells (v up) */
 export function decalCell(name) { const i = DECAL_CELLS.indexOf(name); const cx = i % 4, cy = Math.floor(i / 4); return [cx / 4, 1 - (cy + 1) / 4, (cx + 1) / 4, 1 - cy / 4]; }
 export function makeDecalAtlas(size = 1024) {
@@ -183,5 +183,7 @@ export function makeDecalAtlas(size = 1024) {
   { const [ox, oy] = at(9), cx = ox + s / 2, cy = oy + s / 2; g.fillStyle = 'rgba(8,16,20,0.55)'; g.beginPath(); g.ellipse(cx - s * 0.06, cy, s * 0.3, s * 0.1, 0, 0, 6.2832); g.fill(); g.beginPath(); g.moveTo(cx + s * 0.2, cy); g.lineTo(cx + s * 0.42, cy - s * 0.1); g.lineTo(cx + s * 0.4, cy + s * 0.1); g.closePath(); g.fill(); }
   { const [ox, oy] = at(10); for (let k = 0; k < 90; k++) { const a = R() * 6.2832, r = s * (0.3 + 0.17 * R()), x = ox + s / 2 + Math.cos(a) * r, y = oy + s / 2 + Math.sin(a) * r; g.fillStyle = `rgba(245,250,252,${0.15 + 0.35 * R()})`; g.beginPath(); g.arc(x, y, s * (0.015 + 0.03 * R()), 0, 6.2832); g.fill(); } }
   { const [ox, oy] = at(11); radial(11, [[0, 'rgba(54,40,28,0.85)'], [0.6, 'rgba(60,46,32,0.6)'], [1, 'rgba(60,46,32,0)']]); for (let k = 0; k < 10; k++) { g.fillStyle = 'rgba(30,22,16,0.35)'; g.beginPath(); g.ellipse(ox + s * (0.25 + 0.5 * R()), oy + s * (0.25 + 0.5 * R()), s * 0.07, s * 0.04, R() * 3, 0, 6.2832); g.fill(); } }
+  // 12 solid dark grey (overhead wires use the blob program with uvs inside this cell)
+  { const [ox, oy] = at(12); g.fillStyle = 'rgb(38,40,46)'; g.fillRect(ox + 2, oy + 2, s - 4, s - 4); }
   return tex(c, size);
 }

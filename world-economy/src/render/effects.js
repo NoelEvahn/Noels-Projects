@@ -23,9 +23,9 @@ const RAIN_FS = /* glsl */`uniform float uAlpha; uniform vec3 uCol; varying floa
 // pooled billboard puffs: smoke columns and flames over fires/fireplaces, and soft fog cards (Annex A 4.2, 11). Life and motion
 // are computed in the vertex shader from time and a per-instance seed; the CPU only rewrites emitters every 0.25 s.
 const PUFF_VS = /* glsl */`
-attribute vec4 aEm; attribute float aSeed; uniform float uTime; uniform vec4 uCell; uniform vec3 uWind; varying vec2 vUv; varying float vA; varying vec3 vWPos; varying float vKind;
+attribute vec4 aEm; attribute float aSeed; uniform float uTime; uniform vec4 uCell; uniform vec3 uWind; varying vec2 vUv; varying vec2 vRaw; varying float vA; varying vec3 vWPos; varying float vKind; varying vec3 vCol;
 void main(){
-  float kind = aEm.w; vKind = kind; vec3 p = aEm.xyz; float size; float a;
+  float kind = aEm.w; vKind = kind; vec3 p = aEm.xyz; float size; float a; vec2 qp = position.xy; vCol = vec3(1.0); vRaw = uv;
   if (kind < 0.5){ // smoke: 6 s life, rises 7 m, grows, drifts with the wind
     float t = fract(uTime / 6.0 + aSeed); p += vec3(0.0, t * 7.0, 0.0) + uWind * t * t * 5.0 + vec3(sin(aSeed * 40.0), 0.0, cos(aSeed * 31.0)) * 0.3;
     size = 0.5 + t * 2.6; a = smoothstep(0.0, 0.12, t) * (1.0 - t) * 0.55;
@@ -36,59 +36,43 @@ void main(){
     p += vec3(sin(uTime * 0.05 + aSeed * 9.0), 0.0, cos(uTime * 0.04 + aSeed * 7.0)) * 3.0;
     size = 9.0 + aSeed * 7.0; a = 0.22;
     float d = distance(p, cameraPosition); a *= smoothstep(4.0, 16.0, d) * (1.0 - smoothstep(60.0, 90.0, d));
-  } else { // street steam: 2.6 s life, quick billow, rises 3 m and thins out
+  } else if (kind < 3.5){ // street steam: 2.6 s life, quick billow, rises 3 m and thins out
     float t = fract(uTime / 2.6 + aSeed); p += vec3(sin(aSeed * 50.0) * 0.12, t * 3.0, cos(aSeed * 37.0) * 0.12) + uWind * t * t * 1.8;
     size = 0.35 + t * 1.5; a = smoothstep(0.0, 0.12, t) * (1.0 - t) * 0.5;
+  } else if (kind < 4.5){ // falling leaf: aEm.xyz is a random offset in a camera-following 26 x 11 x 26 m wrap volume; sways, tumbles and squashes as it drops
+    vec3 box = vec3(26.0, 11.0, 26.0); float sd = fract(aEm.x * 43.7 + aEm.z * 17.9);
+    p = aEm.xyz * box; p.y -= uTime * (0.55 + 0.5 * uWind.y + sd * 0.4); p.x += sin(uTime * (0.6 + sd) + sd * 40.0) * 0.7 + uWind.x * uTime * 0.5; p.z += cos(uTime * (0.5 + sd) + sd * 30.0) * 0.7 + uWind.z * uTime * 0.5;
+    p = mod(p - cameraPosition + box * 0.5, box) + cameraPosition - box * 0.5;
+    float an = uTime * (1.5 + sd * 3.0) + sd * 6.28; qp = vec2(cos(an) * position.x - sin(an) * position.y, sin(an) * position.x + cos(an) * position.y); qp.y *= 0.35 + 0.65 * abs(cos(uTime * (1.0 + sd * 2.0) + sd * 9.0));
+    size = 0.16 * (0.7 + sd * 0.7); a = 1.0 - smoothstep(0.38, 0.5, length((p - cameraPosition) / box));
+    vCol = sd < 0.35 ? vec3(0.62, 0.40, 0.10) : sd < 0.65 ? vec3(0.78, 0.55, 0.12) : sd < 0.85 ? vec3(0.70, 0.22, 0.07) : vec3(0.36, 0.46, 0.14);
+  } else { // dust mote / pollen: slow drift, twinkles, fades near the lens (18 x 7 x 18 m wrap volume)
+    vec3 box = vec3(18.0, 7.0, 18.0); float sd = fract(aEm.x * 31.1 + aEm.y * 7.7);
+    p = aEm.xyz * box + vec3(sin(uTime * 0.21 + sd * 20.0), sin(uTime * 0.17 + sd * 33.0) * 0.6, cos(uTime * 0.19 + sd * 27.0)) * 0.8 + uWind * uTime * 0.08;
+    p = mod(p - cameraPosition + box * 0.5, box) + cameraPosition - box * 0.5;
+    size = 0.035 * (0.6 + sd); float tw = 0.45 + 0.55 * sin(uTime * (0.8 + sd * 2.0) + sd * 50.0);
+    a = (1.0 - smoothstep(0.35, 0.5, length((p - cameraPosition) / box))) * tw * smoothstep(1.0, 3.0, distance(p, cameraPosition)); vCol = vec3(1.0, 0.92, 0.72);
   }
-  vec3 toCam = normalize(cameraPosition - p); vec3 right = normalize(cross(vec3(0.0, 1.0, 0.0), toCam)); vec3 up = kind > 1.5 ? vec3(0.0, 0.45, 0.0) : cross(toCam, right);
-  vec3 wp = p + (right * position.x + up * position.y) * size;
+  vec3 toCam = normalize(cameraPosition - p); vec3 right = normalize(cross(vec3(0.0, 1.0, 0.0), toCam)); vec3 up = (kind > 1.5 && kind < 2.5) ? vec3(0.0, 0.45, 0.0) : cross(toCam, right);
+  vec3 wp = p + (right * qp.x + up * qp.y) * size;
   vUv = mix(uCell.xy, uCell.zw, uv); vA = a; vWPos = wp;
   gl_Position = projectionMatrix * viewMatrix * vec4(wp, 1.0);
 }`;
 const PUFF_FS = /* glsl */`
-uniform sampler2D tMap; uniform vec3 uSmoke, uFog; varying vec2 vUv; varying float vA; varying vec3 vWPos; varying float vKind;
+uniform sampler2D tMap; uniform vec3 uSmoke, uFog; uniform float uLeafL, uMoteG; varying vec2 vUv; varying vec2 vRaw; varying float vA; varying vec3 vWPos; varying float vKind; varying vec3 vCol;
 void main(){
+  if (vKind > 3.5) {
+    if (vKind < 4.5) { vec2 d = (vRaw - 0.5) * vec2(1.0, 2.0); float r = length(d); float al = smoothstep(0.5, 0.36, r) * vA; if (al < 0.05) discard; float vein = 1.0 - 0.35 * smoothstep(0.03, 0.0, abs(d.x)); gl_FragColor = vec4(vCol * vein * uLeafL, al); return; }
+    float r2 = length(vRaw - 0.5) * 2.0; float al2 = smoothstep(1.0, 0.0, r2); al2 *= al2 * vA * uMoteG; if (al2 < 0.01) discard; gl_FragColor = vec4(vCol * uLeafL, al2); return;
+  }
   vec4 c = texture2D(tMap, vUv); float a = c.a * vA; if (a < 0.01) discard;
   vec3 col = vKind < 0.5 ? uSmoke * c.rgb : vKind < 1.5 ? vec3(1.6, 0.75, 0.25) * 2.2 : vKind < 2.5 ? uFog : mix(uFog, vec3(0.95), 0.6);
   gl_FragColor = vec4(col, a);
 }`;
 
-// falling leaves and dust motes: camera-following wrap volumes like the rain (one draw each, positions computed in the vertex shader from time and a per-instance offset)
-const LEAF_VS = /* glsl */`
-attribute vec3 aOff; uniform float uTime, uSize, uFall, uMode; uniform vec3 uCam, uBox, uWind; varying vec2 vUv; varying vec3 vCol; varying float vA;
-void main(){
-  vec3 wp;
-  if (uMode < 0.5) { // falling leaf: sways side to side while it drops, tumbles about the view axis, squashes as it turns
-    float sd = fract(aOff.x * 43.7 + aOff.z * 17.9);
-    vec3 p = aOff * uBox; float fall = uFall * (0.5 + sd * 0.6);
-    p.y -= uTime * fall; p.x += sin(uTime * (0.6 + sd) + sd * 40.0) * 0.7 + uWind.x * uTime * 0.5; p.z += cos(uTime * (0.5 + sd) + sd * 30.0) * 0.7 + uWind.z * uTime * 0.5;
-    p = mod(p - uCam + uBox * 0.5, uBox) + uCam - uBox * 0.5;
-    vec3 toCam = normalize(uCam - p); vec3 right = normalize(cross(vec3(0.0, 1.0, 0.0), toCam)); vec3 up = cross(toCam, right);
-    float a = uTime * (1.5 + sd * 3.0) + sd * 6.28; vec2 q = vec2(cos(a) * position.x - sin(a) * position.y, sin(a) * position.x + cos(a) * position.y);
-    q.y *= 0.35 + 0.65 * abs(cos(uTime * (1.0 + sd * 2.0) + sd * 9.0));
-    wp = p + (right * q.x + up * q.y) * uSize * (0.7 + sd * 0.7);
-    vA = 1.0 - smoothstep(0.38, 0.5, length((p - uCam) / uBox));
-    vCol = sd < 0.35 ? vec3(0.62, 0.40, 0.10) : sd < 0.65 ? vec3(0.78, 0.55, 0.12) : sd < 0.85 ? vec3(0.70, 0.22, 0.07) : vec3(0.36, 0.46, 0.14);
-  } else { // dust mote / pollen: slow drift, twinkles, fades near the lens
-    float sd = fract(aOff.x * 31.1 + aOff.y * 7.7);
-    vec3 p = aOff * uBox; p += vec3(sin(uTime * 0.21 + sd * 20.0), sin(uTime * 0.17 + sd * 33.0) * 0.6, cos(uTime * 0.19 + sd * 27.0)) * 0.8 + uWind * uTime * 0.08;
-    p = mod(p - uCam + uBox * 0.5, uBox) + uCam - uBox * 0.5;
-    vec3 toCam = normalize(uCam - p); vec3 right = normalize(cross(vec3(0.0, 1.0, 0.0), toCam)); vec3 up = cross(toCam, right);
-    wp = p + (right * position.x + up * position.y) * uSize * (0.6 + sd);
-    float tw = 0.45 + 0.55 * sin(uTime * (0.8 + sd * 2.0) + sd * 50.0);
-    vA = (1.0 - smoothstep(0.35, 0.5, length((p - uCam) / uBox))) * tw * smoothstep(1.0, 3.0, distance(p, uCam)); vCol = vec3(1.0, 0.92, 0.72);
-  }
-  vUv = uv; gl_Position = projectionMatrix * viewMatrix * vec4(wp, 1.0);
-}`;
-const LEAF_FS = /* glsl */`uniform float uLight, uMode, uGain; varying vec2 vUv; varying vec3 vCol; varying float vA;
-void main(){
-  if (uMode < 0.5) { vec2 d = (vUv - 0.5) * vec2(1.0, 2.0); float r = length(d); float a = smoothstep(0.5, 0.36, r) * vA; if (a < 0.05) discard; float vein = 1.0 - 0.35 * smoothstep(0.03, 0.0, abs(d.x)); gl_FragColor = vec4(vCol * vein * uLight, a); }
-  else { float r = length(vUv - 0.5) * 2.0; float a = smoothstep(1.0, 0.0, r); gl_FragColor = vec4(vCol * a * a, a * vA * uGain); }
-}`;
-
 export function createEffects({ scene, camera }) {
   const group = new THREE.Group(); group.name = 'effects'; scene.add(group);
-  const st = { lights: [], poolN: 8, maxParticles: 4000, rainN: 0, lastAssign: 0, lastPools: new THREE.Vector3(1e9, 0, 0), fireT: 0 };
+  const st = { lights: [], poolN: 8, maxParticles: 4000, rainN: 0, lastAssign: 0, lastPools: new THREE.Vector3(1e9, 0, 0), fireT: 0, leafN: 0, moteN: 0 };
   // ---- light pool ------------------------------------------------------------------------------------------------------------------
   function setPool(n) {
     for (const l of st.lights) group.remove(l);
@@ -150,7 +134,7 @@ export function createEffects({ scene, camera }) {
   rainMat.name = 'mat.rain';
   const rain = new THREE.Mesh(rg, rainMat); rain.frustumCulled = false; rain.renderOrder = 5; rain.name = 'fx.rain'; group.add(rain);
   // ---- puffs (smoke, flames, fog cards) -------------------------------------------------------------------------------------------------------------
-  const PUFFS = 1200;
+  const PUFFS = 1500;
   const pg = new THREE.InstancedBufferGeometry();
   pg.setAttribute('position', new THREE.BufferAttribute(new Float32Array([-0.5, -0.5, 0, 0.5, -0.5, 0, 0.5, 0.5, 0, -0.5, 0.5, 0]), 3));
   pg.setAttribute('uv', new THREE.BufferAttribute(new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]), 2));
@@ -161,7 +145,7 @@ export function createEffects({ scene, camera }) {
   pg.setAttribute('aEm', emA); pg.setAttribute('aSeed', seedA); pg.instanceCount = 0;
   const sc = particleCell('smoke');
   const puffMat = new THREE.ShaderMaterial({ vertexShader: PUFF_VS, fragmentShader: PUFF_FS, transparent: true, depthWrite: false,
-    uniforms: { uTime: { value: 0 }, uCell: { value: new THREE.Vector4(sc[0], sc[1], sc[2], sc[3]) }, uWind: { value: new THREE.Vector3(0.6, 0, 0.2) }, tMap: { value: MatLib.get('mat.particle').map }, uSmoke: { value: new THREE.Color(0.55, 0.55, 0.56) }, uFog: { value: new THREE.Color(0.8, 0.82, 0.84) } } });
+    uniforms: { uTime: { value: 0 }, uCell: { value: new THREE.Vector4(sc[0], sc[1], sc[2], sc[3]) }, uWind: { value: new THREE.Vector3(0.6, 0, 0.2) }, uLeafL: { value: 1 }, uMoteG: { value: 0 }, tMap: { value: MatLib.get('mat.particle').map }, uSmoke: { value: new THREE.Color(0.55, 0.55, 0.56) }, uFog: { value: new THREE.Color(0.8, 0.82, 0.84) } } });
   puffMat.name = 'mat.puff';
   const puffs = new THREE.Mesh(pg, puffMat); puffs.frustumCulled = false; puffs.renderOrder = 4; puffs.name = 'fx.puffs'; group.add(puffs);
   st.fogCards = 'on'; st.puffN = 0; st.fogCardN = 0;
@@ -202,21 +186,18 @@ export function createEffects({ scene, camera }) {
       }
     }
     st.fogCardN = fc;
+    // falling leaves (broadleaf regions, not in rain) and dust motes (low sun; softly all day in forests): wrap-volume offsets in aEm.xyz, kinds 4 and 5
+    { const tier = Math.min(1, st.maxParticles / 4000), treeReg = L.region === 'city' || L.region === 'lake' || L.region === 'forest';
+      const wantL = treeReg && L.wType !== 'rain' && L.wType !== 'storm' && L.day > 0.1 ? Math.round(64 * tier * (0.5 + 0.5 * Math.min(1, L.weather.wind * 1.5))) : 0;
+      const lowSun = L.day > 0.12 && L.sunElev < 0.55 && L.weather.cover < 0.8 && L.wType !== 'rain' && L.wType !== 'storm';
+      const wantM = Math.round(200 * tier * (lowSun ? 1 : L.region === 'forest' && L.day > 0.2 && L.weather.cover < 0.9 ? 0.5 : 0));
+      let nl = 0, nm = 0;
+      for (let k = 0; k < wantL && n < PUFFS; k++, n++, nl++) { a[n * 4] = (k * 0.7548776662 + 0.11) % 1; a[n * 4 + 1] = (k * 0.5698402909 + 0.37) % 1; a[n * 4 + 2] = (k * 0.8191725134 + 0.53) % 1; a[n * 4 + 3] = 4; }
+      for (let k = 0; k < wantM && n < PUFFS; k++, n++, nm++) { a[n * 4] = (k * 0.6180339887 + 0.21) % 1; a[n * 4 + 1] = (k * 0.7548776662 + 0.64) % 1; a[n * 4 + 2] = (k * 0.5698402909 + 0.83) % 1; a[n * 4 + 3] = 5; }
+      st.leafN = nl; st.moteN = nm; puffMat.uniforms.uMoteG.value = (lowSun ? 0.7 : 0.35) * (1 - 0.6 * L.weather.cover); puffMat.uniforms.uLeafL.value = 0.3 + 0.9 * L.day * (1 - 0.5 * L.weather.cover) + 0.05 * L.night;
+    }
     pg.instanceCount = n; emA.needsUpdate = true;
   }
-  // ---- leaves and motes -------------------------------------------------------------------------------------------------------------------------------
-  const quadG = () => { const g = new THREE.InstancedBufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array([-0.5, -0.5, 0, 0.5, -0.5, 0, 0.5, 0.5, 0, -0.5, 0.5, 0]), 3)); g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]), 2)); g.setIndex([0, 1, 2, 0, 2, 3]); return g; };
-  const rndOff = (n, seed) => { const o = new Float32Array(n * 3); let q = seed; const r = () => { q = (q * 16807) % 2147483647; return q / 2147483647; }; for (let i = 0; i < n * 3; i++) o[i] = r(); return new THREE.InstancedBufferAttribute(o, 3); };
-  const LEAVES = 64, MOTES = 200;
-  const leafG = quadG(); leafG.setAttribute('aOff', rndOff(LEAVES, 777)); leafG.instanceCount = 0;
-  const leafMat = new THREE.ShaderMaterial({ vertexShader: LEAF_VS, fragmentShader: LEAF_FS, side: THREE.DoubleSide, transparent: true, depthWrite: false, uniforms: { uMode: { value: 0 }, uGain: { value: 1 }, uTime: { value: 0 }, uSize: { value: 0.16 }, uFall: { value: 0.7 }, uCam: { value: new THREE.Vector3() }, uBox: { value: new THREE.Vector3(26, 11, 26) }, uWind: { value: new THREE.Vector3(1, 0, 0.35) }, uLight: { value: 1 } } });
-  leafMat.name = 'mat.leaves';
-  const leaves = new THREE.Mesh(leafG, leafMat); leaves.frustumCulled = false; leaves.renderOrder = 5; leaves.name = 'fx.leaves'; group.add(leaves);
-  const moteG = quadG(); moteG.setAttribute('aOff', rndOff(MOTES, 4242)); moteG.instanceCount = 0;
-  const moteMat = new THREE.ShaderMaterial({ vertexShader: LEAF_VS, fragmentShader: LEAF_FS, side: THREE.DoubleSide, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, uniforms: { uMode: { value: 1 }, uGain: { value: 1 }, uLight: { value: 1 }, uFall: { value: 0 }, uTime: { value: 0 }, uSize: { value: 0.035 }, uCam: { value: new THREE.Vector3() }, uBox: { value: new THREE.Vector3(18, 7, 18) }, uWind: { value: new THREE.Vector3(1, 0, 0.35) } } }); // same program as the leaves (uMode picks the branch)
-  moteMat.name = 'mat.motes';
-  const motes = new THREE.Mesh(moteG, moteMat); motes.frustumCulled = false; motes.renderOrder = 5; motes.name = 'fx.motes'; group.add(motes);
-  st.leafN = 0; st.moteN = 0;
   const api = {
     group, get activeLights() { let n = 0; for (const l of st.lights) if (l.intensity > 0.01) n++; return n; }, get particlesAlive() { return st.rainN + st.puffN + st.leafN + st.moteN; }, get fogCards() { return st.fogCardN; },
     configure({ particles, lightPool, fogCards }) { st.maxParticles = particles; if (fogCards) st.fogCards = fogCards; if (lightPool !== st.poolN || !st.lights.length) setPool(lightPool); },
@@ -231,14 +212,6 @@ export function createEffects({ scene, camera }) {
       }
       if (st.lastPools.distanceToSquared(cam.position) > 400 || (L.night > 0.05) !== (pools.count > 0)) { st.lastPools.copy(cam.position); rebuildPools(L.night); }
       pools.material.opacity = Math.min(1, L.night * 1.3);
-      // falling leaves (broadleaf regions, not in rain) and dust motes in low sun (forest: all day, softly)
-      { const tier = Math.min(1, st.maxParticles / 4000), treeReg = L.region === 'city' || L.region === 'lake' || L.region === 'forest';
-        const wantL = treeReg && L.wType !== 'rain' && L.wType !== 'storm' && L.day > 0.1 ? Math.round(LEAVES * tier * (0.5 + 0.5 * Math.min(1, L.weather.wind * 1.5))) : 0;
-        const lowSun = L.day > 0.12 && L.sunElev < 0.55 && L.weather.cover < 0.8 && L.wType !== 'rain' && L.wType !== 'storm';
-        const wantM = Math.round(MOTES * tier * (lowSun ? 1 : L.region === 'forest' && L.day > 0.2 && L.weather.cover < 0.9 ? 0.5 : 0));
-        leafG.instanceCount = wantL; leaves.visible = wantL > 0; moteG.instanceCount = wantM; motes.visible = wantM > 0; st.leafN = wantL; st.moteN = wantM;
-        leafMat.uniforms.uTime.value = t; leafMat.uniforms.uCam.value.copy(cam.position); leafMat.uniforms.uLight.value = 0.3 + 0.9 * L.day * (1 - 0.5 * L.weather.cover) + 0.05 * L.night; leafMat.uniforms.uFall.value = 0.55 + 0.5 * L.weather.wind;
-        moteMat.uniforms.uTime.value = t; moteMat.uniforms.uCam.value.copy(cam.position); moteMat.uniforms.uGain.value = (lowSun ? 0.7 : 0.35) * (1 - 0.6 * L.weather.cover); }
       // rain: intensity from wetness target; count capped by the particle budget
       const wet = L.weather.wet, want = L.wType === 'rain' || L.wType === 'storm' ? Math.min(RAIN, st.maxParticles, L.wType === 'storm' ? 6000 : 3500) : 0;
       st.rainN = Math.round(want * Math.min(1, wet));
