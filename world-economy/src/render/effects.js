@@ -44,7 +44,7 @@ void main(){
     p = aEm.xyz * box; p.y -= uTime * (0.55 + 0.5 * uWind.y + sd * 0.4); p.x += sin(uTime * (0.6 + sd) + sd * 40.0) * 0.7 + uWind.x * uTime * 0.5; p.z += cos(uTime * (0.5 + sd) + sd * 30.0) * 0.7 + uWind.z * uTime * 0.5;
     p = mod(p - cameraPosition + box * 0.5, box) + cameraPosition - box * 0.5;
     float an = uTime * (1.5 + sd * 3.0) + sd * 6.28; qp = vec2(cos(an) * position.x - sin(an) * position.y, sin(an) * position.x + cos(an) * position.y); qp.y *= 0.35 + 0.65 * abs(cos(uTime * (1.0 + sd * 2.0) + sd * 9.0));
-    size = 0.16 * (0.7 + sd * 0.7); a = 1.0 - smoothstep(0.38, 0.5, length((p - cameraPosition) / box));
+    size = 0.1 * (0.7 + sd * 0.7); a = 1.0 - smoothstep(0.38, 0.5, length((p - cameraPosition) / box));
     vCol = sd < 0.35 ? vec3(0.62, 0.40, 0.10) : sd < 0.65 ? vec3(0.78, 0.55, 0.12) : sd < 0.85 ? vec3(0.70, 0.22, 0.07) : vec3(0.36, 0.46, 0.14);
   } else { // dust mote / pollen: slow drift, twinkles, fades near the lens (18 x 7 x 18 m wrap volume)
     vec3 box = vec3(18.0, 7.0, 18.0); float sd = fract(aEm.x * 31.1 + aEm.y * 7.7);

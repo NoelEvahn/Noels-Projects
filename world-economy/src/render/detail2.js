@@ -107,7 +107,7 @@ export function createDetail2({ scene }) {
         const mx = (W[i] + W[i + 3]) * 0.5, mz = (W[i + 2] + W[i + 5]) * 0.5, dx = mx - cam.x, dz = mz - cam.z, d2 = dx * dx + dz * dz;
         if (d2 > T.wire * T.wire) continue;
         sph.center.set(mx, (W[i + 1] + W[i + 4]) * 0.5, mz); sph.radius = 36; if (!frustum.intersectsSphere(sph)) continue;
-        const ax = W[i], ay = W[i + 1], az = W[i + 2], bx = W[i + 3], by = W[i + 4], bz = W[i + 5], L = Math.hypot(bx - ax, bz - az), sag = 0.0125 * L, hw = 0.014;
+        const ax = W[i], ay = W[i + 1], az = W[i + 2], bx = W[i + 3], by = W[i + 4], bz = W[i + 5], L = Math.hypot(bx - ax, bz - az), sag = 0.0125 * L, hw = 0.0065;
         const nx = -(bz - az) / L, nz = (bx - ax) / L; // horizontal normal of the span
         for (let k = 0; k < SEGS; k++) {
           const t0 = k / SEGS, t1 = (k + 1) / SEGS;
