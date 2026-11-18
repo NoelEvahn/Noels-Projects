@@ -75,46 +75,64 @@ def('tex.paver', 0.012, 1.0, /* glsl */`
   float e = min(min(q.y, 1.0 - q.y), min(abs(q.x - 0.5), min(q.x, 1.0 - q.x)) * 1.0);
   float j = smoothstep(0.02, 0.05, e); float hsh = hash12(mod(c, vec2(8.0)) + half_ * 3.0); float n = fbm(uv, 16.0, 3);
   a = mix(C(4e4a44), mix(C(a0948a), C(8c8076), hsh) * (0.88 + 0.2 * n), j); h = j * 0.8 + 0.1 * n; r = 0.85; m = 0.0;`);
-def('tex.grass_ground', 0.01, 0.8, /* glsl */`
+// ground layers (Terrain Relief pass): every recipe has real height structure (tufts, clods, ledges, ripples, stones) so the baked
+// normal map and cavity AO carry depth; roughness varies per feature. Albedo palettes are unchanged.
+def('tex.grass_ground', 0.045, 1.6, /* glsl */`
   float n = fbm(uv, 6.0, 5), fine = vnoise(uv * vec2(420.0, 140.0), vec2(420.0, 140.0)), blades = vnoise(uv * vec2(160.0, 640.0), vec2(160.0, 640.0));
+  vec3 wc = worley(uv, 44.0); float tuft = smoothstep(0.62, 0.05, wc.x); float lump = fbm(uv + 0.1, 10.0, 4);
   float clover = smoothstep(0.55, 0.75, fbm(uv + 0.3, 12.0, 3)); float dirt = smoothstep(0.52, 0.74, fbm(uv + 0.71, 4.0, 4));
   vec3 g = mix(C(50662e), C(80883f), n) * (0.7 + 0.5 * blades); g = mix(g, C(3e6030), clover * 0.5); g = mix(g, C(94904e), smoothstep(0.55, 0.9, fine) * 0.4);
-  a = mix(g, C(6a5a40) * (0.8 + 0.3 * fine), dirt * 0.8); h = 0.5 * blades + 0.3 * n - 0.2 * dirt; r = 0.95 - 0.05 * clover; m = 0.0;`);
-def('tex.forest_floor', 0.02, 1.2, /* glsl */`
-  float n = fbm(uv, 5.0, 5); vec3 w = worley(uv, 50.0);
+  g *= 0.74 + 0.42 * tuft;
+  a = mix(g, C(6a5a40) * (0.8 + 0.3 * fine) * (0.8 + 0.3 * lump), dirt * 0.8);
+  h = 0.42 * tuft + 0.22 * blades + 0.3 * lump - 0.28 * dirt + 0.1 * n; r = 0.97 - 0.1 * tuft * blades - 0.06 * clover + 0.02 * dirt; m = 0.0;`);
+def('tex.forest_floor', 0.075, 1.9, /* glsl */`
+  float n = fbm(uv, 5.0, 5); vec3 w = worley(uv, 50.0), w2 = worley(uv + 0.3, 22.0);
   float needles = vnoise(uv * vec2(600.0, 90.0), vec2(600.0, 90.0)) * vnoise(uv.yx * vec2(500.0, 80.0), vec2(500.0, 80.0));
   float moss = smoothstep(0.5, 0.7, fbm(uv + 0.5, 6.0, 4)); float stones = smoothstep(0.25, 0.1, w.x) * step(0.8, w.z);
+  float twig = smoothstep(0.9, 0.99, ridged(uv + 0.17, 13.0, 3)) * (1.0 - moss * 0.6); float clump = smoothstep(0.5, 0.0, w2.x) * step(0.45, w2.z);
   vec3 c = mix(C(45351f), C(7a5a36), needles * 1.8) * (0.7 + 0.5 * n); c = mix(c, C(3a5424) * (0.8 + 0.4 * n), moss * 0.5); c = mix(c, C(8a5a2c), smoothstep(0.6, 0.8, fbm(uv + 0.2, 14.0, 3)) * 0.35); c = mix(c, C(7a7468), stones);
-  a = c; h = 0.4 * n + 0.3 * needles + 0.2 * moss + 0.5 * stones; r = mix(0.95, 0.85, moss); m = 0.0;`);
+  c = mix(c, C(5a4430) * (0.8 + 0.4 * needles), twig * 0.75); c *= 0.8 + 0.3 * clump;
+  a = c; h = 0.3 * n + 0.28 * needles + 0.2 * moss + 0.5 * stones + 0.45 * twig + 0.25 * clump; r = mix(0.98, 0.88, moss) - 0.1 * stones; m = 0.0;`);
 def('tex.moss', 0.01, 0.8, /* glsl */`
   float n = fbm(uv, 8.0, 5), c = vnoise(uv * 120.0, vec2(120.0)); a = mix(C(3e5a22), C(7a9a3a), n) * (0.8 + 0.3 * c); h = n * 0.7 + c * 0.3; r = 0.95; m = 0.0;`);
-def('tex.dirt_track', 0.02, 1.0, /* glsl */`
-  float n = fbm(uv, 6.0, 5); vec3 w = worley(uv, 70.0); float peb = smoothstep(0.22, 0.08, w.x);
+def('tex.dirt_track', 0.07, 1.6, /* glsl */`
+  float n = fbm(uv, 6.0, 5); vec3 w = worley(uv, 70.0), wc = worley(uv + 0.2, 16.0); float peb = smoothstep(0.22, 0.08, w.x);
+  float clod = smoothstep(0.0, 0.5, wc.y - wc.x) * (0.6 + 0.4 * wc.z); float crackd = 1.0 - smoothstep(0.0, 0.05, wc.y - wc.x);
   float rut = smoothstep(0.08, 0.0, abs(fract(uv.x * 2.0) - 0.28)) + smoothstep(0.08, 0.0, abs(fract(uv.x * 2.0) - 0.72));
-  a = mix(C(8a7656), C(6a5840), n) * (1.0 - 0.15 * rut); a = mix(a, C(9a948a) * (0.8 + 0.3 * w.z), peb * 0.7);
-  h = 0.5 + 0.2 * n - 0.3 * rut + 0.4 * peb; r = 0.92; m = 0.0;`);
-def('tex.mud', 0.02, 1.0, /* glsl */`
-  float n = fbm(uv, 5.0, 5), puddle = smoothstep(0.55, 0.62, fbm(uv + 0.2, 3.0, 4));
+  a = mix(C(8a7656), C(6a5840), n) * (1.0 - 0.15 * rut) * (0.82 + 0.28 * clod); a = mix(a, C(9a948a) * (0.8 + 0.3 * w.z), peb * 0.7); a *= 1.0 - 0.3 * crackd;
+  h = 0.18 + 0.2 * n + 0.38 * clod - 0.35 * rut + 0.4 * peb - 0.15 * crackd; r = 0.95 - 0.2 * peb - 0.05 * clod; m = 0.0;`);
+def('tex.mud', 0.07, 1.6, /* glsl */`
+  float n = fbm(uv, 5.0, 5), puddle = smoothstep(0.55, 0.62, fbm(uv + 0.2, 3.0, 4)), slosh = ridged(uv + 0.4, 9.0, 4);
   float tyre = smoothstep(0.85, 1.0, sin(uv.y * 6.2832 * 40.0) * 0.5 + 0.5) * smoothstep(0.1, 0.0, abs(fract(uv.x * 2.0) - 0.3));
-  a = mix(C(5a4a36), C(3e3226), n) * (1.0 - 0.3 * puddle); h = 0.5 + 0.3 * n - 0.4 * puddle - 0.1 * tyre; r = mix(0.85, 0.15, puddle); m = 0.0;`);
-def('tex.gravel', 0.02, 1.4, /* glsl */`
-  vec3 w = worley(uv, 60.0), w2 = worley(uv + 0.5, 110.0); float s1 = smoothstep(0.45, 0.1, w.x), s2 = smoothstep(0.4, 0.1, w2.x);
-  a = mix(C(5a564e), mix(C(9a958a), C(7a7064), w.z), max(s1, s2 * 0.8)) * (0.85 + 0.25 * w2.z); h = max(s1 * (1.0 - w.x), s2 * 0.6); r = 0.9; m = 0.0;`);
-def('tex.sand_pale', 0.006, 0.4, /* glsl */`
+  vec3 wc = worley(uv, 26.0); float lump = smoothstep(0.5, 0.0, wc.x);
+  a = mix(C(5a4a36), C(3e3226), n) * (1.0 - 0.3 * puddle) * (0.85 + 0.25 * lump); h = 0.3 + 0.3 * n + 0.28 * slosh + 0.2 * lump - 0.45 * puddle - 0.25 * tyre; r = mix(0.7 + 0.2 * (1.0 - lump), 0.12, puddle); m = 0.0;`);
+def('tex.gravel', 0.065, 2.2, /* glsl */`
+  vec3 w = worley(uv, 60.0), w2 = worley(uv + 0.5, 110.0), w3 = worley(uv + 0.25, 24.0); float s1 = smoothstep(0.45, 0.1, w.x), s2 = smoothstep(0.4, 0.1, w2.x), s3 = smoothstep(0.5, 0.12, w3.x) * step(0.55, w3.z);
+  float st = max(max(s1, s2 * 0.8), s3);
+  float dome = max(max(s1 * (1.0 - w.x), s2 * 0.6 * (1.0 - w2.x)), s3 * (1.0 - w3.x) * 1.1);
+  a = mix(C(5a564e), mix(C(9a958a), C(7a7064), w.z), st) * (0.85 + 0.25 * w2.z); a *= 0.78 + 0.3 * smoothstep(0.0, 0.7, dome);
+  h = pow(dome, 0.7) * 0.95 + 0.04 * fbm(uv, 8.0, 3); r = mix(0.97, 0.7 + 0.15 * w.z, st); m = 0.0;`);
+def('tex.sand_pale', 0.034, 0.9, /* glsl */`
   float n = fbm(uv, 6.0, 5), g = vnoise(uv * 500.0, vec2(500.0));
-  float rip = sin((uv.y + 0.08 * fbm(uv, 4.0, 3)) * 6.2832 * 22.0) * 0.5 + 0.5;
+  float wob = 0.1 * fbm(uv, 4.0, 3) + 0.03 * fbm(uv + 0.6, 12.0, 2);
+  float amp = 0.35 + 0.65 * smoothstep(0.2, 0.65, fbm(uv + 0.2, 3.0, 3));
+  float ph = (uv.y + wob) * 22.0 + 0.5 * sin(uv.x * 6.2832 * 3.0 + n * 3.0); float f = fract(ph);
+  float rip = pow(0.5 + 0.5 * sin(ph * 6.2832 + 1.2 * sin(ph * 6.2832)), 1.3) * amp;
+  float grit = smoothstep(0.7, 0.95, g);
   a = C(e4d4b0) * (0.9 + 0.12 * n) * (0.94 + 0.1 * g); a = mix(a, C(c8b48c), smoothstep(0.6, 0.85, fbm(uv + 0.4, 3.0, 3)) * 0.4);
-  h = rip * 0.5 + n * 0.3 + g * 0.2; r = 0.92; m = 0.0;`);
+  a *= 0.88 + 0.2 * rip; a = mix(a, C(f2e6c8), smoothstep(0.7, 1.0, rip) * 0.3);
+  h = rip * 0.62 + n * 0.25 + g * 0.1 + grit * 0.04; r = 0.94 - 0.14 * rip + 0.03 * grit; m = 0.0;`);
 def('tex.sand_lake', 0.008, 0.6, /* glsl */`
   float n = fbm(uv, 6.0, 5), g = vnoise(uv * 300.0, vec2(300.0)); vec3 w = worley(uv, 40.0); float peb = smoothstep(0.2, 0.08, w.x);
   a = mix(C(9a8a6a), C(7a6a4e), n) * (0.88 + 0.2 * g); a = mix(a, C(8a8478), peb); h = n * 0.4 + g * 0.2 + peb * 0.5; r = 0.9; m = 0.0;`);
-def('tex.rock_granite', 0.08, 1.4, /* glsl */`
+def('tex.rock_granite', 0.2, 2.0, /* glsl */`
   float rg = ridged(uv, 3.0, 5), n = fbm(uv, 8.0, 5), sp = vnoise(uv * 400.0, vec2(400.0));
-  float strata = sin((uv.y + 0.15 * n) * 6.2832 * 7.0) * 0.5 + 0.5;
+  vec3 wk = worley(uv, 9.0); float crack = 1.0 - smoothstep(0.0, 0.07, wk.y - wk.x); float blk = smoothstep(0.0, 0.4, wk.y - wk.x);
+  float sw = (uv.y + 0.15 * n) * 7.0; float strata = sin(sw * 6.2832) * 0.5 + 0.5; float ledge = fract(sw);
   float lichen = smoothstep(0.62, 0.7, fbm(uv + 0.9, 10.0, 4));
-  a = mix(C(8e8c84), C(6a6862), rg) * (0.8 + 0.3 * n) * (0.9 + 0.2 * sp); a *= 0.9 + 0.1 * strata;
+  a = mix(C(8e8c84), C(6a6862), rg) * (0.8 + 0.3 * n) * (0.9 + 0.2 * sp); a *= 0.9 + 0.1 * strata; a *= 1.0 - 0.5 * crack;
   a = mix(a, C(a8a87a), lichen * 0.5); a = mix(a, C(5a6a3a), smoothstep(0.7, 0.78, fbm(uv + 0.3, 6.0, 4)) * 0.5);
-  h = rg * 0.7 + n * 0.25 + sp * 0.05; r = 0.88 - 0.1 * sp; m = 0.0;`);
+  h = rg * 0.45 + n * 0.2 + sp * 0.04 + blk * 0.3 + ledge * 0.15 - crack * 0.4; r = 0.9 - 0.12 * sp - 0.1 * blk; m = 0.0;`);
 def('tex.rock_dark', 0.06, 1.4, /* glsl */`
   float rg = ridged(uv, 4.0, 5), n = fbm(uv, 10.0, 4); vec3 w = worley(uv, 30.0); float pit = smoothstep(0.15, 0.05, w.x);
   a = mix(C(46423e), C(2a2826), rg) * (0.85 + 0.3 * n); h = rg * 0.8 + n * 0.2 - pit * 0.4; r = 0.7 - 0.25 * smoothstep(0.4, 0.8, n); m = 0.0;`);

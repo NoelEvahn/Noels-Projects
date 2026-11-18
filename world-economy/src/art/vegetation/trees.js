@@ -154,6 +154,7 @@ export function plantGeometry(id) {
     case 'veg.daisy': crossed(C('daisy'), 0.5, 0.42, 2); break;
     case 'veg.reeds': crossed(C('reeds'), 1.0, 1.6); break;
     case 'veg.flowers': crossed(C('flowers'), 0.8, 0.6, 3); break;
+    case 'veg.sapling': for (let w = 0; w < 5; w++) { const y = 0.18 + w * 0.22, L = 0.7 - w * 0.1; for (let k = 0; k < 5; k++) { const yaw = w * 0.7 + (k / 5) * 6.28 + R() * 0.4; frond(leaf, 0, y, 0, yaw, -0.2 + R() * 0.2, L, L * 0.6, C('spruce'), 0, L * 0.25); } } frond(leaf, 0, 1.15, 0, 0, 1.45, 0.3, 0.3, C('spruce'), 0, 0); break;
     case 'veg.litter': for (let k = 0; k < 3; k++) frond(leaf, 0, 0.015, 0, k * 2.1 + R(), 0.0, 0.9, 0.9, C('litter'), 0, 0); break;
     case 'veg.clover': for (let k = 0; k < 3; k++) frond(leaf, 0, 0.02, 0, k * 2.1 + R(), 0.05, 0.7, 0.7, C('clover'), 0, 0.02); break;
     case 'veg.groundcover': for (let k = 0; k < 4; k++) frond(leaf, 0, 0.02, 0, k * 1.57 + R(), 0.12, 0.5, 0.5, C('grass'), 0, 0.05); break;

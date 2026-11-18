@@ -14,7 +14,7 @@ const sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
 const TIMBER = [1150, -1300];
 
 /** terrain weights for slots [grass, forest, rock, sand, dirt, mud, gravel, snow] into w (Float32Array(8)); returns a tint key */
-export function terrainWeights(x, z, h, slope, w, inWorld = true) {
+export function terrainWeights(x, z, h, slope, w, inWorld = true, cvx = 0, rock = 0) {
   w.fill(0);
   const n1 = fbm(x / 60, z / 60, 3, 11), n2 = valueNoise(x / 17, z / 17, 23);
   let tint = TINT.base;
@@ -53,7 +53,10 @@ export function terrainWeights(x, z, h, slope, w, inWorld = true) {
     else if (x > -170 && x < 1110 && z > -260 && z < 960) { w[6] = 0.45 + 0.3 * n1; w[0] = 0.55 - 0.3 * n1; w[4] = 0.15 * n2; tint = TINT.dryCity; }
     else { w[0] = 0.85; w[4] = 0.15 * n2; }
   }
-  const r = sm(0.55, 0.95, slope);
+  // relief-driven exposure: convex crests dry out (dirt shows through), hollows keep the moss and litter; outcrops and steep faces go to rock
+  if (cvx > 0.1 && reg !== 'ocean') { const k = 0.45 * sm(0.1, 0.7, cvx); w[4] += k * (w[0] + w[1]); w[0] *= 1 - 0.5 * k; w[1] *= 1 - 0.5 * k; }
+  else if (cvx < -0.12 && (reg === 'forest' || reg === 'lake')) { const k = 0.35 * sm(0.12, 0.8, -cvx); w[1] += k * w[0]; w[0] *= 1 - k; }
+  const r = Math.max(sm(0.42, 0.82, slope), rock);
   if (r > 0) { for (let i = 0; i < 8; i++) w[i] *= 1 - r; w[2] += r; }
   return tint;
 }
@@ -98,14 +101,14 @@ export class TerrainWriter {
   }
 }
 
-/** phase 1: sample heights (with a 1-cell border for normals) */
+/** phase 1: sample heights (with a 2-cell border for normals and the wide cavity ring) */
 export function sampleTerrainChunk(cx, cz, lod) {
   const x0 = -2000 + cx * CHUNK, z0 = -2000 + cz * CHUNK;
   const n = lod === 0 ? 25 : 8;
   const step = CHUNK / n;
-  const hh = new Float32Array((n + 3) * (n + 3));
-  const W2 = n + 3;
-  for (let j = -1; j <= n + 1; j++) for (let i = -1; i <= n + 1; i++) hh[(j + 1) * W2 + (i + 1)] = World.heightAt(x0 + i * step, z0 + j * step);
+  const hh = new Float32Array((n + 5) * (n + 5));
+  const W2 = n + 5;
+  for (let j = -2; j <= n + 2; j++) for (let i = -2; i <= n + 2; i++) hh[(j + 2) * W2 + (i + 2)] = World.heightAt(x0 + i * step, z0 + j * step);
   return hh;
 }
 const wTmp = new Float32Array(8);
@@ -113,20 +116,33 @@ const wTmp = new Float32Array(8);
 export function addTerrainChunk(t, cx, cz, lod, hh) {
   const x0 = -2000 + cx * CHUNK, z0 = -2000 + cz * CHUNK;
   const n = lod === 0 ? 25 : 8;
-  const step = CHUNK / n, W2 = n + 3;
+  const step = CHUNK / n, W2 = n + 5;
   if (!hh) hh = sampleTerrainChunk(cx, cz, lod);
   t.grow((n + 1) * (n + 1) + 4 * (n + 1), n * n * 6 + 4 * n * 6);
   const base = t.vn;
   const skirt = lod === 0 ? 6 : 14;
+  const D = World.data, grid = D && D.grid, GN = grid ? grid.N : 0;
+  const H = (i, j) => hh[(j + 2) * W2 + (i + 2)];
   for (let j = 0; j <= n; j++) for (let i = 0; i <= n; i++) {
-    const h = hh[(j + 1) * W2 + (i + 1)];
-    const dx = (hh[(j + 1) * W2 + (i + 2)] - hh[(j + 1) * W2 + i]) / (2 * step), dz = (hh[(j + 2) * W2 + (i + 1)] - hh[j * W2 + (i + 1)]) / (2 * step);
+    const h = H(i, j);
+    const dx = (H(i + 1, j) - H(i - 1, j)) / (2 * step), dz = (H(i, j + 1) - H(i, j - 1)) / (2 * step);
     const l = Math.sqrt(dx * dx + 1 + dz * dz);
     const x = x0 + i * step, z = z0 + j * step;
-    // concavity AO: lower than the neighbour average -> darker
-    const avg = (hh[(j + 1) * W2 + (i + 2)] + hh[(j + 1) * W2 + i] + hh[(j + 2) * W2 + (i + 1)] + hh[j * W2 + (i + 1)]) / 4;
-    const ao = Math.max(0.55, Math.min(1, 1 - (avg - h) * 0.12));
-    const tint = terrainWeights(x, z, h, Math.hypot(dx, dz), wTmp);
+    // cavity: height below the average of the 4 neighbours at 1 and at 2 cells (about 4 and 8 m at LOD0) -> darker; crests stay at 1
+    const a1 = (H(i + 1, j) + H(i - 1, j) + H(i, j + 1) + H(i, j - 1)) / 4, a2 = (H(i + 2, j) + H(i - 2, j) + H(i, j + 2) + H(i, j - 2)) / 4;
+    const cav = 0.55 * (a1 - h) + 0.45 * (a2 - h) * (lod === 0 ? 0.6 : 0.3);
+    let ao = Math.max(0.45, Math.min(1, 1 - cav * 0.75));
+    let rock = 0;
+    if (grid && lod === 0) {
+      const gi = Math.round((x + 2000) / 4), gj = Math.round((z + 2000) / 4);
+      if (gi >= 0 && gj >= 0 && gi < GN && gj < GN) {
+        const gk = gj * GN + gi, fl = grid.flat[gk] / 255;
+        // contact darkening on the verge beside kerbs and building pads (the flat weight falls from 1 to 0 over the shoulder)
+        ao *= 1 - 0.2 * sm(0.45, 0.98, fl) * (1 - sm(0.99, 1.0, fl));
+        rock = grid.rock[gk] / 255;
+      }
+    }
+    const tint = terrainWeights(x, z, h, Math.hypot(dx, dz), wTmp, true, -cav, rock);
     t.vert(x, h, z, -dx / l, 1 / l, -dz / l, wTmp, tint, ao);
   }
   for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {

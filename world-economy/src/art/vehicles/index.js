@@ -52,6 +52,31 @@ function carBody(g, p, S, lod, R, id) {
   g.mat('tex.metal_painted', 0x101012); g.box(0, lerpBelt(S.belt, -1) - 0.16, -hl - 0.005, W * 0.42, 0.18, 0.04);
   g.mat('tex.glass_window', 0xfff8f0); g.emit(HEAD); for (const sx of [-1, 1]) g.box(sx * hw * 0.68, lerpBelt(S.belt, -1) - 0.12, -hl + 0.02, 0.36, 0.12, 0.06); g.emit(0);
   g.mat('tex.plastic', 0xd02818); g.emit(TAIL); for (const sx of [-1, 1]) g.box(sx * hw * 0.72, lerpBelt(S.belt, 1) - 0.14, hl - 0.01, 0.3, 0.12, 0.06); g.emit(0);
+  // wheel arches: dark discs on the body side behind each wheel (all LODs), so the tyres read as sitting in the bodywork instead of under a slab
+  g.mat('tex.plastic', 0x0c0c0e);
+  for (const [wx, wy, wz, wr] of wheelSpec(id)) { const sx = wx < 0 ? -1 : 1; g.push().translate(sx * (hw + 0.003), wy, wz).rotZ(Math.PI / 2); g.cyl(0, 0, 0, wr + 0.08, wr + 0.08, 0.004, lod ? 8 : 16); g.pop(); }
+  if (!lod) {
+    // panel lines, handles, trim, sills, wipers and proper mirrors
+    g.mat('tex.plastic', 0x16161a);
+    const nDoor = S.box || S.bed ? 1 : 2;
+    for (const sx of [-1, 1]) {
+      const xs = sx * (hw + 0.004), y0 = cl + 0.22, y1 = yB - 0.01;
+      const lines = nDoor === 2 ? [zA + 0.22, zB + (zC - zB) * 0.1, zD - 0.12] : [zA + 0.25, (zA + zD) / 2 + 0.1];
+      for (const zl of lines) g.box(xs, (y0 + y1) / 2, zl, 0.008, y1 - y0, 0.012);
+      g.box(xs, yB - 0.005, (zA + zD) / 2, 0.01, 0.035, zD - zA);                       // window trim
+      g.box(sx * (hw + 0.01), cl + 0.09, 0, 0.03, 0.1, hl * 1.45);                      // sill
+      g.mat('tex.metal_aluminium', 0xc8c8c8); for (const zh of lines.slice(0, 2)) g.box(xs + sx * 0.008, yB - 0.12, zh + 0.38, 0.016, 0.022, 0.13); // door handles
+      g.mat('tex.plastic', 0x16161a);
+      g.beam([sx * (hw - 0.02), yB + 0.05, zA + 0.14], [sx * (hw + 0.1), yB + 0.12, zA + 0.05], 0.015, 0.015); // mirror stalk
+      P.box(sx * (hw + 0.13), yB + 0.13, zA + 0.07, 0.07, 0.1, 0.17);                    // mirror housing (paint)
+      g.mat('tex.glass_window', 0x8a98a2); g.box(sx * (hw + 0.13), yB + 0.13, zA + 0.158, 0.06, 0.08, 0.01);
+      g.mat('tex.plastic', 0x16161a);
+    }
+    for (const sx of [-1, 1]) { const t = 0.14, wz = zA + (zB - zA) * t, wy = yB + (rf - yB) * t + 0.012, wxa = hw - 0.12, wxb = hw - 0.12 - 0.5; g.beam([sx * wxa * 0.1, wy, wz], [sx * wxb * -1.2 * 0 + sx * (hw * 0.62), wy + (rf - yB) * 0.06, wz + (zB - zA) * 0.06], 0.012, 0.012); } // wiper blades
+    g.mat('tex.plastic', 0x1e1e20); g.box(0, cl + 0.12, -hl - 0.02, W * 0.7, 0.07, 0.1); // lower air dam
+    g.mat('tex.glass_window', 0xfff0c8); g.emit(HEAD - 40); for (const sx of [-1, 1]) g.box(sx * hw * 0.78, cl + 0.18, -hl - 0.01, 0.12, 0.06, 0.04); g.emit(0); // fog lights
+    g.mat('tex.metal_aluminium', 0xd8d8d8); g.cyl(hw * 0.55, cl + 0.02, hl + 0.06, 0.028, 0.028, 0.2, 6, { noBottom: true }); // tail pipe
+  }
   if (!lod) {
     g.mat('tex.flat', 0xe8e8e0); g.box(0, cl + 0.3, -hl - 0.11, 0.5, 0.11, 0.02); g.box(0, cl + 0.38, hl + 0.11, 0.5, 0.11, 0.02);
     g.mat('tex.plastic', 0x1e1e20); for (const sx of [-1, 1]) g.box(sx * (hw + 0.08), yB + 0.08, zA + 0.15, 0.14, 0.1, 0.06);
@@ -91,7 +116,7 @@ export function wheelSpec(id) {
   const S = CARS[id] && (CARS[id].base ? CARS[CARS[id].base] : CARS[id]);
   const r = S ? S.wr : id === 'veh.logtruck' || id === 'veh.boxtruck' ? 0.5 : id === 'veh.forklift' ? 0.3 : 0.38;
   const wb = S ? S.wb : id === 'veh.logtruck' ? 5.2 : id === 'veh.boxtruck' ? 4.2 : L * 0.6;
-  const tw = id === 'veh.forklift' ? 0.24 : 0.26, x = W / 2 - tw / 2 - 0.02;
+  const tw = id === 'veh.forklift' ? 0.24 : 0.26, x = W / 2 - tw / 2 + (CARS[id] ? 0.035 : -0.02);
   const front = -wb / 2 - (L / 2 - wb / 2 > 1.2 ? 0.25 : 0), out = [];
   for (const z of [front, front + wb]) for (const sx of [-1, 1]) out.push([sx * x, r, z, r, tw]);
   if (id === 'veh.logtruck') for (const sx of [-1, 1]) out.push([sx * x, r, front + wb - 1.4, r, tw]);

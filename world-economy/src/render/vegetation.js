@@ -255,16 +255,28 @@ export function createVegetation({ scene, renderer }) {
   // point when rank < density(d) * quality detail, so the lawn is dense within ~20 m and thins to the ring edge (no popping: the rank
   // is hash-stable). Types 6 and 7 are small solid meshes (pebbles, sticks).
   const GCD = [
-    { name: 'grass', geo: 'veg.grass_tuft', cap: 5000 }, { name: 'fern', geo: 'veg.fern', cap: 2500 }, { name: 'reeds', geo: 'veg.reeds', cap: 2000 },
-    { name: 'flowers', geo: 'veg.flowers', cap: 2200 }, { name: 'litter', geo: 'veg.litter', cap: 4500 }, { name: 'clover', geo: 'veg.clover', cap: 1200 },
-    { name: 'rock', small: 'rock', cap: 2500 }, { name: 'stick', small: 'stick', cap: 2500 },
-    { name: 'lawn', geo: 'veg.lawn', cap: 9000 }, { name: 'marram', geo: 'veg.marram', cap: 3500 }, { name: 'cattail', geo: 'veg.cattail', cap: 1600 }, { name: 'daisy', geo: 'veg.daisy', cap: 2600 },
+    { name: 'grass', geo: 'veg.grass_tuft', cap: 9000 }, { name: 'fern', geo: 'veg.fern', cap: 5000 }, { name: 'reeds', geo: 'veg.reeds', cap: 2400 },
+    { name: 'flowers', geo: 'veg.flowers', cap: 2600 }, { name: 'litter', geo: 'veg.litter', cap: 7000 }, { name: 'clover', geo: 'veg.clover', cap: 1800 },
+    { name: 'rock', small: 'rock', cap: 2500 }, { name: 'stick', small: 'stick', cap: 3000 },
+    { name: 'lawn', geo: 'veg.lawn', cap: 26000 }, { name: 'marram', geo: 'veg.marram', cap: 4500 }, { name: 'cattail', geo: 'veg.cattail', cap: 2000 }, { name: 'daisy', geo: 'veg.daisy', cap: 3200 },
+    { name: 'needles', geo: 'veg.litter', cap: 8000 }, { name: 'mush', small: 'mush', cap: 1600 }, { name: 'log', small: 'log', cap: 260 }, { name: 'sapling', geo: 'veg.sapling', cap: 1600 },
   ];
-  const NGC = GCD.length, T_GRASS = 0, T_FERN = 1, T_REED = 2, T_FLOWER = 3, T_LITTER = 4, T_CLOVER = 5, T_ROCK = 6, T_STICK = 7, T_LAWN = 8, T_MARRAM = 9, T_CATTAIL = 10, T_DAISY = 11;
+  const NGC = GCD.length, T_GRASS = 0, T_FERN = 1, T_REED = 2, T_FLOWER = 3, T_LITTER = 4, T_CLOVER = 5, T_ROCK = 6, T_STICK = 7, T_LAWN = 8, T_MARRAM = 9, T_CATTAIL = 10, T_DAISY = 11, T_NEEDLE = 12, T_MUSH = 13, T_LOG = 14, T_SAPLING = 15;
   const gcMat = MatLib.get('mat.groundcover');
   function smallGeo(kind) {
     const g = new GB(256); g.groundAO = false;
     if (kind === 'rock') { g.mat('tex.rock_granite', 0xb8b2a8); g.push().scale(1, 0.62, 0.82); g.lathe([[0.001, -0.12], [0.12, -0.07], [0.16, 0.03], [0.11, 0.11], [0.001, 0.14]], 6); g.pop(); g.push().translate(0.2, 0, 0.1).scale(0.6, 0.5, 0.6); g.lathe([[0.001, -0.1], [0.11, -0.05], [0.12, 0.05], [0.001, 0.1]], 5); g.pop(); }
+    else if (kind === 'mush') { // two toadstools and a bud: pale stipes, red / brown / buff caps
+      for (const [x, z, h, r, col] of [[0, 0, 0.09, 0.065, 0xb8452e], [0.1, 0.05, 0.06, 0.045, 0xa07850], [-0.07, 0.08, 0.05, 0.04, 0xd8c8a0], [0.05, -0.09, 0.07, 0.05, 0xb8452e]]) {
+        g.mat('tex.flat', 0xe6dcc6); g.cyl(x, 0, z, 0.014, 0.018, h, 5, { noBottom: true });
+        g.mat('tex.flat', col); g.push().translate(x, h * 0.92, z).scale(1, 0.55, 1); g.lathe([[0.001, -0.02], [r, 0.0], [r * 0.7, r * 0.7], [0.001, r * 0.95]], 7); g.pop();
+      }
+    } else if (kind === 'log') { // fallen log: bark, a mossy top band, a cut end and a snapped branch stub
+      g.mat('tex.bark_pine', 0xc8c0b0); g.tube([-1.3, 0.17, 0], [1.3, 0.2, 0.1], 0.19, 0.15, 8);
+      g.mat('tex.moss', 0x9aaa80); g.tube([-0.9, 0.33, 0.01], [0.7, 0.34, 0.07], 0.09, 0.07, 5);
+      g.mat('tex.log_round', 0xe0c8a0); g.cyl(1.3, 0.2, 0.1, 0.15, 0.15, 0.01, 8, { noBottom: true });
+      g.mat('tex.bark_pine', 0xb0a090); g.beam([0.2, 0.3, 0.08], [0.45, 0.6, 0.35], 0.04, 0.025);
+    }
     else { g.mat('tex.bark_pine', 0xb0a090); g.beam([-0.45, 0.03, 0.0], [0.4, 0.05, 0.08], 0.022, 0.016); g.beam([0.0, 0.04, 0.0], [0.18, 0.05, -0.32], 0.014, 0.01); }
     return artGeometry(g.toArrays());
   }
@@ -277,11 +289,14 @@ export function createVegetation({ scene, renderer }) {
     m.count = 0; m.visible = false; m.frustumCulled = false; m.castShadow = false; m.receiveShadow = true; m.matrixAutoUpdate = false; m.name = 'veg.gc.' + d.name; group.add(m); gcMeshes.push(m);
   }
   // per-instance tint palette (multiplies the card albedo; linear): lush, fresh, yellow-green, dry straw, dark, sun-bleached, lush-2, lush-3
-  const TINTS = [[0.62, 0.78, 0.56], [0.72, 0.86, 0.6], [0.9, 0.9, 0.58], [1.0, 0.86, 0.55], [0.5, 0.66, 0.48], [1.12, 0.96, 0.62], [0.74, 0.9, 0.66], [1.0, 0.98, 0.7]];
+  // natural varied greens: deep, warm green, olive-yellow, straw, dark shade, sun-bleached, cool green, pale; 8-11: needle browns, rust, olive litter, dark duff; 12-15: fern / sapling greens
+  const TINTS = [[0.62, 0.78, 0.56], [0.7, 0.82, 0.54], [0.9, 0.88, 0.54], [1.0, 0.84, 0.54], [0.5, 0.66, 0.5], [1.1, 0.95, 0.62], [0.68, 0.86, 0.68], [0.96, 0.95, 0.7],
+    [0.62, 0.52, 0.42], [0.95, 0.7, 0.45], [0.7, 0.72, 0.42], [0.45, 0.38, 0.3], [0.55, 0.78, 0.5], [0.7, 0.9, 0.55], [0.46, 0.64, 0.44], [0.8, 0.95, 0.6]];
+  const LAWN_T = [0, 1, 2, 4, 6, 0, 1, 4, 2, 0, 6, 1];
   const gcCache = new Map(); // chunk key -> {n, x: Uint16 (1/655 m), z, y: Float32, m: Uint8 [type, scale, rot, tint, rank] * n}
   const gcPending = new Set();
   const wts = new Float32Array(8);
-  const GB3 = 44, GN = GB3 * 3, GSTEP = 100 / GN; // 44 x 44 blocks of 3 x 3 jittered candidates (0.76 m cells, ~1.7 candidates / m2)
+  const GB3 = 48, GN = GB3 * 4, GSTEP = 100 / GN; // 48 x 48 blocks of 4 x 4 jittered candidates (0.52 m cells, ~3.7 candidates / m2); noise is evaluated once per block
   const BROAD_CROWN = { 3: 5.0, 4: 4.2, 5: 3.0 }; // oak, maple, street tree: leaf litter under the crown
   function* buildGc(cx, cz) {
     const X = [], Z = [], Y = [], M = [];
@@ -290,32 +305,38 @@ export function createVegetation({ scene, renderer }) {
     const isFlat = (x, z) => { const gi = Math.round((x + 2000) / 4), gj = Math.round((z + 2000) / 4); return grid.flat[gj * grid.N + gi] > 170; }; // weight 1 inside the road row and building pads, 8 m shoulders fade out: keep tufts on the shoulders
     for (let bj = 0; bj < GB3; bj++) {
       for (let bi = 0; bi < GB3; bi++) {
-        const bx = x0 + (bi * 3 + 1.5) * GSTEP, bz = z0 + (bj * 3 + 1.5) * GSTEP, by = World.heightAt(bx, bz);
+        const bx = x0 + (bi * 4 + 2) * GSTEP, bz = z0 + (bj * 4 + 2) * GSTEP, by = World.heightAt(bx, bz);
         if (by < 0.4) continue;
         terrainWeights(bx, bz, by, 0, wts);
         const reg = regionAt(bx, bz);
         const lakeEdge = by > LAKE.level - 0.2 && by < LAKE.level + 1.6 && bx < -650 && bz < -650;
         const clump = valueNoise(bx / 9, bz / 9, 5), patch = valueNoise(bx / 7, bz / 7, 17), flowerP = valueNoise(bx / 11, bz / 11, 29), clumpM = valueNoise(bx / 5, bz / 5, 31), dryN = valueNoise(bx / 40, bz / 40, 43);
-        for (let q = 0; q < 9; q++) {
-          const i = bi * 3 + (q % 3), j = bj * 3 + ((q / 3) | 0);
+        for (let q = 0; q < 16; q++) {
+          const i = bi * 4 + (q & 3), j = bj * 4 + (q >> 2);
           const gi = cx * GN + i, gj = cz * GN + j;
           const h1 = keepHash(gi * 7919 + gj * 104729), h2 = keepHash(gi * 31 + gj * 17 + 99), h3 = keepHash(gi * 577 + gj * 1291 + 7), h4 = keepHash(gi * 211 + gj * 977 + 13);
           const x = x0 + i * GSTEP + h1 * GSTEP, z = z0 + j * GSTEP + h2 * GSTEP;
           if (isFlat(x, z)) continue; // roads and building pads
-          const y = (i % 3 === 1 && j % 3 === 1) ? by : World.heightAt(x, z);
+          const y = World.heightAt(x, z);
           if (y < 0.4) continue;
           let type = -1, tint = 0;
           if (lakeEdge && h1 < 0.55) { type = h3 < 0.38 ? T_CATTAIL : T_REED; tint = 0; }
-          else if (wts[1] > 0.4) { // forest floor: ferns, litter, the odd tuft, rocks and sticks
-            if (h3 < 0.26 * wts[1] * (0.3 + clump)) type = T_FERN; else if (h3 < 0.4) type = T_LITTER; else if (h3 < 0.62 && clump > 0.38) type = T_GRASS; else if (h3 > 0.965) type = T_ROCK; else if (h3 > 0.9) type = T_STICK;
-            if (h2 > 0.7 && type === T_LITTER) type = -1;
-            tint = (h4 * 255 | 0) % 3;
+          else if (wts[1] > 0.4) { // forest floor: needle duff, leaf litter, ferns and saplings in drifts, mushrooms, fallen logs, sticks and rocks (grass only in rare sunny gaps)
+            const fernP = valueNoise(bx / 13, bz / 13, 71), mushP = valueNoise(bx / 8, bz / 8, 83);
+            tint = 12 + ((h4 * 255 | 0) % 4);
+            if (h4 > 0.9992 && h3 > 0.3) { type = T_LOG; }
+            else if (h3 < 0.22 * wts[1] * (0.25 + fernP * 1.3)) type = T_FERN;
+            else if (h3 < 0.26 && fernP > 0.5 && h2 < 0.14) { type = T_SAPLING; tint = 12 + ((h4 * 255 | 0) % 4); }
+            else if (h3 < 0.62) { type = h2 < 0.3 ? T_LITTER : T_NEEDLE; tint = h2 < 0.3 ? 8 + ((h4 * 255 | 0) & 3) : (h4 < 0.7 ? 8 : h4 < 0.9 ? 9 : 11); }
+            else if (h3 < 0.72 && clump > 0.78) { type = T_GRASS; tint = (h4 * 255 | 0) % 3; }
+            else if (h3 > 0.955 && mushP > 0.55) type = T_MUSH;
+            else if (h3 > 0.985) type = T_ROCK; else if (h3 > 0.93) type = T_STICK;
           } else if (wts[0] > 0.2) { // meadow and lawn
             const lawn = reg === 'city' || reg === 'lake' || reg === 'ocean';
             const dry = reg === 'ocean' ? 0.55 : (wts[6] > 0.2 ? 0.45 : 0.06 + 0.18 * dryN);
             if (patch > 0.72) { if (h3 > 0.985) type = T_ROCK; }
             else if (flowerP > 0.6 && h3 < 0.32) type = lawn ? T_DAISY : T_FLOWER;
-            else if (h3 < 0.98 * Math.min(1, 0.5 + wts[0]) * (0.85 + 0.5 * clump)) { type = h2 < 0.05 ? T_CLOVER : (lawn ? T_LAWN : T_GRASS); tint = h4 < dry ? 3 + ((h2 * 40 | 0) & 1) * 2 : ((h4 * 255 | 0) % 3); if (h4 > 0.93) tint = 2; }
+            else if (h3 < 0.98 * Math.min(1, 0.5 + wts[0]) * (0.85 + 0.5 * clump)) { type = h2 < 0.05 ? T_CLOVER : (lawn ? T_LAWN : T_GRASS); tint = h4 < dry ? 3 + ((h2 * 40 | 0) & 1) * 2 : LAWN_T[(h4 * 255 | 0) % 12]; if (h4 > 0.96) tint = 2; }
             else if (h3 > 0.993) type = T_ROCK;
             else if (h3 < 0.012 + 0.012 * flowerP) type = lawn ? T_DAISY : T_FLOWER;
           } else if (wts[3] > 0.45 && (reg === 'ocean' || reg === 'city' || reg === 'lake')) { // sand: marram clumps on the dune side, sparse straw tufts and shells
@@ -340,7 +361,7 @@ export function createVegetation({ scene, renderer }) {
       for (let m = 0; m < n; m++) {
         const a = keepHash(i * 131 + m * 7) * 6.2832, r = rr * Math.sqrt(keepHash(i * 17 + m * 37 + 5)) , x = T.x[i] + Math.cos(a) * r, z = T.z[i] + Math.sin(a) * r;
         if (isFlat(x, z)) continue;
-        push(x, World.heightAt(x, z), z, T_LITTER, 0.3 + 0.35 * keepHash(i + m), a * 3, 0, keepHash(i * 3 + m * 11));
+        push(x, World.heightAt(x, z), z, T_LITTER, 0.3 + 0.35 * keepHash(i + m), a * 3, 8 + ((m + i) & 3), keepHash(i * 3 + m * 11));
       }
     }
     yield;
@@ -370,7 +391,7 @@ export function createVegetation({ scene, renderer }) {
     if (!force && gcLast.distanceToSquared(cam) < 25) return;
     gcLast.copy(cam);
     const counts = gcCounts; counts.fill(0); const R2 = R * R, dens = cfg.detail, inv = 1 / 655, inv255 = 1 / 255;
-    const near2 = R2 * 0.09, span = Math.sqrt(R2) * 0.7;
+    const near2 = R2 * 0.16, span = Math.sqrt(R2) * 0.65;
     for (let z = ccz - rc; z <= ccz + rc; z++) for (let x = ccx - rc; x <= ccx + rc; x++) {
       const rec = gcCache.get(z * NC + x); if (!rec) continue;
       const ox = -2000 + x * 100, oz = -2000 + z * 100, RX = rec.x, RZ = rec.z, RY = rec.y, RM = rec.m;
@@ -379,14 +400,14 @@ export function createVegetation({ scene, renderer }) {
         if (d2 > R2) continue;
         const o5 = q * 5, t = RM[o5], rank = RM[o5 + 4] * inv255;
         // density falls from 1 inside 30% of the radius to 0.1 at the edge, scaled by the quality detail factor
-        const f = d2 < near2 ? 1 : 1 - 0.9 * Math.pow((Math.sqrt(d2) - R * 0.3) / span, 0.8);
+        const f = d2 < near2 ? 1 : 1 - 0.9 * Math.pow((Math.sqrt(d2) - R * 0.4) / span, 0.8);
         const keepScale = t === T_ROCK || t === T_STICK ? 1 : dens;
         if (rank >= f * keepScale) continue;
         if (counts[t] >= GCD[t].cap) continue;
-        const fr = RM[o5 + 1] * inv255, mesh = gcMeshes[t], sc = t === T_ROCK ? 0.5 + fr * 1.1 : t === T_MARRAM ? 0.8 + fr * 0.8 : 0.5 + fr * 0.9, ang = RM[o5 + 2] * inv255 * 6.2832, c = Math.cos(ang), sn = Math.sin(ang);
+        const fr = RM[o5 + 1] * inv255, mesh = gcMeshes[t], sc = t === T_ROCK ? 0.5 + fr * 1.1 : t === T_MARRAM ? 0.8 + fr * 0.8 : t === T_NEEDLE ? 1.3 + fr * 1.2 : t === T_LOG ? 0.8 + fr * 0.9 : t === T_MUSH ? 0.7 + fr * 0.9 : t === T_SAPLING ? 0.6 + fr * 0.8 : 0.5 + fr * 0.9, ang = RM[o5 + 2] * inv255 * 6.2832, c = Math.cos(ang), sn = Math.sin(ang);
         const m = mesh.instanceMatrix.array, o = counts[t] * 16;
         m[o] = c * sc; m[o + 1] = 0; m[o + 2] = -sn * sc; m[o + 3] = 0; m[o + 4] = 0; m[o + 5] = sc; m[o + 6] = 0; m[o + 7] = 0; m[o + 8] = sn * sc; m[o + 9] = 0; m[o + 10] = c * sc; m[o + 11] = 0; m[o + 12] = px; m[o + 13] = RY[q]; m[o + 14] = pz; m[o + 15] = 1;
-        if (mesh.instanceColor) { const tt = TINTS[RM[o5 + 3] & 7], v = 0.9 + 0.2 * (RM[o5 + 4] * inv255), ci = counts[t] * 3, ca = mesh.instanceColor.array; ca[ci] = tt[0] * v; ca[ci + 1] = tt[1] * v; ca[ci + 2] = tt[2] * v; }
+        if (mesh.instanceColor) { const tt = TINTS[RM[o5 + 3] & 15], v = 0.9 + 0.2 * (RM[o5 + 4] * inv255), ci = counts[t] * 3, ca = mesh.instanceColor.array; ca[ci] = tt[0] * v; ca[ci + 1] = tt[1] * v; ca[ci + 2] = tt[2] * v; }
         counts[t]++;
       }
     }
@@ -427,6 +448,9 @@ export function createVegetation({ scene, renderer }) {
       let n = 0; for (const b of blocks.values()) if (b.mesh) n += b.mesh.count; st.impostors = n;
     },
     forceRebuild() { st.dirty = true; gcLast.set(1e9, 0, 0); },
+    /** QA probe: ground-cover gating values at a point (terrain weights, flat mask, noise) */
+    probe(x, z) { const y = World.heightAt(x, z), w = new Float32Array(8); terrainWeights(x, z, y, 0, w); const gi = Math.round((x + 2000) / 4), gj = Math.round((z + 2000) / 4); return { y, w: Array.from(w, (v) => +v.toFixed(2)), flat: D.grid.flat[gj * D.grid.N + gi], patch: valueNoise(x / 7, z / 7, 17), reg: regionAt(x, z) }; },
+    gcCounts() { const o = {}; GCD.forEach((d, i) => { o[d.name] = gcMeshes[i].count; }); return o; },
   };
   void leafCell;
   return api;

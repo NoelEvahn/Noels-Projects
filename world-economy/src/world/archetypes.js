@@ -86,6 +86,11 @@ const PROP_NAMES = ['ac_unit', 'antenna', 'anvil', 'atm', 'awning', 'barrel', 'b
   'hunting_stand', 'hydrant', 'ice_bin', 'kayak', 'lantern', 'life_ring', 'lifeguard_tower', 'log_pile', 'log_single', 'mailbox', 'manhole', 'map_kiosk', 'net_drying', 'net_pile', 'newsstand',
   'mailbox_post', 'trash_bags', 'newspaper_box', 'oar', 'outboard', 'pallet', 'parasol', 'parking_meter', 'picnic_table', 'pile', 'pile_rope', 'planter', 'railing', 'reeds', 'roof_vent', 'rope_coil', 'sawhorse', 'scaffold', 'sign_shop',
   'sign_street', 'sign_wood', 'streetlamp_a', 'streetlamp_b', 'stump', 'sun_lounger', 'tent', 'traffic_cone', 'traffic_light', 'trail_sign', 'utility_pole', 'vending_machine', 'water_tower', 'workbench'];
+// Detail Batch 2 props (art/props/detail2.js): decoration only, no colliders
+const D2 = { bike_rack: [0.8, 1, 2.6], potted_plant: [0.5, 0.9, 0.5], firewood_stack: [2.1, 1.4, 0.7], rail_fence: [3.4, 1.1, 0.4], crate_stack: [1.4, 1.5, 1.0], barrel_group: [1.4, 0.9, 1.4], pallet_stack: [1.2, 3, 1.0],
+  tyre_fender: [2.8, 1, 0.7], bollard_rope: [1.2, 0.6, 1.2], stump_mossy: [1, 0.9, 1], stump_fresh: [1, 0.9, 1], stump_rotten: [1, 0.9, 1], poster_column: [1.1, 3.4, 1.1], graffiti_wall: [4.4, 2.2, 0.4], string_lights: [6.2, 3.3, 0.3],
+  steam_vent: [0.9, 1.3, 0.9], laundry_line: [4.2, 2.3, 0.6], sandbags: [2.2, 0.5, 0.4] };
+for (const n of Object.keys(D2)) { PROP_NAMES.push(n); PROP_SIZES[n] = D2[n]; PROP_NOCOLLIDE.push(n); }
 for (const rock of ['granite', 'dark', 'mossy']) for (const sz of ['s', 'm', 'l']) PROP_NAMES.push(`rock_${rock}_${sz}`);
 export const PROP_IDS = [];
 for (const n of PROP_NAMES) {

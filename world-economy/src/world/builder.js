@@ -202,7 +202,9 @@ export function* buildWorld(seed = 1) {
   }
   const grid = createHeightGrid();
   W.grid = grid;
-  const gen = grid.build({ edges: edges.filter((e) => !e.noStamp), pads });
+  // relief keeps clear of POIs (docks, camps, markers); the park keeps its hills
+  const anchors = poiDefs.filter((p) => !p.tags.includes('park')).map((p) => ({ x: p.pos[0], z: p.pos[2], r: p.data.dock ? 26 : 12 }));
+  const gen = grid.build({ edges: edges.filter((e) => !e.noStamp), pads, anchors });
   for (let r = gen.next(); !r.done; r = gen.next()) yield 'grid';
   W.pads = pads;
 

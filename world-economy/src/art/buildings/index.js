@@ -5,7 +5,7 @@
 import { GB, srng, h01, out } from '../kit/geo.js';
 import { Builders } from '../../render/builders.js';
 import { ARCHETYPES } from '../../world/archetypes.js';
-import { rectFaces, enterFace, faceWindows, faceFlat, storefront, awning, cornice, parapet, flatRoof, plinth, roofClutter, fireEscape } from './facade.js';
+import { rectFaces, enterFace, faceWindows, faceFlat, storefront, awning, cornice, parapet, flatRoof, plinth, roofClutter, fireEscape, windowBox } from './facade.js';
 
 // pooled writers: a generator build may be interleaved with another chunk job, so every build takes its own GB pair
 const POOL = [];
@@ -48,6 +48,7 @@ function* block(pl, ctx, S, g) {
       }
       const acP = S.ac || 0, R2 = srng(pl.seed + f.i * 7);
       if (fl > 0) for (let k = 0; k < fl; k++) { if (k && k % 2 === 0) yield; faceWindows(g, f, y0 + k * st, 1, s, pl.seed, (i, flr, cx, wy0, wy1, x0, x1) => {
+        if (S.windowBoxes && flr < 3 && R2() < S.windowBoxes) windowBox(g, cx, wy0, x1 - x0, pl.seed + f.i * 5, i + flr * 17);
         if (acP && R2() < acP) { g.mat('tex.metal_galvanized', 0xd8d8d0); g.box(cx + (R2() - 0.5) * 0.4, wy0 - 0.35, -0.3, 0.75, 0.48, 0.55); g.mat(s.wallTex, s.wallTint); }
         if (S.balconies && !f.front === false && flr % 1 === 0 && h01(pl.seed + i, flr) < S.balconies) {
           g.mat('tex.concrete_cast', 0xc8c4bc); g.box(cx, wy0 - s.win[2] + 0.1, -0.7, x1 - x0 + 1.2, 0.18, 1.4);
@@ -78,15 +79,15 @@ function* block(pl, ctx, S, g) {
 
 const BRICK_TINTS = [0xffffff, 0xf0e0d8, 0xd8c8c0, 0xffe8dc, 0xc8b0a8];
 const STYLES = {
-  'bld.brick_loft': { wall: ['tex.brick_red', BRICK_TINTS], facade: 'tex.facade_brick', bay: 3.4, win: [1.35, 2.3, 0.9], recess: 0.24, bars: 1, lintel: true, ground: 'shop', awnings: 0.7, cornice: 'corbel', fireEscape: 0.45, ac: 0.12, waterTower: 0.25, pilasters: true },
-  'bld.brick_walkup': { wall: ['tex.brick_brown', [0xffffff, 0xf0d8cc, 0xe0d0c8]], facade: 'tex.facade_brick', bay: 3.0, win: [1.1, 1.7, 0.85], recess: 0.2, bars: 1, lintel: true, ground: 'plain', cornice: 'corbel', fireEscape: 0.35, ac: 0.1, waterTower: 0.1 },
-  'bld.mixed_use': { wall: ['tex.brick_painted_white', [0xffffff, 0xe8dcc8, 0xd8e0e4, 0xf0e4d0]], facade: 'tex.facade_stucco', bay: 3.2, win: [1.2, 1.6, 0.9], recess: 0.16, bars: 2, ground: 'shop', shopAll: true, awnings: 0.5, striped: true, cornice: 'slab', ac: 0.15 },
+  'bld.brick_loft': { windowBoxes: 0.14, wall: ['tex.brick_red', BRICK_TINTS], facade: 'tex.facade_brick', bay: 3.4, win: [1.35, 2.3, 0.9], recess: 0.24, bars: 1, lintel: true, ground: 'shop', awnings: 0.7, cornice: 'corbel', fireEscape: 0.45, ac: 0.12, waterTower: 0.25, pilasters: true },
+  'bld.brick_walkup': { windowBoxes: 0.3, wall: ['tex.brick_brown', [0xffffff, 0xf0d8cc, 0xe0d0c8]], facade: 'tex.facade_brick', bay: 3.0, win: [1.1, 1.7, 0.85], recess: 0.2, bars: 1, lintel: true, ground: 'plain', cornice: 'corbel', fireEscape: 0.35, ac: 0.1, waterTower: 0.1 },
+  'bld.mixed_use': { windowBoxes: 0.16, wall: ['tex.brick_painted_white', [0xffffff, 0xe8dcc8, 0xd8e0e4, 0xf0e4d0]], facade: 'tex.facade_stucco', bay: 3.2, win: [1.2, 1.6, 0.9], recess: 0.16, bars: 2, ground: 'shop', shopAll: true, awnings: 0.5, striped: true, cornice: 'slab', ac: 0.15 },
   'bld.panel_midrise': { wall: ['tex.concrete_panel', [0xffffff, 0xe8e8e0, 0xdcd8d0, 0xe4e0d4]], facade: 'tex.facade_panel', bay: 3.0, win: [1.6, 1.4, 0.9], recess: 0.12, bars: 1, ground: 'lobby', cornice: null, balconies: 0.35, ac: 0.05 },
   'bld.office_midrise': { wall: ['tex.concrete_cast', [0xffffff, 0xe0dcd4, 0xd0d4d8]], facade: 'tex.facade_office', bay: 3.6, win: [3.4, 2.0, 0.9], recess: 0.15, ribbon: true, ground: 'lobby', cornice: 'slab', frameTint: 0x30363c },
-  'bld.apartment_block': { wall: ['tex.brick_brown', [0xffffff, 0xe8d8c8]], facade: 'tex.facade_brick', bay: 3.2, win: [1.4, 1.5, 0.9], recess: 0.16, bars: 1, ground: 'lobby', cornice: 'slab', balconies: 0.45, ac: 0.08 },
+  'bld.apartment_block': { windowBoxes: 0.12, wall: ['tex.brick_brown', [0xffffff, 0xe8d8c8]], facade: 'tex.facade_brick', bay: 3.2, win: [1.4, 1.5, 0.9], recess: 0.16, bars: 1, ground: 'lobby', cornice: 'slab', balconies: 0.45, ac: 0.08 },
   'bld.diner': { wall: ['tex.brick_red', [0xffffff]], facade: 'tex.facade_brick', bay: 3.4, win: [1.2, 1.7, 0.9], recess: 0.2, bars: 1, ground: 'shop', shopAll: true, awnings: 1.0, awningTints: [0xb3272d], cornice: 'corbel' },
   'bld.bank': { wall: ['tex.concrete_cast', [0xf4ece0, 0xe8e0d0]], facade: 'tex.facade_concrete', bay: 4.2, win: [1.6, 2.6, 1.0], recess: 0.3, bars: 1, ground: 'plain', cornice: 'slab', after: bankPortico },
-  'bld.port_town_house': { wall: ['tex.stucco', [0xfff4e0, 0xf8e0c8, 0xe0ecf0, 0xf0d8d0, 0xe8f0d8]], facade: 'tex.facade_stucco', bay: 3.0, win: [1.0, 1.5, 0.9], recess: 0.15, bars: 2, ground: 'plain', parapet: false, cornice: null, after: tileRoofHouse },
+  'bld.port_town_house': { windowBoxes: 0.34, wall: ['tex.stucco', [0xfff4e0, 0xf8e0c8, 0xe0ecf0, 0xf0d8d0, 0xe8f0d8]], facade: 'tex.facade_stucco', bay: 3.0, win: [1.0, 1.5, 0.9], recess: 0.15, bars: 2, ground: 'plain', parapet: false, cornice: null, after: tileRoofHouse },
 };
 for (const id in STYLES) regGen(id, (pl, ctx, g) => block(pl, ctx, STYLES[id], g));
 

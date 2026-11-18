@@ -2,6 +2,7 @@
 // covers, replacing the Stage 2 blockout builder under the same id (render/builders.js keeps the later registration).
 import './buildings/index.js';
 import './props/index.js';
+import './props/detail2.js';
 import './vehicles/index.js';
 import './boats/index.js';
 import './characters/index.js';

@@ -33,7 +33,7 @@ if (set === 'matrix' || set === 'weather') for (const [v, w, h] of [['V01', 'rai
     p.on('pageerror', (e) => errs.push(e.message)); p.on('console', (m) => { if (m.type() === 'error') errs.push(m.text()); });
     await p.goto('file://' + htmlPath);
     await p.evaluate(() => window.__LOE.ready);
-    await p.evaluate((pr) => { window.__LOE.freeze(true); document.getElementById('overlay').style.display = 'none'; window.__LOE.setQuality(pr); for (const id of ['dbg', 'hint']) { const d = document.getElementById(id); if (d) d.style.display = 'none'; } }, preset);
+    await p.evaluate((pr) => { window.__LOE.freeze(true); document.getElementById('overlay').style.display = 'none'; window.__LOE.setQuality(pr); for (const id of ['dbg', 'hint', 'jobdev', 'perfhud', 'lockhint']) { const d = document.getElementById(id); if (d) d.style.display = 'none'; } }, preset);
     while (next < jobs.length) {
       const j = jobs[next++], t = Date.now();
       await p.evaluate(([w]) => window.__LOE.setWeather(w, 1), [j.weather]);

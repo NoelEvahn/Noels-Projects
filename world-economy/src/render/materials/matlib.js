@@ -25,7 +25,16 @@ const MAKERS = {
   // vegetation: bark (array layers + wind, instanced) and leaf cards (atlas, alpha test, wind, instanced)
   'mat.veg_bark': () => world({ wind: true, key: ':vb' }),
   'mat.veg_leaf': () => { const m = std({ map: leafAtlas, alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.82 }); patchMaterial(m, { wind: true, key: ':vl' }); lit.add(m); return m; },
-  'mat.groundcover': () => { const m = std({ map: leafAtlas, alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.9 }); patchMaterial(m, { wind: true, key: ':gc' }); lit.add(m); return m; },
+  'mat.groundcover': () => { const m = std({ map: leafAtlas, alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.9 });
+    // visible grass motion: travelling gusts (a slow wave crossing the field along the wind) plus a fast per-tuft flutter, on top of the shared sway; amplitude follows the weather wind and the blade height weight
+    patchMaterial(m, { wind: true, key: ':gc', extra(vs, fs) { return [vs.replace('#include <begin_vertex>', `#include <begin_vertex>
+  #ifdef USE_INSTANCING
+    { vec3 gp = vec3(instanceMatrix[3][0], instanceMatrix[3][1], instanceMatrix[3][2]); float gw = clamp(aWind, 0.0, 1.0); gw *= gw;
+      float gust = sin(dot(gp.xz, vec2(0.21, 0.08)) - uTime * 1.5) * 0.5 + 0.5; gust *= gust;
+      float fl2 = sin(uTime * 4.7 + gp.x * 1.9 + gp.z * 1.3 + position.x * 5.0);
+      vec2 dir = normalize(uWind.xz + vec2(0.001));
+      transformed.xz += (dir * (0.05 + 0.2 * gust) * (0.5 + uWindStr) + vec2(-dir.y, dir.x) * fl2 * 0.025) * gw / max(0.5, length(instanceMatrix[0].xyz)) ; }
+  #endif`), fs.replace('#include <alphatest_fragment>', 'diffuseColor.a = clamp(diffuseColor.a * 2.2, 0.0, 1.0);\n#include <alphatest_fragment>')]; } }); lit.add(m); return m; },
   // characters (instanced segments, tinted by instance colour)
   'mat.character': () => { const m = std({ roughness: 0.8 }); patchMaterial(m, { key: ':ch' }); lit.add(m); return m; },
   // emissive and additive helpers (lamp glows, light pools, beams)

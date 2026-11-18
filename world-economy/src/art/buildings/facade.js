@@ -91,6 +91,15 @@ export function faceWindows(g, f, yStart, floors, s, seed, extras) {
   return { n, bw };
 }
 
+/** flower box under a window (face-local frame; wall plane z = 0, outward is -z): painted box, foliage block and a few blooms */
+export function windowBox(g, cx, wy0, w, seed, k) {
+  const r = (n) => h01(seed + k * 13, n);
+  g.mat('tex.wood_painted', [0x5a3a28, 0x2a4a3a, 0xe8e4dc, 0x4a3a5a][Math.floor(r(1) * 4)]); g.box(cx, wy0 - 0.13, -0.17, w * 0.96, 0.2, 0.26);
+  g.mat('tex.flat', [0x3a6a2a, 0x4a7a32, 0x2e5a2a][Math.floor(r(2) * 3)]); g.box(cx, wy0 + 0.03, -0.17, w * 0.9, 0.16, 0.2);
+  g.mat('tex.flat', [0xe8404a, 0xf0d040, 0xf4f4f0, 0xd050b0, 0xf08030][Math.floor(r(3) * 5)]);
+  for (let q = 0; q < 4; q++) g.box(cx + (q - 1.5) * w * 0.22, wy0 + 0.14 + 0.04 * r(4 + q), -0.17 + (r(8 + q) - 0.5) * 0.06, 0.1, 0.1, 0.1);
+}
+
 /** LOD1/2 face: facade layer quad over floors [f0, f1) (uv u = bays, v = storeys) */
 export function faceFlat(g, f, y0, y1, f0, f1, s, tex, tint, emit) {
   const n = Math.max(1, Math.round(f.L / s.bay));
@@ -130,6 +139,27 @@ export function storefront(g, f, y0, h, s, seed, o = {}) {
     g.mat(o.pierTex || s.wallTex, o.pierTint || s.wallTint);
     g.wall(x0, gy1, x1, y0 + h - 0.9, 0);
     if (o.awnings && h01(seed + i, f.i + 11) < o.awnings) awning(g, x0 - 0.1, x1 + 0.1, y0 + h - 0.95, 1.3, o.awningTint || 0xb3272d, o.striped && h01(seed, 5) < 0.5);
+    if (i === door && y0 < 0.01) { // Detail Batch 2: potted plants either side of the door, wall lamp over it
+      const dc = (x0 + x1) / 2, dw2 = Math.min(1.6, x1 - x0 - 0.4);
+      if (h01(seed, f.i + 21) < 0.55) for (const sd of [-1, 1]) if (h01(seed + sd, f.i + 22) < 0.7) {
+        g.mat('tex.paint_chipped', [0xa8582e, 0x3a5a6a, 0x8a4a2a, 0xc8c0b0][Math.floor(h01(seed + sd, 23) * 4)]); g.cyl(dc + sd * (dw2 / 2 + 0.42), 0, -0.55, 0.18, 0.13, 0.36, 8);
+        g.mat('tex.flat', [0x3a6a2a, 0x4a7a32, 0x2e5a2a][Math.floor(h01(seed + sd, 24) * 3)]); g.box(dc + sd * (dw2 / 2 + 0.42), 0.62, -0.55, 0.42, 0.52, 0.42);
+        g.mat('tex.flat', [0xe84a5a, 0xf0d040, 0xffffff, 0xc85ab8][Math.floor(h01(seed + sd, 25) * 4)]); g.box(dc + sd * (dw2 / 2 + 0.42) + 0.08, 0.92, -0.62, 0.14, 0.12, 0.14);
+      }
+      g.mat('tex.metal_painted', 0x2a2a2a); g.box(dc, y0 + 2.62, -0.11, 0.1, 0.1, 0.18); g.mat('tex.glass_window', 0xffe6b0); g.emit(215); g.box(dc, y0 + 2.5, -0.2, 0.14, 0.18, 0.14); g.emit(0);
+    }
+  }
+  if (y0 < 0.01 && h01(seed, f.i + 31) < 0.55 && f.L > 5) { // lit fascia sign (lettering over an emissive panel) and a hanging blade sign
+    const pw = Math.min(f.L * 0.72, 7), col = [0xfff0c8, 0xff5a40, 0x60e8c0, 0xffc040, 0x8ac8ff][Math.floor(h01(seed, f.i + 32) * 5)];
+    g.mat('tex.flat', col); g.emit(h01(seed, f.i + 33) < 0.5 ? 205 : 185); g.box(f.L / 2, y0 + h - 0.45, -0.215, pw, 0.52, 0.01); g.emit(0);
+    g.mat('tex.metal_painted', 0x20242a); const nl = Math.floor(pw / 0.42); for (let k = 0; k < nl; k++) if (h01(seed + k, f.i + 34) < 0.85) g.box(f.L / 2 - pw / 2 + 0.3 + k * 0.42, y0 + h - 0.45, -0.222, 0.2 + 0.1 * h01(seed + k, 35), 0.3, 0.008);
+  }
+  if (y0 < 0.01 && h01(seed, f.i + 41) < 0.5 && f.L > 5) {
+    const bx = Math.min(f.L - 0.5, (door + 1) * bw - 0.1), by = y0 + h + 0.55, glow = h01(seed, f.i + 42) < 0.4, col = [0x8a2a20, 0x2a4a6a, 0x3a5a2a, 0x6a4a2a, 0xe8e0d0][Math.floor(h01(seed, f.i + 43) * 5)];
+    g.mat('tex.metal_painted', 0x1e1e20); g.beam([bx, by + 0.3, -0.05], [bx, by + 0.3, -1.05], 0.05); g.box(bx, by + 0.3, -1.05, 0.06, 0.06, 0.06);
+    g.beam([bx, by + 0.28, -0.3], [bx, by + 0.02, -0.3], 0.015); g.beam([bx, by + 0.28, -0.9], [bx, by + 0.02, -0.9], 0.015);
+    g.mat(glow ? 'tex.flat' : 'tex.metal_painted', glow ? [0xff4a8a, 0x30e0f0, 0x70ff70][Math.floor(h01(seed, f.i + 44) * 3)] : col); if (glow) g.emit(215);
+    g.box(bx, by - 0.3, -0.6, 0.05, 0.55, 0.78); g.emit(0);
   }
   return { n, bw };
 }

@@ -610,22 +610,35 @@ export function createBusiness(ctx) {
     const day = dayOf(ctx.now());
     meta().contracts = [];
     for (let i = 0; i < 5; i++) { const kind = i < 3 ? 'parcel' : i === 3 ? 'restock' : 'freight'; meta().contracts.push({ id: 'k' + meta().nextContract++, kind, fee: kind === 'freight' ? 90000 : kind === 'restock' ? 25000 : 14000, day, takenBy: null }); }
-    for (const b of S().businesses.slice()) dailyClose(b);
-    for (const b of S().businesses) { for (const c of (b.contracts || [])) c.stale = true; b.contracts = (b.contracts || []).filter((c) => !c.done); }
+    // the per-business close (payroll, rent, utilities, restock, report) is queued and spread over the next minutes so no frame pays for all of them
+    const q = (meta().closeQueue ||= []);
+    for (const b of S().businesses) q.push(['d', b.id]);
   }
-  /** Monday 00:00: 12% tax on the previous week's positive cash-basis profit (Annex D 3.2), losses carry 4 weeks */
+  /** Monday 00:00: 12% tax on the previous week's positive cash-basis profit (Annex D 3.2), losses carry 4 weeks (queued like the daily close) */
   function weekly() {
-    const today = dayOf(ctx.now());
-    for (const b of S().businesses.slice()) {
-      const rep = ctx.reports.pnlRange(b.id, today - 7, today - 1);
-      let profit = rep.profit; const week = Math.floor((today - 1) / 7);
-      b.finance.lossCarry = b.finance.lossCarry.filter((l) => week - l.week <= BALANCE.lossCarryWeeks);
-      if (profit < 0) { b.finance.lossCarry.push({ week, amt: -profit }); continue; }
-      for (const l of b.finance.lossCarry) { const use = Math.min(l.amt, profit); l.amt -= use; profit -= use; }
-      b.finance.lossCarry = b.finance.lossCarry.filter((l) => l.amt > 0);
-      const tax = Math.ceil(profit * BALANCE.businessTax);
-      if (tax > 0) pay(b, 'ext:tax', tax, TX.TAX_BUSINESS, 'Business tax');
+    const q = (meta().closeQueue ||= []), today = dayOf(ctx.now());
+    for (const b of S().businesses) q.push(['w', b.id, today]);
+  }
+  function weeklyTax(b, today) {
+    const rep = ctx.reports.pnlRange(b.id, today - 7, today - 1);
+    let profit = rep.profit; const week = Math.floor((today - 1) / 7);
+    b.finance.lossCarry = b.finance.lossCarry.filter((l) => week - l.week <= BALANCE.lossCarryWeeks);
+    if (profit < 0) { b.finance.lossCarry.push({ week, amt: -profit }); return; }
+    for (const l of b.finance.lossCarry) { const use = Math.min(l.amt, profit); l.amt -= use; profit -= use; }
+    b.finance.lossCarry = b.finance.lossCarry.filter((l) => l.amt > 0);
+    const tax = Math.ceil(profit * BALANCE.businessTax);
+    if (tax > 0) pay(b, 'ext:tax', tax, TX.TAX_BUSINESS, 'Business tax');
+  }
+  /** work through the queued closes: at most `n` entries per call (midnight takes 4, every later minute 2; 40 businesses with the Monday tax finish in 40 minutes) */
+  function pump(n = 2) {
+    const q = meta().closeQueue; if (!q || !q.length) return 0;
+    let done = 0;
+    while (q.length && done < n) {
+      const [kind, id, day] = q.shift(); const b = get(id); if (!b) continue;
+      if (kind === 'd') { dailyClose(b); for (const c of (b.contracts || [])) c.stale = true; b.contracts = (b.contracts || []).filter((c) => !c.done); } else weeklyTax(b, day);
+      done++;
     }
+    return done;
   }
   // ---- selects -----------------------------------------------------------------------------------------------------------------
   const summary = (b) => ({ id: b.id, typeId: b.typeId, name: b.name, siteId: b.siteId, tier: b.tier, balance: ctx.ledger.balance(acct(b)), reputation: Math.round(b.reputation * 100) / 100, staff: b.staff.length, units: b.units.length, suspended: !!b.suspended, payables: b.finance.payables, today: { revenue: b.stats.today.revenue, customers: b.stats.today.customers } });
@@ -648,5 +661,5 @@ export function createBusiness(ctx) {
   /** owner-shift hooks (jobsSim): is the business trading this hour, and set the one-hour assist that the hourly model consumes */
   const openNow = (bizId) => { const b = get(bizId); if (!b) return false; const t = ctx.now(); return H.isOpen(b, hourOf(t), t); };
   function setAssist(bizId, hours, score) { const b = get(bizId); if (!b || b.suspended || !openNow(bizId)) return false; b.assist = { hours: Math.max(hours, b.assist ? b.assist.hours : 0), score: clamp(score, 0, 1) }; return true; }
-  return { defaults, get, create, openNow, setAssist, cmds, selects, hourly, daily, weekly, assetValue, storageCap, isCold, isFood, suggestTargets, orderFor, quality: H.quality, capacity: H.capacity };
+  return { defaults, get, create, openNow, setAssist, cmds, selects, hourly, daily, weekly, pump, assetValue, storageCap, isCold, isFood, suggestTargets, orderFor, quality: H.quality, capacity: H.capacity };
 }

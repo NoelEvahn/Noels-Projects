@@ -6,6 +6,7 @@ import { hash2 } from '../../core/rng.js';
 import { regionAt, districtAt } from './regions.js';
 import { waterBodyAt, LAKE } from './water.js';
 import { valueNoise } from '../../core/math.js';
+import { generateDetail2 } from './decorDetail.js';
 
 const NC = 40;
 const ck = (x, z) => Math.min(NC - 1, Math.max(0, Math.floor((z + 2000) / 100))) * NC + Math.min(NC - 1, Math.max(0, Math.floor((x + 2000) / 100)));
@@ -127,10 +128,14 @@ export function generateDecor({ edges, nodes, placements, pois, heightAt, infra,
     const lx = b.params.w / 2 - 1.2, c = Math.cos(b.rotY), s = Math.sin(b.rotY);
     fires.push([b.x + lx * c, b.y + 0.9, b.z + lx * s]);
   }
+  const scatter = generateScatter({ edges, nodes, placements, heightAt, roadIndex, overlaps, seed, nodeDeg, nodeCar, add });
+  // Detail Batch 2/3: more props (added to `items`), plus flat lists for render/detail2.js and the effects (wires, perched birds, waterfowl, fish, rings, steam, chimneys)
+  const d2 = generateDetail2({ items, edges, placements, heightAt, infra, seed, roadIndex, overlaps, add });
+  // chunk lists are built last: every prop added above (Batch 1 street dressing included) must be in them
   const byChunk = Array.from({ length: NC * NC }, () => []);
   for (const it of items) byChunk[ck(it.x, it.z)].push(it);
-  const scatter = generateScatter({ edges, nodes, placements, heightAt, roadIndex, overlaps, seed, nodeDeg, nodeCar, add });
-  return { items, byChunk, lamps, fires, ...scatter };
+  const detail2 = {}; for (const k of Object.keys(d2)) detail2[k] = Float32Array.from(d2[k]);
+  return { items, byChunk, lamps, fires, ...scatter, detail2 };
 }
 
 // ---- Detail Batch 1: scattered small vegetation, parked cars and water plants (drawn by render/detail.js, instanced) ---------------------------------------

@@ -6,8 +6,12 @@
 import * as THREE from 'three';
 import { NOISE } from './glsl/noise.js';
 import { recipeFor, expandColours } from './library.js';
-import { LAYER_LIST, TIER_COUNT } from '../../art/kit/layers.js';
+import { LAYER_LIST, TIER_COUNT, TERRAIN_SLOTS } from '../../art/kit/layers.js';
+
+/** terrain splat layers carry their height map in the albedo alpha (metalness is 0 for all of them): used for height-blended splats and parallax */
+const HEIGHT_ALPHA = new Set(TERRAIN_SLOTS);
 import { MemTracker } from '../perf.js';
+import { G } from '../materials/patches.js';
 
 const VS = /* glsl */`out vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`;
 const quadGeo = new THREE.PlaneGeometry(2, 2);
@@ -15,12 +19,12 @@ const quadGeo = new THREE.PlaneGeometry(2, 2);
 function recipeMaterial(id) {
   const r = recipeFor(id);
   return new THREE.ShaderMaterial({
-    glslVersion: THREE.GLSL3, vertexShader: VS, depthTest: false, depthWrite: false,
-    fragmentShader: expandColours(/* glsl */`precision highp float; in vec2 vUv;
+    glslVersion: THREE.GLSL3, vertexShader: VS, depthTest: false, depthWrite: false, uniforms: { uHA: { value: HEIGHT_ALPHA.has(id) ? 1 : 0 } },
+    fragmentShader: expandColours(/* glsl */`precision highp float; in vec2 vUv; uniform float uHA;
 layout(location = 0) out vec4 oAlb; layout(location = 1) out vec4 oDat;
 ${NOISE}
 void recipe(vec2 uv, out vec3 a, out float h, out float r, out float m){ ${r.body} }
-void main(){ vec3 a; float h, r, m; recipe(fract(vUv), a, h, r, m); oAlb = vec4(max(a, vec3(0.0)), sat(m)); oDat = vec4(sat(h), sat(r), 0.0, 1.0); }`),
+void main(){ vec3 a; float h, r, m; recipe(fract(vUv), a, h, r, m); oAlb = vec4(max(a, vec3(0.0)), mix(sat(m), sat(h), uHA)); oDat = vec4(sat(h), sat(r), 0.0, 1.0); }`),
   });
 }
 const packMat = new THREE.ShaderMaterial({
@@ -145,6 +149,7 @@ export function createTexBaker(renderer) {
     start(sizes) {
       if (building) disposeSet(building);
       building = makeSet(sizes);
+      G.uPom.value = sizes.H[0] >= 1024 ? 1 : 0; // parallax on the High / Ultra tiers only (never Low or Medium)
       queue.length = 0;
       for (const e of LAYER_LIST) queue.push(e);
       stats.sizes = sizes; stats.pending = queue.length;

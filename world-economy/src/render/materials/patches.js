@@ -13,6 +13,7 @@ export const G = {
   uMacro: { value: 1 }, uSplatL: { value: TERRAIN_SLOTS.map((id) => LAYERS[id].index) },
   tHA: { value: null }, tHD: { value: null }, tSA: { value: null }, tSD: { value: null }, tDA: { value: null }, tDD: { value: null }, tProps: { value: null },
   uNoiseL: { value: LAYERS['tex.noise_shared'].index - 128 },
+  uPom: { value: 0 }, // 1 on High/Ultra texture tiers (set by the baker): parallax offset on gravel, sand, dirt and mud
 };
 /** per-layer properties texture: R wettable, G normal scale (x/128), B macro-variation strength, A specular glass flag */
 export function makeLayerProps() {
@@ -22,6 +23,8 @@ export function makeLayerProps() {
   for (const id of wet) d[LAYERS[id].index * 4] = 255;
   for (const id of ['tex.glass_window', 'tex.glass_curtain', 'tex.carpaint_flake', 'tex.metal_aluminium', 'tex.facade_office', 'tex.facade_shop']) { d[LAYERS[id].index * 4 + 2] = 40; d[LAYERS[id].index * 4 + 3] = 255; }
   for (const id of ['tex.flat', 'tex.fabric_cloth', 'tex.plastic']) d[LAYERS[id].index * 4 + 2] = 90;
+  // terrain splat layers: albedo alpha holds the height map (A = 64 flags it, so non-splat users of these layers read metalness 0); stronger normals
+  for (const id of TERRAIN_SLOTS) { d[LAYERS[id].index * 4 + 3] = 64; d[LAYERS[id].index * 4 + 1] = 160; }
   const t = new THREE.DataTexture(d, 256, 1, THREE.RGBAFormat, THREE.UnsignedByteType);
   t.needsUpdate = true; t.minFilter = t.magFilter = THREE.NearestFilter;
   G.tProps.value = t;
@@ -171,7 +174,7 @@ const FOG_F = `gl_FragColor.rgb = applyFog(gl_FragColor.rgb);
 
 const ARR_PARS = `
 uniform sampler2DArray tHA, tHD, tSA, tSD, tDA, tDD; uniform sampler2D tProps;
-uniform float uWet, uNight, uWinLit, uLampGain, uWinGain, uDay, uMacro, uNoiseL, uTime;
+uniform float uWet, uNight, uWinLit, uLampGain, uWinGain, uDay, uMacro, uNoiseL, uTime, uPom;
 void sampleLayer(float L, vec2 uv, vec2 gx, vec2 gy, out vec4 a, out vec4 d){
 #ifdef LOE_LOW
   // Low tier: albedo only (no normal/roughness/AO fetch); constant data texel
@@ -210,14 +213,35 @@ ${splat ? `
     if (w > wa){ wb = wa; Lb = Lmain; wa = w; Lmain = uSplatL[i]; } else if (w > wb){ wb = w; Lb = uSplatL[i]; }
   }
   vec4 a2, d2; sampleLayer(Lmain, tuv, gx, gy, sA, sD);
-  if (wb > 0.04){ sampleLayer(Lb, tuv, gx, gy, a2, d2); float f = wb / (wa + wb); sA = mix(sA, a2, f); }
+  if (wb > 0.04){ sampleLayer(Lb, tuv, gx, gy, a2, d2); float ba = wa * exp(4.0 * sA.a), bb = wb * exp(4.0 * a2.a); sA = mix(sA, a2, bb / (ba + bb)); }
 #else
+  // slope exposure: dirt shows through the grass from ~14 deg, bare rock from ~28 deg (interpolated vertex normal, broken up by noise)
+  vec3 sWn = normalize(transpose(mat3(viewMatrix)) * vNormal);
+  float sSlope = 1.0 - clamp(sWn.y, 0.0, 1.0), sBr = (nzr(vWPos.xz * 0.07) - 0.5) * 0.06 + (nzg(vWPos.xz * 0.31) - 0.5) * 0.03;
+  float kRock = smoothstep(0.1, 0.26, sSlope + sBr);
+  float kDirt = smoothstep(0.025, 0.085, sSlope + sBr) * (1.0 - kRock) * (1.0 - vW0.w);
+  float wKeep = (1.0 - kRock) * (1.0 - kDirt);
   sA = vec4(0.0); sD = vec4(0.0); float wsum = 0.0; Lmain = uSplatL[0]; float wbest = 0.0;
   for (int i = 0; i < 8; i++){
-    float w = i < 4 ? vW0[i] : vW1[i - 4];
-    if (w > 0.02){ vec4 a, d; sampleLayer(uSplatL[i], tuv, gx, gy, a, d); sA += a * w; sD += d * w; wsum += w; if (w > wbest){ wbest = w; Lmain = uSplatL[i]; } }
+    float w = (i < 4 ? vW0[i] : vW1[i - 4]) * wKeep + (i == 2 ? kRock : 0.0) + (i == 4 ? kDirt : 0.0);
+    if (w > 0.02){
+      vec4 a, d; sampleLayer(uSplatL[i], tuv, gx, gy, a, d);
+      float b = w * exp(4.5 * a.a); // height blend: the higher layer (stones over soil, tufts over bare earth) wins the transition
+      sA += a * b; sD += d * b; wsum += b; if (b > wbest){ wbest = b; Lmain = uSplatL[i]; }
+    }
   }
   sA /= max(wsum, 1e-3); sD /= max(wsum, 1e-3);
+  if (uPom > 0.5) { // cheap parallax (High / Ultra): shift the dominant gravel / sand / dirt / mud layer by its height toward the viewer, within 22 m
+    float pd = length(vWPos - cameraPosition);
+    float pdep = 0.07 * step(abs(Lmain - uSplatL[6]), 0.5) + 0.045 * step(abs(Lmain - uSplatL[3]), 0.5) + 0.06 * step(abs(Lmain - uSplatL[4]), 0.5) + 0.05 * step(abs(Lmain - uSplatL[5]), 0.5);
+    float pf = (1.0 - smoothstep(9.0, 22.0, pd)) * min(1.0, wbest / max(wsum, 1e-3) * 1.6);
+    if (pdep > 0.0 && pf > 0.01) {
+      vec3 pV = (cameraPosition - vWPos) / max(pd, 1e-3);
+      vec2 puv = tuv + pV.xz / max(pV.y, 0.25) * (sA.a - 0.5) * pdep / 4.0;
+      vec4 pa, pdd; sampleLayer(Lmain, puv, gx, gy, pa, pdd);
+      sA = mix(sA, pa, pf); sD = mix(sD, pdd, pf);
+    }
+  }
 #endif` : `
   Lmain = vAux.x; sampleLayer(vAux.x, tuv, gx, gy, sA, sD);`}
   vec4 lp = texelFetch(tProps, ivec2(int(Lmain + 0.5), 0), 0);
@@ -230,7 +254,7 @@ ${splat ? `
 #endif
   float macro = (mn.r * 0.6 + mn2.r * 0.4 - 0.5) * lp.b * uMacro;
   vec3 albedo = sA.rgb * vTint.rgb * ${splat ? '1.06' : '1.0'} * (1.0 + ${splat ? '0.55' : '0.16'} * macro);
-${splat ? '  albedo *= vec3(1.0 + 0.16 * macro, 1.0, 1.0 - 0.2 * macro);' : ''}
+${splat ? '  albedo *= vec3(1.0 + 0.16 * macro, 1.0, 1.0 - 0.2 * macro);\n  albedo *= (0.8 + 0.2 * sD.w) * (0.86 + 0.14 * vTint.a); // cavities (baked height AO, concave terrain) also darken direct light' : ''}
   float rough = clamp(sD.z * (1.0 + 0.2 * macro), 0.02, 1.0);
 ${splat ? '' : DETAIL_PRE + DETAIL_MAIN()}
   float wetAmt = uWet * lp.r;
@@ -239,18 +263,27 @@ ${splat ? '' : DETAIL_PRE + DETAIL_MAIN()}
   rough = mix(rough, 0.25, wetAmt * 0.75); rough = mix(rough, 0.04, puddle);
   diffuseColor.rgb *= albedo;
 `;
-const NORMAL_MAIN = `
+const NORMAL_MAIN = (splat) => `
 #ifndef LOE_LOW
   {
     vec3 mapN = vec3(sD.xy * 2.0 - 1.0, 0.0);
     float puddleFlat = 1.0 - puddle;
-    mapN.xy *= texelFetch(tProps, ivec2(int(Lmain + 0.5), 0), 0).g * 2.0 * puddleFlat;
+    float nsc = texelFetch(tProps, ivec2(int(Lmain + 0.5), 0), 0).g * 2.0;
+${splat ? '    nsc *= mix(1.3, 0.3, smoothstep(25.0, 230.0, length(vViewPosition))); // detail normals fade with distance (the geometry carries the far relief)' : ''}
+    mapN.xy *= nsc * puddleFlat;
     mapN.z = sqrt(max(0.0, 1.0 - dot(mapN.xy, mapN.xy)));
     vec3 q0 = dFdx(-vViewPosition), q1 = dFdy(-vViewPosition); vec3 N = normal;
     vec3 q1p = cross(q1, N), q0p = cross(N, q0);
     vec3 T = q1p * gx.x + q0p * gy.x, B = q1p * gx.y + q0p * gy.y;
     float det = max(dot(T, T), dot(B, B)); float sc = det == 0.0 ? 0.0 : inversesqrt(det);
     normal = normalize(T * sc * mapN.x + B * sc * mapN.y + N * mapN.z);
+${splat ? `    // metre-scale undulation the 4 m mesh cannot hold: gradient of the shared value noise (2.4 m cells), fading out by 60 m
+    float bFade = 1.0 - smoothstep(12.0, 60.0, length(vViewPosition));
+    if (bFade > 0.0){
+      float ex = 0.7 * 0.013;
+      vec2 bg = vec2(texture(tDA, vec3(mvUv + vec2(ex, 0.0), uNoiseL)).r - mn.r, texture(tDA, vec3(mvUv + vec2(0.0, ex), uNoiseL)).r - mn.r) / 0.7;
+      normal = normalize(normal - mat3(viewMatrix) * vec3(bg.x, 0.0, bg.y) * 0.3 * bFade * puddleFlat);
+    }` : ''}
   }
 #endif
 `;
@@ -323,8 +356,8 @@ varying vec2 vTUv; varying vec4 vTint; ${flags.splat ? 'varying vec4 vW0; varyin
 ${ARR_PARS}`)
         .replace('#include <map_fragment>', ARR_MAIN(flags.splat))
         .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = rough;')
-        .replace('#include <metalnessmap_fragment>', 'float metalnessFactor = sA.a;')
-        .replace('#include <normal_fragment_maps>', NORMAL_MAIN)
+        .replace('#include <metalnessmap_fragment>', flags.splat ? 'float metalnessFactor = 0.0;' : 'float metalnessFactor = sA.a * (1.0 - step(0.2, lp.a) * step(lp.a, 0.4));')
+        .replace('#include <normal_fragment_maps>', NORMAL_MAIN(!!flags.splat))
         .replace('#include <aomap_fragment>', AO_MAIN)
         .replace('#include <emissivemap_fragment>', flags.splat ? '' : EMIT_MAIN);
     }

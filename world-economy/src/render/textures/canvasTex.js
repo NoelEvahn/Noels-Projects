@@ -76,7 +76,7 @@ export function makeLeafAtlas(size = 1024) {
   // 6 meadow grass: loose fan of tapered blades with a few seed stems (base at bottom)
   { const [x, y] = cell(6); g.save(); g.translate(x, y);
     for (let k = 0; k < 46; k++) { const t = R(), bx = cw * (0.5 + (t - 0.5) * 0.7), h = ch * (0.4 + 0.55 * R()), lean = (bx - cw * 0.5) * 0.9 + (R() - 0.5) * cw * 0.18, dry = R() < 0.22;
-      blade(bx, ch, h, lean, cw * (0.035 + 0.03 * R()), dry ? mix3([110, 100, 50], [120, 110, 60], R()) : mix3([46, 76, 30], [64, 98, 38], R()), dry ? mix3([196, 176, 104], [214, 196, 128], R()) : mix3([118, 156, 62], [160, 190, 84], R())); }
+      blade(bx, ch, h, lean, cw * (0.035 + 0.03 * R()), dry ? mix3([110, 100, 50], [120, 110, 60], R()) : mix3([40, 66, 28], [56, 86, 34], R()), dry ? mix3([186, 166, 98], [206, 186, 120], R()) : mix3([84, 122, 52], [124, 150, 66], R())); }
     for (let k = 0; k < 5; k++) { const bx = cw * (0.25 + 0.5 * R()), h = ch * (0.78 + 0.18 * R()), lean = (R() - 0.5) * cw * 0.2; g.strokeStyle = 'rgb(150,150,86)'; g.lineWidth = 1.6; g.beginPath(); g.moveTo(bx, ch); g.quadraticCurveTo(bx + lean * 0.3, ch - h * 0.6, bx + lean, ch - h); g.stroke(); g.fillStyle = 'rgb(176,160,96)'; g.beginPath(); g.ellipse(bx + lean, ch - h - 5, 2.6, 9, lean * 0.01, 0, 6.28); g.fill(); }
     g.restore(); }
   // 7 reeds with seed heads and a few flowers (kept for the reed cards)
@@ -107,7 +107,7 @@ export function makeLeafAtlas(size = 1024) {
   // 12 lawn tuft: short dense fan of fine blades (tinted per instance), base at bottom
   { const [x, y] = cell(12); g.save(); g.translate(x, y);
     for (let k = 0; k < 34; k++) { const bx = cw * (0.5 + (R() - 0.5) * 0.62), h = ch * (0.28 + 0.4 * R()), lean = (bx - cw * 0.5) * 0.85 + (R() - 0.5) * cw * 0.1;
-      blade(bx, ch, h, lean, cw * (0.045 + 0.03 * R()), mix3([34, 64, 24], [46, 78, 30], R()), mix3([78, 118, 44], [112, 150, 60], R())); }
+      { const dry = R() < 0.16, olive = R() < 0.3; blade(bx, ch, h, lean, cw * (0.045 + 0.03 * R()), dry ? mix3([84, 76, 38], [100, 90, 46], R()) : mix3([30, 54, 24], [42, 66, 28], R()), dry ? mix3([168, 150, 88], [190, 170, 104], R()) : olive ? mix3([92, 112, 46], [118, 134, 58], R()) : mix3([58, 98, 46], [88, 128, 58], R())); } }
     g.restore(); }
   // 13 marram dune grass: long arching pale blades in a clump
   { const [x, y] = cell(13); g.save(); g.translate(x, y);
@@ -151,7 +151,7 @@ export function makeParticleAtlas(size = 512) {
   { const [x, y] = at(7); const gr = g.createLinearGradient(x, y - ch / 2, x, y + ch / 2); gr.addColorStop(0, 'rgba(220,230,245,0)'); gr.addColorStop(0.5, 'rgba(220,230,245,0.7)'); gr.addColorStop(1, 'rgba(220,230,245,0)'); g.fillStyle = gr; g.fillRect(x - cw * 0.04, y - ch / 2, cw * 0.08, ch); }
   return tex(c, size);
 }
-export const DECAL_CELLS = ['pool', 'puddle', 'oil', 'tyre', 'blob', 'lilypad', 'lily', 'bushblob'];
+export const DECAL_CELLS = ['pool', 'puddle', 'oil', 'tyre', 'blob', 'lilypad', 'lily', 'bushblob', 'ring', 'fish', 'foam', 'mud'];
 /** decal atlas: 4 x 4 grid of square cells (v up) */
 export function decalCell(name) { const i = DECAL_CELLS.indexOf(name); const cx = i % 4, cy = Math.floor(i / 4); return [cx / 4, 1 - (cy + 1) / 4, (cx + 1) / 4, 1 - cy / 4]; }
 export function makeDecalAtlas(size = 1024) {
@@ -178,5 +178,10 @@ export function makeDecalAtlas(size = 1024) {
     g.fillStyle = '#f2b81e'; g.beginPath(); g.arc(cx, cy, s * 0.07, 0, 6.28); g.fill(); }
   // 7 bush ground blob (wider and softer than the tree blob)
   radial(7, [[0, 'rgba(0,0,0,0.5)'], [0.55, 'rgba(0,0,0,0.28)'], [1, 'rgba(0,0,0,0)']]);
+  // 8 ripple rings (two concentric soft white rings, tinted by the material), 9 fish shadow (dark elongated body with tail), 10 foam collar, 11 mud patch
+  { const [ox, oy] = at(8), cx = ox + s / 2, cy = oy + s / 2; for (const [r, a] of [[0.44, 0.7], [0.3, 0.5], [0.16, 0.35]]) { g.strokeStyle = `rgba(255,255,255,${a})`; g.lineWidth = s * 0.035; g.beginPath(); g.arc(cx, cy, s * r, 0, 6.2832); g.stroke(); } }
+  { const [ox, oy] = at(9), cx = ox + s / 2, cy = oy + s / 2; g.fillStyle = 'rgba(8,16,20,0.55)'; g.beginPath(); g.ellipse(cx - s * 0.06, cy, s * 0.3, s * 0.1, 0, 0, 6.2832); g.fill(); g.beginPath(); g.moveTo(cx + s * 0.2, cy); g.lineTo(cx + s * 0.42, cy - s * 0.1); g.lineTo(cx + s * 0.4, cy + s * 0.1); g.closePath(); g.fill(); }
+  { const [ox, oy] = at(10); for (let k = 0; k < 90; k++) { const a = R() * 6.2832, r = s * (0.3 + 0.17 * R()), x = ox + s / 2 + Math.cos(a) * r, y = oy + s / 2 + Math.sin(a) * r; g.fillStyle = `rgba(245,250,252,${0.15 + 0.35 * R()})`; g.beginPath(); g.arc(x, y, s * (0.015 + 0.03 * R()), 0, 6.2832); g.fill(); } }
+  { const [ox, oy] = at(11); radial(11, [[0, 'rgba(54,40,28,0.85)'], [0.6, 'rgba(60,46,32,0.6)'], [1, 'rgba(60,46,32,0)']]); for (let k = 0; k < 10; k++) { g.fillStyle = 'rgba(30,22,16,0.35)'; g.beginPath(); g.ellipse(ox + s * (0.25 + 0.5 * R()), oy + s * (0.25 + 0.5 * R()), s * 0.07, s * 0.04, R() * 3, 0, 6.2832); g.fill(); } }
   return tex(c, size);
 }
