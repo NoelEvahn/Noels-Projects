@@ -12,6 +12,23 @@ let leafAtlas = null, particleAtlas = null, decalAtlas = null;
 const std = (o) => new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, metalness: 0, ...o });
 function world(flags, o = {}) { const m = std(o); patchMaterial(m, { arr: true, ...flags }); lit.add(m); return m; }
 
+// contact shadows under trees / shrubs / parked cars, water-lily pads and flowers, fish shadows, hull collars (ring = 0) and ripple rings (ring = 1): one unlit decal-atlas program.
+// Soft alpha, no depth write; the vertex shader bobs and ripples instances a few cm (pads float, blobs move imperceptibly), rings grow and fade; the fragment dims at night (unlit).
+function blobLike(ring) {
+  const m = new THREE.MeshBasicMaterial({ map: decalAtlas, transparent: true, depthWrite: false, fog: true, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -6 });
+  patchMaterial(m, { key: ':blob', extra(vs, fs, shader) { shader.uniforms.uRing = { value: ring }; return [vs.replace('#include <common>', '#include <common>\nuniform float uTime, uRing; varying float vRA;').replace('#include <begin_vertex>', `#include <begin_vertex>
+  vRA = 1.0;
+  #ifdef USE_INSTANCING
+    { vec3 ip = vec3(instanceMatrix[3][0], instanceMatrix[3][1], instanceMatrix[3][2]); float ph = dot(ip.xz, vec2(0.71, 0.53));
+      if (uRing > 0.5) { float pr = fract(uTime * 0.36 + dot(ip.xz, vec2(0.37, 0.21))); transformed.xz *= 0.45 + pr * 0.95; vRA = smoothstep(0.0, 0.12, pr) * (1.0 - pr) * 0.9; }
+      else {
+      float rip = sin(uTime * 1.5 + ph * 3.0 + length(position.xz) * 4.0) * 0.012 + sin(uTime * 2.3 + ph) * 0.01;
+      transformed.y += rip * (0.4 + length(position.xz) * 1.5); transformed.xz += vec2(sin(uTime * 0.4 + ph), cos(uTime * 0.37 + ph * 1.3)) * 0.012; }
+    }
+  #endif`), fs.replace('#include <common>', '#include <common>\nuniform float uNight; varying float vRA;').replace('#include <opaque_fragment>', '#include <opaque_fragment>\n  gl_FragColor.a *= vRA; gl_FragColor.rgb *= mix(1.0, 0.16, uNight);')]; } });
+  return m;
+}
+
 const MAKERS = {
   // static world geometry (chunks, infra, props merged per chunk): texture-array layers, tint, AO, window/lamp emissive
   'mat.world': () => world({ emit: true }),
@@ -43,13 +60,11 @@ const MAKERS = {
   'mat.decal': () => { const m = std({ map: decalAtlas, transparent: true, depthWrite: false, roughness: 0.8, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 }); patchMaterial(m, { key: ':decal' }); lit.add(m); return m; },
   // contact shadows under trees / shrubs / parked cars AND water-lily pads and flowers: one unlit decal-atlas material (one program, not two). Soft alpha, no
   // depth write; the vertex shader bobs and ripples instances a few cm (pads float, blobs move imperceptibly) and the fragment dims at night (unlit).
-  'mat.blob': () => { const m = new THREE.MeshBasicMaterial({ map: decalAtlas, transparent: true, depthWrite: false, fog: true, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -6 });
-    patchMaterial(m, { key: ':blob', extra(vs, fs) { return [vs.replace('#include <common>', '#include <common>\nuniform float uTime;').replace('#include <begin_vertex>', `#include <begin_vertex>
-  #ifdef USE_INSTANCING
-    { vec3 ip = vec3(instanceMatrix[3][0], instanceMatrix[3][1], instanceMatrix[3][2]); float ph = dot(ip.xz, vec2(0.71, 0.53));
-      float rip = sin(uTime * 1.5 + ph * 3.0 + length(position.xz) * 4.0) * 0.012 + sin(uTime * 2.3 + ph) * 0.01;
-      transformed.y += rip * (0.4 + length(position.xz) * 1.5); transformed.xz += vec2(sin(uTime * 0.4 + ph), cos(uTime * 0.37 + ph * 1.3)) * 0.012; }
-  #endif`), fs.replace('#include <common>', '#include <common>\nuniform float uNight;').replace('#include <opaque_fragment>', '#include <opaque_fragment>\n  gl_FragColor.rgb *= mix(1.0, 0.16, uNight);')]; } }); return m; },
+  'mat.blob': () => blobLike(0),
+  // expanding ripple rings on water (piles, ducks): same program as mat.blob (uRing = 1): the vertex shader grows each instance on a 2.8 s cycle (phase from its position) and fades it out
+  'mat.ripple': () => blobLike(1),
+  // overhead wires: the unlit glow material (same program) tinted dark grey
+  'mat.wire': () => { const m = new THREE.MeshBasicMaterial({ color: 0x2a2c30, fog: true, toneMapped: true }); patchMaterial(m, { key: ':glow' }); return m; },
   'mat.particle': () => { const m = new THREE.MeshBasicMaterial({ map: particleAtlas, transparent: true, depthWrite: false, fog: true, vertexColors: true }); patchMaterial(m, { key: ':pt' }); return m; },
   // Stage 2 materials (kept for the blockout fallback path)
   'mat.blockout': () => { const m = std({ vertexColors: true, roughness: 0.92 }); patchMaterial(m, { key: ':bo' }); lit.add(m); return m; },

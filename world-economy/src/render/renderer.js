@@ -16,6 +16,7 @@ import { createPipeline } from './pipeline.js';
 import { createChunkManager } from './chunkManager.js';
 import { createVegetation } from './vegetation.js';
 import { createDetail } from './detail.js';
+import { createDetail2 } from './detail2.js';
 import { createEntityViews } from './entityViews.js';
 import { createEffects } from './effects.js';
 import { createAmbient } from '../game/ai/ambient.js';
@@ -66,6 +67,7 @@ export function createRenderer({ canvas, settings, perf, quality, onRendererStri
   const chunks = createChunkManager({ scene, far, getRadii: () => [Math.min(detailRadius(), derived.chunkRadii[0]), derived.chunkRadii[0], derived.chunkRadii[1]] });
   const veg = createVegetation({ scene, renderer });
   const detail = createDetail({ scene });
+  const detail2 = createDetail2({ scene });
   const views = createEntityViews(scene);
   const ambient = createAmbient();
   const ambientViews = createAmbientViews({ scene, ambient });
@@ -77,9 +79,9 @@ export function createRenderer({ canvas, settings, perf, quality, onRendererStri
   const shadowCounter = { calls: 0, tris: 0 };
   sm.render = function (lights, sc, cam) { const c0 = renderer.info.render.calls, tr0 = renderer.info.render.triangles; smRender.call(sm, lights, sc, cam); shadowCounter.calls += renderer.info.render.calls - c0; shadowCounter.tris += renderer.info.render.triangles - tr0; };
 
-  { const origCompile = renderer.compile.bind(renderer); renderer.compile = (sc, cam, tgt) => { ambientViews.prewarm(true); detail.prewarm(true); const r = origCompile(sc, cam, tgt); ambientViews.prewarm(false); detail.prewarm(false); return r; }; }
+  { const origCompile = renderer.compile.bind(renderer); renderer.compile = (sc, cam, tgt) => { ambientViews.prewarm(true); detail.prewarm(true); detail2.prewarm(true); const r = origCompile(sc, cam, tgt); ambientViews.prewarm(false); detail.prewarm(false); detail2.prewarm(false); return r; }; }
   let w = 0, h = 0, applying = 0;
-  const api = { renderer, scene, camera, sky, water, far, chunks, views, ambient, ambientViews, veg, detail, fx, lighting, pipeline, baker, info: renderer.info, cpuOnly: false, frozenCamera: false, marks, counters: { shadowCalls: 0, shadowTris: 0, mainCalls: 0, mainTris: 0, postCalls: 0 } };
+  const api = { renderer, scene, camera, sky, water, far, chunks, views, ambient, ambientViews, veg, detail, detail2, fx, lighting, pipeline, baker, info: renderer.info, cpuOnly: false, frozenCamera: false, marks, counters: { shadowCalls: 0, shadowTris: 0, mainCalls: 0, mainTris: 0, postCalls: 0 } };
   api.resize = function (cssW, cssH) {
     const pr = derived.pixelRatio;
     renderer.setPixelRatio(pr);
@@ -101,6 +103,7 @@ export function createRenderer({ canvas, settings, perf, quality, onRendererStri
       camera.fov = d.camera.fov; camera.far = Math.max(2500, d.farClip); camera.updateProjectionMatrix();
       veg.configure({ density: d.vegetation.density, treeCaps: d.vegetation.treeCaps, groundCoverRadius: d.vegetation.groundCoverRadius, detail: d.vegetation.detail, lodBias: d.lodBias, mid: d.chunkRadii[1], shadows: d.shadows.enabled, atlasSize: Math.min(2048, d.textures.atlas) });
       detail.configure({ detail: d.vegetation.detail, shadows: d.shadows.enabled, lodBias: d.lodBias });
+      detail2.configure({ detail: d.vegetation.detail, shadows: d.shadows.enabled });
       fx.configure({ particles: d.particles.maxAlive, lightPool: d.lightPool, fogCards: d.fogCards });
       views.configure({ lodBias: d.lodBias, shadows: d.shadows.enabled });
       ambient.configure({ traffic: d.trafficDensity, crowd: d.crowdDensity });
@@ -150,6 +153,7 @@ export function createRenderer({ canvas, settings, perf, quality, onRendererStri
     water.update(camV, 1);
     const L = lighting.state;
     detail.update(camera);
+    detail2.update(camera, time);
     veg.update(camera, 0.25 + 0.9 * L.day * (1 - 0.5 * L.weather.cover) + 0.06 * L.night, scene.fog, L);
     fx.update(dt, camera, L, game);
     pst.exposure = L.exposure; pst.grade = L.grade; pst.sunDir = sd; pst.time = time;

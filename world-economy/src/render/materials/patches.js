@@ -100,6 +100,24 @@ const DETAIL_MAIN = () => /* glsl */`
       albedo *= 1.0 + vert * (mott - 0.5) * 0.22;
       rough = min(1.0, rough + 0.05 * streak);
     }
+    // Detail Batch 2: moss on wall bases in the damp north (lake and forest), salt-rust streaks on painted / corrugated / galvanised metal (strongest near the sea)
+    if (vert > 0.01) {
+      float along2 = vWPos.x * dgn.z - vWPos.z * dgn.x;
+      if (${WALL_IDS.map((id) => `inL(Lmain, ${LI(id)})`).join(' + ')} > 0.5) {
+        float damp = smoothstep(-400.0, -720.0, vWPos.z);
+        float baseLow = clamp((1.0 - vTint.a) * 3.2, 0.0, 1.0);
+        float mp = smoothstep(0.38, 0.7, nzg(vec2(along2 * 0.55, vWPos.y * 1.6) + 0.35) * 0.65 + nzr(vec2(along2, vWPos.y) * 0.16) * 0.35);
+        float mm = damp * baseLow * mp * vert;
+        albedo = mix(albedo, vec3(0.10, 0.2, 0.05) * (0.8 + 0.5 * nzr(vec2(along2, vWPos.y) * 2.1)), clamp(mm * 0.85, 0.0, 0.8));
+      }
+      if (${['tex.metal_painted', 'tex.metal_corrugated', 'tex.metal_galvanized', 'tex.paint_chipped'].map((id) => `inL(Lmain, ${LI(id)})`).join(' + ')} > 0.5) {
+        float salt = 0.3 + 0.7 * smoothstep(900.0, 1100.0, vWPos.z);
+        float rs = smoothstep(0.52, 0.8, nzr(vec2(along2 * 0.9, vWPos.y * 0.05) + 0.7) * 0.6 + nzg(vec2(along2 * 2.3, vWPos.y * 0.11) + 0.1) * 0.4);
+        float rb = smoothstep(0.62, 0.9, nzg(vWPos.xz * 0.9 + vWPos.y * 0.7));
+        albedo = mix(albedo, vec3(0.34, 0.16, 0.06) * (0.7 + 0.6 * nzr(vWPos.xz * 3.0 + vWPos.y)), clamp((rs * 0.55 + rb * 0.3) * salt * vert, 0.0, 0.7));
+        rough = mix(rough, 0.85, rs * salt * 0.5);
+      }
+    }
     // kerb stone: dirty bottom, tyre rub and grit
     if (inL(Lmain, ${LI('tex.curb_stone')}) > 0.5) {
       float kn = nzr(vTUv * vec2(0.13, 0.5) + 0.2);

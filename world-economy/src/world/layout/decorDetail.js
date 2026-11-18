@@ -29,7 +29,7 @@ export function generateDetail2({ items, edges, placements, heightAt, infra, see
     return true;
   };
   const okWalk = (x, z, r) => !(overlaps && overlaps({ cx: x, cz: z, w: r, d: r, yaw: 0 }, 0.1)); // sidewalks lie inside the road row: only buildings block
-  const out = { wires: [], perches: [], fowl: [], fish: [], rings: [], hullFoam: [], steam: [], chimneys: [] };
+  const out = { wires: [], perches: [], fowl: [], fish: [], rings: [], hullFoam: [], steam: [], chimneys: [], weeds: [] };
   const alongYaw = (tx, tz) => Math.atan2(tz, tx);       // local +x along (tx, tz)
   const lenYaw = (tx, tz) => Math.atan2(-tx, tz);        // local +z along (tx, tz)
 
@@ -39,6 +39,9 @@ export function generateDetail2({ items, edges, placements, heightAt, infra, see
     for (let s0 = 10; s0 < e.len - 10; s0 += 9) {
       const p = pointAt(e, s0); if (!p) continue;
       const dist = districtAt(p.x, p.z) || '', old = dist === 'city.oldtown', down = dist === 'city.downtown', mk = dist === 'city.market', mid = dist === 'city.midtown';
+      for (const sd of [-1, 1]) { // weeds in the kerb joint: [x, y, z, scale, tint, rot] every few metres
+        const hw = H(p.x, p.z, sd * 3 + 9); if (hw < 0.72) { const kl = sd * (e.carriage / 2 + 0.12), wx = p.x - p.tz * kl + p.tx * (hw * 9 - 4), wz = p.z + p.tx * kl + p.tz * (hw * 9 - 4); out.weeds.push(wx, p.y + 0.16, wz, 0.45 + hw * 0.7, Math.floor(hw * 977) % 4, hw * 60); if (hw < 0.3) out.weeds.push(wx + p.tx * 1.7, p.y + 0.16, wz + p.tz * 1.7, 0.4 + hw, Math.floor(hw * 331) % 4, hw * 33); }
+      }
       for (const sd of [-1, 1]) {
         const h = H(p.x, p.z, sd * 5 + 1), lat = sd * (e.carriage / 2 + Math.min(e.walkW, 6) * 0.55), x = p.x - p.tz * lat, z = p.z + p.tx * lat;
         const busy = old || down || mk || mid;
@@ -119,6 +122,7 @@ export function generateDetail2({ items, edges, placements, heightAt, infra, see
         for (const sd of [-1, 1]) {
           const lx = q.x + dirx * s - dirz * sd * (Math.min(q.sx, q.sz) / 2 + 2.2 + hh * 2.5), lz = q.z + dirz * s + dirx * sd * (Math.min(q.sx, q.sz) / 2 + 2.2 + hh * 2.5);
           const wb = waterBodyAt(lx, lz); if (wb) continue; const gy = heightAt(lx, lz); if (gy < 0.6 || !okSpot(lx, lz, 1.4)) continue;
+          { const fx = q.x + dirx * s + dirz * sd * -(Math.min(q.sx, q.sz) / 2 + 0.7), fz = q.z + dirz * s - dirx * sd * -(Math.min(q.sx, q.sz) / 2 + 0.7), fwb = waterBodyAt(fx, fz); if (fwb) out.hullFoam.push(fx, fz, fwb.level, 7, 0.5, lenYaw(dirx, dirz)); }
           const id = harbourIds[Math.floor(hh * 977) % harbourIds.length];
           add(id, lx, gy, lz, hh * 60);
           // tyre fenders and rope bollards on the water side
