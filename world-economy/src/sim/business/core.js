@@ -566,6 +566,8 @@ export function createBusiness(ctx) {
     autoRestock(b);
     if (T.model === 'vending') maintain(b);
     if (managerOk(b) && b.policies.pricing === 'auto') autoPrice(b);
+    // timber stand: the harvest counter decays (weekly quota about 175 m3) and a stand under quota regrows
+    if (b.stand) { b.stand.harvested = Math.max(0, b.stand.harvested - 25); if (b.stand.harvested <= 160) b.stand.health = Math.min(1, b.stand.health + 0.02); }
     // growth of ground richness handled globally; daily report
     const rep = ctx.reports.pnlRange(b.id, today, today);
     const st = b.stats.today;

@@ -69,6 +69,7 @@ export function createHour(ctx, B) {
     let demandTotal = 0; const dem = [];
     for (const p of active) {
       let shareMult = 1;
+      if (T.assortments) shareMult = ASSORTMENTS[b.assortment || 'convenience'].demandMult || 1;
       if (T.assortments && site) { const a = ASSORTMENTS[b.assortment || 'convenience']; if (a.tag && site.tags.includes(a.tag)) shareMult = a.tagMult; if (a.district && site.district === a.district[0]) shareMult *= a.district[1]; }
       const d = stochRound(F * capture * ((p.share || 1) / (totalShare || 1)) * appeal * priceMult(b, p, eps, B.refOf(b, p)) * shareMult * (T.id === 'biz.supermarket' || T.id === 'biz.retail' ? active.length * 0.5 : 1), rngS());
       dem.push(d); demandTotal += d;
@@ -217,7 +218,7 @@ export function createHour(ctx, B) {
       const sp = rngS().chance(0.6) ? 'item.wood.log_pine' : 'item.wood.log_spruce';
       ctx.inv.add('biz:' + b.id, sp, m3, { force: true });
       meta.harvested += m3;
-      if (meta.harvested > 140) meta.health = Math.max(0.2, meta.health - 0.01 * (meta.harvested - 140) / 10);
+      if (meta.harvested > 160) meta.health = Math.max(0.2, meta.health - 0.01 * (meta.harvested - 160) / 10);
       st.customers += m3; st.logs = (st.logs || 0) + m3;
       B.sellLogs(b);
       for (const u of trucks) { const km = 25; const litres = Math.ceil(VEHICLE_ECON[u.modelId].use * km); B.pay(b, 'ext:services', litres * BALANCE.fuelPrice, TX.FUEL, 'Fuel'); u.condition = Math.max(0, u.condition - 0.0125); }

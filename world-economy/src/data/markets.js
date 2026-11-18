@@ -10,8 +10,8 @@ export const MARKETS = {
       ...fishItems([['item.fish.carp', 0.9], ['item.fish.perch', 0.9], ['item.fish.bass', 0.9], ['item.fish.pike', 0.9], ['item.fish.trout', 0.9], ['item.fish.mackerel', 0.9], ['item.fish.cod', 0.9], ['item.fish.snapper', 0.9], ['item.fish.tuna', 0.9], ['item.fish.shrimp', 0.9], ['item.fish.crab', 0.9], ['item.fish.lobster', 0.9]], { target: 400 }),
       'item.wood.lumber': { target: 150, k: ELAS.wood, factor: 1, buys: true, sells: true, supply: 1.5, demand: 1.5 },
       'item.wood.firewood': { target: 300, k: ELAS.wood, factor: 1, buys: true, sells: true, supply: 3, demand: 3 },
-      ...stock(['item.ing.produce', 'item.ing.meat', 'item.ing.bread', 'item.ing.dairy', 'item.ing.fish', 'item.ing.fish_premium', 'item.ing.coffee', 'item.ing.beverage', 'item.ing.snack'], 4000),
-      ...stock(['item.goods.grocery', 'item.goods.household', 'item.goods.clothing', 'item.goods.electronics', 'item.goods.tools', 'item.goods.souvenir', 'item.goods.tackle', 'item.goods.bait', 'item.parts', 'item.fuel'], 1500),
+      ...stock(['item.ing.produce', 'item.ing.meat', 'item.ing.bread', 'item.ing.dairy', 'item.ing.fish', 'item.ing.fish_premium', 'item.ing.coffee', 'item.ing.beverage', 'item.ing.snack'], 12000),
+      ...stock(['item.goods.grocery', 'item.goods.household', 'item.goods.clothing', 'item.goods.electronics', 'item.goods.tools', 'item.goods.souvenir', 'item.goods.tackle', 'item.goods.bait', 'item.parts', 'item.fuel'], 6000),
       ...stock(['item.mat.concrete', 'item.mat.brick', 'item.mat.steel', 'item.mat.glass', 'item.mat.fixtures'], 300, ELAS.material),
     },
   },
@@ -35,8 +35,8 @@ export const MARKETS = {
   'mkt.forest.sawmill': {
     poi: 'poi.forest.sawmill', region: 'forest', name: 'Sawmill Junction',
     items: {
-      'item.wood.log_pine': { target: 120, k: ELAS.wood, factor: 1, buys: true, sells: false, supply: 1.2, demand: 1.2 },
-      'item.wood.log_spruce': { target: 100, k: ELAS.wood, factor: 1, buys: true, sells: false, supply: 1, demand: 1 },
+      'item.wood.log_pine': { target: 600, k: ELAS.wood, factor: 1, buys: true, sells: false, supply: 6, demand: 6 },
+      'item.wood.log_spruce': { target: 500, k: ELAS.wood, factor: 1, buys: true, sells: false, supply: 5, demand: 5 },
       'item.wood.lumber': { target: 150, k: ELAS.wood, factor: 1, buys: false, sells: true, supply: 1.5, demand: 1.5 },
       'item.wood.firewood': { target: 300, k: ELAS.wood, factor: 1, buys: true, sells: true, supply: 3, demand: 3 },
     },
