@@ -20,12 +20,14 @@ tail flick, yawn, turning his back, sitting on the one thing everybody is lookin
 ## Episode log
 ### Ep3 — "What if every 2 seconds, twice as many people loved you?"
 Gerald's stat: `LOVES YOU: NO`. Final gag: he is the only one without a heart above his head; the hero says "Bombo." and Gerald looks away.
-| Scene | Gerald is… | Roast (narrator, ≤2 s) |
+| Scene | Gerald is… (as built) | Roast (narrator, ≤2 s) |
 |---|---|---|
-| 1 Garden BBQ | loafing on the fence, one half-open eye | "Gerald remained unconvinced." |
-| 2 Street | sitting in the road on the white line while a conga line goes round him | "Gerald had seen better." |
-| 3 Theatre | in the front row; the golden buzzer lands next to him | "Gerald gave it a four." |
-| 4 Lab | in the rat's cage, rat on his head, he is the only needle that does not move | "Gerald did not register." |
-| 5 Cloud Nine | asleep on a cloud, a balloon bumps his nose | "Gerald was not up for it." |
-| 6 Earth / plazas | on a billboard-top ledge, looks away from the hero billboard | "Gerald had no comment." |
-| 7 Garden finale | one cat among 17 trillion, no heart above him | "Gerald: still no." |
+| 1 Garden BBQ | loafing on the left fence, one half-open eye; looks away at 5.0 | "Gerald remained unconvinced." |
+| 2 Street | sitting on the white road line while the crowd parts around him | "Gerald had seen better." |
+| 3 Theatre | front-row seat, half-lidded, while hearts rise behind him (the golden buzzer is on the judges' table) | "Gerald gave it a four." |
+| 4 State / bakery / lab | **loafing on the bakery cash register** (roast); later sitting on the rat's cage in the lab | "Gerald did not register." |
+| 5 Cloud Nine | loafing in the grass below while the hero is lifted away by balloons | "Gerald was not up for it." |
+| 6 Billboard tour | sitting on top of the Rio billboard, back turned to the hero's face | "Gerald had no comment." |
+| 7 Finale | on the fence of the wrecked garden, no heart over him; turns away at 88.4; icon on the title card next to "NOT COUNTED: 1 CAT" | "Still no." |
+
+Reusable ideas not yet used: Gerald on the pitch / stage / roof, Gerald asleep through the climax, Gerald pushing something off a table, Gerald as the only needle that does not move.

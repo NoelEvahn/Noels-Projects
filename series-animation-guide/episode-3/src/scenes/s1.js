@@ -100,7 +100,7 @@ export default {
     S.dog.pose(APOSES.stand(t)); S.dog.face({ open: 1 }); S.dog.root.position.set(5.0 - Math.min(1, Math.max(0, (t - 8.0))) * 1.0, 0, 2.2);
     const look = t > 5.0 ? 1 : 0; S.cat.pose(look ? { ...APOSES.loaf(t), hy: 0.8 } : APOSES.loaf(t)); S.cat.face(t > 8.4 ? { lid: 0.55 } : { lid: 0.45 + Math.max(0, Math.sin(t * 0.9) - 0.9) * 4 });
     // ---- hearts, aura
-    lovers.update(t, c.pos);
+    lovers.update(t, c.pos, c);
     const n = Math.max(1, lovers.count(t)); S.aura.position.set(hp[0], 0.02, hp[2]); S.aura.setR(0.9 + 0.35 * Math.log2(n), 0.9);
     S.gd.update(t);
     // seed grandma's heart at t=0

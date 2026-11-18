@@ -43,7 +43,9 @@ window.renderFrame = async (i, opts = {}) => {
   const age = TL.tickAge(t), tier = TL.TIERS[TL.lastTick(t)] ?? 0;
   const amp = age < 0.25 ? (1 - age / 0.25) * (0.012 + tier * 0.012) : 0;
   const sx = (noise(Math.floor(t * 30) * 1.3) - 0.5) * amp * 2, sy = (noise(Math.floor(t * 30) * 2.9) - 0.5) * amp * 2;
-  lookFrom(camera, [cam.pos[0] + sx, cam.pos[1] + sy, cam.pos[2]], cam.target, cam.fov ?? 45, cam.roll ?? 0);
+  // voiced close-ups: ease the lens out a little so the face clears the caption band (bottom of the frame)
+  let fovMul = 1; for (const v of TL.VOICES) { if (['crowd_world', 'plazas_unison', 'washer_shout', 'ghost_echo', 'crowd_audience'].includes(v.id)) continue; const a = (t - (v.t - 0.4)) / 0.4; if (a > 0 && t < v.t + 1.0) fovMul = Math.max(fovMul, 1 + 0.16 * Math.min(1, a)); }
+  lookFrom(camera, [cam.pos[0] + sx, cam.pos[1] + sy, cam.pos[2]], cam.target, (cam.fov ?? 45) * fovMul, cam.roll ?? 0);
   if (r.keyFocus !== false) aimKey(s.stage ?? r.stage, new THREE.Vector3(...(r.keyFocus ?? cam.target)), r.keyDist ?? 9);
   renderer.render(s.scene, camera);
   // composite
@@ -52,15 +54,15 @@ window.renderFrame = async (i, opts = {}) => {
   g2.drawImage(gl, 0, 0, W, H);
   g2.save(); g2.scale(SCALE, SCALE);
   if (!r.hideHud) {
-    HUD.drawClock(g2, Math.min(t, 89.99)); HUD.drawCounter(g2, Math.min(t, 89.99));
-    HUD.drawGeraldChip(g2, 462);
+    HUD.drawClock(g2, Math.min(t, 89.99)); const base = HUD.drawCounter(g2, Math.min(t, 89.99));
+    HUD.drawGeraldChip(g2, 290 + base * 0.58 + 70 + 24);
   }
   // captions
   if (r.banner) HUD.drawBanner(g2, r.banner, t - (r.banner.t0 ?? 0));
   if (t >= 77.6 && t < 80.7) HUD.drawSilenceWords(g2, t);
-  for (const n of TL.NARRATION) { const w = wordsOf(n, 3.4); HUD.drawStoryCaption(g2, n, t, w, 1330); }
-  for (const rr of TL.ROASTS) { const w = wordsOf(rr, 1.8); HUD.drawRoastCaption(g2, rr, t, w, 1530); }
-  for (const v of TL.VOICES) HUD.drawVoiceCaption(g2, v, t, r.voiceY?.[v.id] ?? 1400, v.id === 'crowd_world' ? 1.8 : v.id === 'judge_disbelief' ? 0.8 : 1.0);
+  for (const n of TL.NARRATION) { const w = wordsOf(n, 3.4); HUD.drawStoryCaption(g2, n, t, w, 1500); }
+  for (const rr of TL.ROASTS) { const w = wordsOf(rr, 1.8); HUD.drawRoastCaption(g2, rr, t, w, 1575); }
+  for (const v of TL.VOICES) HUD.drawVoiceCaption(g2, v, t, r.voiceY?.[v.id] ?? 1500, v.id === 'crowd_world' ? 1.8 : v.id === 'judge_disbelief' ? 0.8 : 1.0);
   if (t >= TL.BEATS.title) HUD.drawTitleCard(g2, t);
   if (r.flash) HUD.drawFlash(g2, r.flash);
   g2.restore();

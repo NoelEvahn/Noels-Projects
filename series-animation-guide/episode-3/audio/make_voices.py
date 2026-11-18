@@ -12,7 +12,12 @@ word = y0[int(V0 * SR):int(V1 * SR)]
 # 'Bombo' = cut at the dip before 'cl' (episode-1 analysis: ~2.224 s absolute) -> relative
 CUT = 2.224 - V0; bombo = fade(word[:int(CUT * SR)], 0.005, 0.02)
 word = fade(word, 0.005, 0.03)
-f0 = lambda y: float(np.nanmedian(librosa.pyin(y.astype(np.float32), fmin=250, fmax=900, sr=SR, frame_length=4096, hop_length=512)[0]))
+def f0(y):
+    v = []
+    for fl, hop in ((2048, 256), (4096, 512), (8192, 512)):
+        f = librosa.pyin(y.astype(np.float32), fmin=250, fmax=900, sr=SR, frame_length=fl, hop_length=hop)[0]; f = f[~np.isnan(f)]
+        if len(f): v.append(float(np.median(f)))
+    return float(np.mean(v))
 F_SRC = f0(word); print('source median f0', round(F_SRC, 1), 'Hz')
 def contour(y, r0, r1, pts=None):
     """time-varying resample: playback rate (= pitch ratio) goes r0->r1 (or via pts [(u,ratio)...]); output is n/mean(rate) long."""
@@ -37,9 +42,9 @@ def add(name, y, target_lufs=-20, **meta): VARS[name] = (norm_lufs(mono(y) if y.
 def calibrate(base, p0, p1, **kw):
     """adjust so the measured mean ratio lands within +-3% of the target (episode-1 note: 'bombo' reads ~4% high)."""
     tgt = (p0 + p1) / 2; comp = 1.0
-    for _ in range(2):
+    for _ in range(4):
         y = voice(base, p0, p1, comp=comp, **kw); m = measure(y)
-        if abs(m / tgt - 1) < 0.02: break
+        if abs(m / tgt - 1) < 0.012: break
         comp *= tgt / m
     return y, measure(y)
 rep = {}

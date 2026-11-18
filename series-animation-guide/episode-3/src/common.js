@@ -21,12 +21,20 @@ export const pops = (t, birth, dur = 0.35) => (t < birth ? 0 : easeOutBack(clamp
 
 // Heart-above-head manager: lovers = [{ch, born, size?}]; call update(t, camPos, scene)
 export function makeLovers(scene) {
-  const list = [];
+  const list = [], pc = new THREE.PerspectiveCamera(45, 1080 / 1920, 0.05, 2000);
   return {
     add(ch, born, size = 0.36, dy = 0.62) { const tag = makeHeartTag(); scene.add(tag); list.push({ ch, born, tag, size, dy }); return tag; },
-    update(t, camPos) {
+    // cam = {pos,target,fov}: hearts whose screen position falls in the counter/tag/chip band (top ~30%) are hidden so they never sit on the HUD
+    update(t, camPos, cam = null) {
       const v = new THREE.Vector3(), c = { position: new THREE.Vector3(...camPos) };
-      for (const l of list) { l.ch.head.getWorldPosition(v); const sc = l.ch.root.scale.y; l.tag.position.set(v.x, v.y + l.dy * sc + l.ch.R * sc * 0.8, v.z); l.tag.set(t - l.born, c, l.size * (l.ch.root.visible === false ? 0 : 1)); if (l.ch.root.visible === false) l.tag.visible = false; }
+      if (cam) { pc.fov = cam.fov ?? 45; pc.updateProjectionMatrix(); pc.position.set(...cam.pos); pc.lookAt(new THREE.Vector3(...cam.target)); pc.updateMatrixWorld(true); }
+      for (const l of list) {
+        l.ch.head.getWorldPosition(v); const sc = l.ch.root.scale.y; v.y += l.dy * sc + l.ch.R * sc * 0.8;
+        let hide = l.ch.root.visible === false;
+        if (cam && !hide) { const p = v.clone().project(pc); if (p.z < 1 && p.y > 0.36) hide = true; }
+        l.tag.position.copy(v); if (l.tag.parent) l.tag.parent.worldToLocal(l.tag.position);
+        l.tag.set(t - l.born, c, hide ? 0.0001 : l.size); if (hide) l.tag.visible = false;
+      }
     },
     count: (t) => list.filter((l) => t >= l.born && l.ch.root.visible !== false).length, list,
   };

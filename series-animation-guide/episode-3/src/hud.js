@@ -40,6 +40,7 @@ export function drawCounter(g, t, shakeAmp = 1) {
 import { TAGS } from './timeline.js';
 const tagTimes = TAGS.map((x) => x[0]);
 
+export function drawCatIcon(g, cx, cy, s = 1) { g.save(); g.translate(cx, cy); g.scale(s, s); g.fillStyle = '#f08a2e'; g.beginPath(); g.arc(0, 0, 17, 0, 7); g.fill(); g.beginPath(); g.moveTo(-16, -6); g.lineTo(-12, -24); g.lineTo(-3, -14); g.fill(); g.beginPath(); g.moveTo(16, -6); g.lineTo(12, -24); g.lineTo(3, -14); g.fill(); g.fillStyle = '#c4e05a'; for (const sd of [-1, 1]) { g.beginPath(); g.ellipse(sd * 7, -1, 4.5, 4, 0, 0, 7); g.fill(); } g.fillStyle = '#f08a2e'; g.fillRect(-12, -6, 24, 3.5); g.restore(); }
 // Gerald's chip: never changes while the counter explodes. Drawn under the tag line.
 export function drawGeraldChip(g, y = 470) {
   const w = 560, h = 46, x = W / 2 - w / 2;
@@ -54,7 +55,7 @@ export function drawGeraldChip(g, y = 470) {
 // ---------- captions ----------
 // words: [{t0, t1, w}] per narration/roast id loaded from audio build; falls back to even spacing.
 export function chunkWords(words, per = 3) { const out = []; for (let i = 0; i < words.length; i += per) out.push(words.slice(i, i + per)); return out; }
-export function drawStoryCaption(g, line, t, words, y = 1330) {
+export function drawStoryCaption(g, line, t, words, y = 1500) {
   if (!words || !words.length) return;
   const t0 = words[0].t0, t1 = words[words.length - 1].t1 + 0.45;
   if (t < t0 - 0.02 || t > t1) return;
@@ -72,7 +73,7 @@ export function drawStoryCaption(g, line, t, words, y = 1330) {
   let x = -total / 2; shown.forEach((w, i) => { const gi = words.indexOf(w); const key = keyIdx.has(gi); strokeFill(g, w.w.toUpperCase(), x, 0, key ? '#ffd21f' : '#ffffff', '#101014', Math.max(10, px * 0.12)); x += ws[i] + sp; });
   g.restore();
 }
-export function drawRoastCaption(g, line, t, words, y = 1520) {
+export function drawRoastCaption(g, line, t, words, y = 1575) {
   if (!words || !words.length) return;
   const t0 = words[0].t0, t1 = words[words.length - 1].t1 + 0.4;
   if (t < t0 - 0.02 || t > t1) return;
@@ -92,14 +93,14 @@ export function drawVoiceCaption(g, v, t, y = 1360, dur = 1.0) {
   const k = back(a / 0.14) * (a > dur - 0.2 ? 1 - ease((a - (dur - 0.2)) / 0.2) : 1);
   const sh = a < 0.5 ? (1 - a / 0.5) * 9 : 0; const ox = (noise(a * 60 + v.t) - 0.5) * sh, oy = (noise(a * 60 + v.t + 9) - 0.5) * sh;
   const big = v.id === 'crowd_world' ? 1.45 : 1;
-  const px = fitFont(g, v.cap, 'Anton, Impact, sans-serif', 170 * big, W - 2 * M - 20);
+  const px = fitFont(g, v.cap, 'Anton, Impact, sans-serif', 150 * big, W - 2 * M - 20);
   g.save(); g.translate(W / 2 + ox, y + oy); g.scale(k, k); g.rotate(-0.03); g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = `${px}px Anton, Impact, sans-serif`;
   strokeFill(g, v.cap, 0, 0, '#ffd21f', '#101014', Math.max(12, px * 0.13)); g.restore();
 }
 // "HE GAVE / ONE / HUG." text-only captions in the silence
 export function drawSilenceWords(g, t) {
   const items = [[77.6, 78.8, 'HE GAVE'], [78.8, 79.6, 'ONE'], [79.6, 80.0, 'HUG.']];
-  for (const [a, b, w] of items) { if (t >= a && t < b + (w === 'HUG.' ? 0.6 : 0)) { const k = back((t - a) / 0.22); g.save(); g.translate(W / 2, 1320); g.scale(k, k); g.textAlign = 'center'; g.textBaseline = 'middle'; const px = w === 'HUG.' ? 230 : 150; g.font = `${px}px Anton, Impact, sans-serif`; strokeFill(g, w, 0, 0, '#ffffff', '#101014', 16); g.restore(); } }
+  for (const [a, b, w] of items) { if (t >= a && t < b + (w === 'HUG.' ? 0.6 : 0)) { const k = back((t - a) / 0.22); g.save(); g.translate(W / 2, 1500); g.scale(k, k); g.textAlign = 'center'; g.textBaseline = 'middle'; const px = w === 'HUG.' ? 220 : 150; g.font = `${px}px Anton, Impact, sans-serif`; strokeFill(g, w, 0, 0, '#ffffff', '#101014', 16); g.restore(); } }
 }
 export function drawTitleCard(g, t) {
   const a = t - BEATS.title; if (a < 0) return; const k = back(a / 0.3);
@@ -111,7 +112,7 @@ export function drawTitleCard(g, t) {
   g.font = '800 44px Inter, sans-serif'; strokeFill(g, 'FINAL COUNT', 0, 1230, '#9be7ff', '#000', 8);
   const px = fitFont(g, '17,592,186,044,416', 'Anton, Impact, sans-serif', 130, W - 2 * M); g.font = `${px}px Anton, Impact, sans-serif`; strokeFill(g, '17,592,186,044,416', 0, 1330, '#ffd21f', '#101014', 14);
   g.font = '800 44px Inter, sans-serif'; strokeFill(g, 'PEOPLE WHO LOVE YOU', 0, 1425, '#fff', '#000', 8);
-  g.font = '800 38px Inter, sans-serif'; strokeFill(g, 'NOT COUNTED: 1 CAT', 0, 1500, '#ffb27a', '#000', 8);
+  g.font = '800 38px Inter, sans-serif'; strokeFill(g, 'NOT COUNTED: 1 CAT', 20, 1500, '#ffb27a', '#000', 8); drawCatIcon(g, -250, 1498, 1.5);
   g.restore();
 }
 export function drawBanner(g, b, age) { if (age < 0) return; const k = back(age / 0.25); g.save(); g.translate(W / 2, b.y ?? 1180); g.scale(k, k); g.rotate(b.rot ?? -0.02); g.textAlign = 'center'; g.textBaseline = 'middle'; const px = fitFont(g, b.text, 'Anton, Impact, sans-serif', b.size ?? 120, W - 2 * M - 20); g.font = `${px}px Anton, Impact, sans-serif`; strokeFill(g, b.text, 0, 0, b.fill ?? '#ffffff', '#101014', Math.max(10, px * 0.12)); g.restore(); }

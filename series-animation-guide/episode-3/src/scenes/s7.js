@@ -126,7 +126,7 @@ export default {
       place(g.kid, 1.9, 0, 1.4, 0.3); g.kid.pose(POSES.shock()); g.kid.face(FACES.shock);
       place(g.grandma, -3.6, 0, 1.2, 0.9); g.grandma.pose({ ...POSES.sitOn(tt, 0.34 / 0.92), aRs: 1.6 + Math.sin(tt * 7) * 0.3, aRe: 0.6, hR: 'open' }); g.grandma.face(FACES.love);
       S.gNb.forEach((n, i) => { n.pose(POSES.cheer(tt + i)); n.face(FACES.happy); });
-      S.gLovers.update(tt, [c.pos[0] - OFFG[0], c.pos[1], c.pos[2] - OFFG[2]]);
+      S.gLovers.update(tt, c.pos, c);
       S.gCat.pose(tt >= 88.4 ? { ...APOSES.lookAway(tt), hy: 0.9 } : APOSES.stand(tt)); S.gCat.face({ lid: 0.5 }); place(S.gCat, -7.1, 1.15 + 0.0, 1.6, 1.25); S.gCat.root.position.y = 1.15; S.gCat.pose(tt >= 88.4 ? { ...APOSES.loaf(tt), hy: 0.9 } : APOSES.loaf(tt)); S.gCat.root.position.y = 1.15 + 0.115;
       S.gd.update(tt);
     }
