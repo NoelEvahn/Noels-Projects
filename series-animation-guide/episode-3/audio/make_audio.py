@@ -108,7 +108,7 @@ mix = mus * g_duck[:, None] + voice + narr + sfx
 mix[int(77.6 * SR):int(80.0 * SR)] = mus[int(77.6 * SR):int(80.0 * SR)] * 0 + (sfx[int(77.6 * SR):int(80.0 * SR)] + narr[int(77.6 * SR):int(80.0 * SR)])
 # ------------------------------------------------------------------ master: -14 LUFS, limiter ceiling ~ -3.2 dB, then verify true peak after AAC elsewhere
 g0 = 10 ** ((-14 - lufs(mix)) / 20); best = None
-for extra in (2.5,):
+for extra in (1.0,):
     sf.write(os.path.join(AUD, 'premaster.wav'), mix * g0 * 10 ** (extra / 20), SR, subtype='FLOAT')
     subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', os.path.join(AUD, 'premaster.wav'), '-af', 'alimiter=limit=0.69:attack=3:release=60:level=disabled', '-ar', '48000', os.path.join(AUD, 'final_mix.wav')], check=True)
     fm, _ = sf.read(os.path.join(AUD, 'final_mix.wav')); L = lufs(fm); print('extra gain', extra, 'dB -> LUFS', round(L, 2), 'peak', round(peak_db(fm), 2))
