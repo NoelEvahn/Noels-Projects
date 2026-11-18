@@ -1,0 +1,114 @@
+{
+ "preset": "high",
+ "rows": [
+  {
+   "name": "V08_0800",
+   "ok": true,
+   "ms": 254632,
+   "mean": 120.2,
+   "variance": 3460,
+   "colors": 1088,
+   "calls": 174,
+   "tris": 376770,
+   "shadowCalls": 94,
+   "programs": 41
+  },
+  {
+   "name": "V03_0800",
+   "ok": true,
+   "ms": 589263,
+   "mean": 76.8,
+   "variance": 3491.3,
+   "colors": 930,
+   "calls": 295,
+   "tris": 388152,
+   "shadowCalls": 126,
+   "programs": 41
+  },
+  {
+   "name": "V10_0800",
+   "ok": true,
+   "ms": 319535,
+   "mean": 140,
+   "variance": 3881.3,
+   "colors": 1107,
+   "calls": 197,
+   "tris": 284857,
+   "shadowCalls": 110,
+   "programs": 43
+  },
+  {
+   "name": "V01_0800",
+   "ok": true,
+   "ms": 609676,
+   "mean": 97.1,
+   "variance": 2507,
+   "colors": 1436,
+   "calls": 292,
+   "tris": 436199,
+   "shadowCalls": 125,
+   "programs": 45
+  },
+  {
+   "name": "V12_0800",
+   "ok": true,
+   "ms": 219570,
+   "mean": 179.2,
+   "variance": 945.1,
+   "colors": 1099,
+   "calls": 67,
+   "tris": 236357,
+   "shadowCalls": 82,
+   "programs": 42
+  },
+  {
+   "name": "V16_0800",
+   "ok": true,
+   "ms": 266209,
+   "mean": 81.6,
+   "variance": 2338.6,
+   "colors": 1149,
+   "calls": 140,
+   "tris": 592581,
+   "shadowCalls": 100,
+   "programs": 46
+  },
+  {
+   "name": "V13_0800",
+   "ok": true,
+   "ms": 272354,
+   "mean": 110.3,
+   "variance": 3923.1,
+   "colors": 1095,
+   "calls": 196,
+   "tris": 531623,
+   "shadowCalls": 88,
+   "programs": 46
+  },
+  {
+   "name": "D1_0800",
+   "ok": true,
+   "ms": 183103,
+   "mean": 66.2,
+   "variance": 2340.9,
+   "colors": 923,
+   "calls": 84,
+   "tris": 314031,
+   "shadowCalls": 83,
+   "programs": 44
+  },
+  {
+   "name": "D2_0800",
+   "ok": true,
+   "ms": 133724,
+   "mean": 74.7,
+   "variance": 3515.6,
+   "colors": 997,
+   "calls": 259,
+   "tris": 478536,
+   "shadowCalls": 114,
+   "programs": 47
+  }
+ ],
+ "errors": []
+}

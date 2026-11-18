@@ -277,7 +277,7 @@ export function createVegetation({ scene, renderer }) {
     m.count = 0; m.visible = false; m.frustumCulled = false; m.castShadow = false; m.receiveShadow = true; m.matrixAutoUpdate = false; m.name = 'veg.gc.' + d.name; group.add(m); gcMeshes.push(m);
   }
   // per-instance tint palette (multiplies the card albedo; linear): lush, fresh, yellow-green, dry straw, dark, sun-bleached, lush-2, lush-3
-  const TINTS = [[0.82, 1.0, 0.72], [0.95, 1.1, 0.8], [1.12, 1.12, 0.74], [1.45, 1.22, 0.78], [0.66, 0.84, 0.62], [1.6, 1.35, 0.95], [0.74, 0.9, 0.66], [1.0, 0.98, 0.7]];
+  const TINTS = [[0.62, 0.78, 0.56], [0.72, 0.86, 0.6], [0.9, 0.9, 0.58], [1.0, 0.86, 0.55], [0.5, 0.66, 0.48], [1.12, 0.96, 0.62], [0.74, 0.9, 0.66], [1.0, 0.98, 0.7]];
   const gcCache = new Map(); // chunk key -> {n, x: Uint16 (1/655 m), z, y: Float32, m: Uint8 [type, scale, rot, tint, rank] * n}
   const gcPending = new Set();
   const wts = new Float32Array(8);
@@ -315,11 +315,11 @@ export function createVegetation({ scene, renderer }) {
             const dry = reg === 'ocean' ? 0.55 : (wts[6] > 0.2 ? 0.45 : 0.06 + 0.18 * dryN);
             if (patch > 0.72) { if (h3 > 0.985) type = T_ROCK; }
             else if (flowerP > 0.6 && h3 < 0.32) type = lawn ? T_DAISY : T_FLOWER;
-            else if (h3 < 0.98 * Math.min(1, 0.5 + wts[0]) * (0.6 + 0.8 * clump)) { type = h2 < 0.05 ? T_CLOVER : (lawn ? T_LAWN : T_GRASS); tint = h4 < dry ? 3 + ((h2 * 40 | 0) & 1) * 2 : ((h4 * 255 | 0) % 3); if (h4 > 0.93) tint = 2; }
+            else if (h3 < 0.98 * Math.min(1, 0.5 + wts[0]) * (0.85 + 0.5 * clump)) { type = h2 < 0.05 ? T_CLOVER : (lawn ? T_LAWN : T_GRASS); tint = h4 < dry ? 3 + ((h2 * 40 | 0) & 1) * 2 : ((h4 * 255 | 0) % 3); if (h4 > 0.93) tint = 2; }
             else if (h3 > 0.993) type = T_ROCK;
             else if (h3 < 0.012 + 0.012 * flowerP) type = lawn ? T_DAISY : T_FLOWER;
           } else if (wts[3] > 0.45 && (reg === 'ocean' || reg === 'city' || reg === 'lake')) { // sand: marram clumps on the dune side, sparse straw tufts and shells
-            if (y > 2.0 && clumpM > 0.46 && h3 < 0.85 * (clumpM - 0.3) * 2.2) { type = T_MARRAM; tint = h4 < 0.5 ? 6 : 4; }
+            if (y > 2.0 && clumpM > 0.46 && h3 < 0.85 * (clumpM - 0.3) * 2.2) { type = T_MARRAM; tint = h4 < 0.5 ? 6 : 7; }
             else if (y > 1.8 && h3 > 0.9 && h3 < 0.935) { type = T_LAWN; tint = 5; }
             else if (h3 > 0.985) type = T_ROCK;
           } else if (wts[6] > 0.25 && h3 < 0.14 * wts[6]) { type = T_LAWN; tint = h4 < 0.6 ? 5 : 3; } // gravel and dry ground: straw tufts

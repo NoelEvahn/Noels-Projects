@@ -75,10 +75,11 @@ const DETAIL_MAIN = () => /* glsl */`
         vec2 dd = abs(lc - (o0 + sz * 0.5)) - sz * 0.5; float inside = 1.0 - step(0.0, max(dd.x * 3.6, dd.y * 8.5));
         pat = inside; pedge = inside * (1.0 - step(0.09, -max(dd.x * 3.6, dd.y * 8.5)));
       }
-      float cm = smoothstep(0.52, 0.66, nzr(rp * 0.0042 + 0.21));
-      float cn = nzr(rp * vec2(0.012, 0.016) + 0.05); float ridge = abs(cn - 0.5);
-      float crack = (1.0 - smoothstep(0.0, 0.011 + fwidth(cn) * 1.2, ridge)) * cm;
-      float cn2 = nzg(rp * 0.05 + 0.4); float crack2 = (1.0 - smoothstep(0.0, 0.014 + fwidth(cn2), abs(cn2 - 0.5))) * smoothstep(0.62, 0.78, nzr(rp * 0.009 + 0.6)) * 0.8;
+      float cm = smoothstep(0.58, 0.7, nzr(rp * 0.0042 + 0.21));
+      vec2 jit = (vec2(nzr(rp * 0.11 + 0.3), nzg(rp * 0.13 + 0.8)) - 0.5) * 0.9 + (vec2(nzr(rp * 0.37), nzg(rp * 0.41 + 0.2)) - 0.5) * 0.25; // wobble: cracks are jagged, not smooth contours
+      float cn = nzr((rp + jit) * vec2(0.011, 0.02) + 0.05); float ridge = abs(cn - 0.5);
+      float crack = (1.0 - smoothstep(0.0, 0.0055 + fwidth(cn) * 1.2, ridge)) * cm;
+      float cn2 = nzg((rp + jit * 0.5) * 0.05 + 0.4); float crack2 = (1.0 - smoothstep(0.0, 0.008 + fwidth(cn2), abs(cn2 - 0.5))) * smoothstep(0.66, 0.8, nzr(rp * 0.009 + 0.6)) * 0.8;
       float seam = (1.0 - smoothstep(0.0, 0.03, abs(fract(rp.x / 3.6 + 0.5) - 0.5) * 3.6)) * 0.35; // longitudinal tar seams between paving lanes
       float age = nzg(rp * 0.021 + 0.7) * 0.5 + nzr(rp * 0.008 + 0.2) * 0.5;
       albedo *= (0.86 + 0.3 * age) * (1.0 - 0.72 * max(crack, crack2)) * (1.0 - 0.4 * seam);
