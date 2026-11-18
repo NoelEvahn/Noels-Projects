@@ -42,6 +42,7 @@ export function audience(seatPos, { seed = 5, fill = 0.9, palette = [0xe76f51, 0
   const headI = new THREE.InstancedMesh(new THREE.SphereGeometry(0.22, 14, 10), new THREE.MeshStandardMaterial({ roughness: 0.6 }), n);
   const armI = new THREE.InstancedMesh(new THREE.CapsuleGeometry(0.055, 0.28, 3, 8), new THREE.MeshStandardMaterial({ roughness: 0.7 }), n * 2);
   const hairI = new THREE.InstancedMesh(new THREE.SphereGeometry(0.235, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.5), new THREE.MeshStandardMaterial({ roughness: 0.7 }), n);
+  const eyeW = new THREE.InstancedMesh(new THREE.SphereGeometry(0.055, 8, 6), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 }), n * 2), eyeB = new THREE.InstancedMesh(new THREE.SphereGeometry(0.03, 6, 5), new THREE.MeshStandardMaterial({ color: 0x15151c }), n * 2), mouthI = new THREE.InstancedMesh(new THREE.SphereGeometry(0.05, 8, 6), new THREE.MeshStandardMaterial({ color: 0x4a1218 }), n);
   const col = new THREE.Color(); const S = [];
   idx.forEach((si, k) => { const c1 = r.pick(palette), sk = r.pick(skins), hc = r.pick([0x15100c, 0x3a2a1a, 0x6a4a28, 0xc9a24a, 0x8a8a92, 0x15100c]); col.set(c1); bodyI.setColorAt(k, col); col.set(sk); headI.setColorAt(k, col); armI.setColorAt(k * 2, col); armI.setColorAt(k * 2 + 1, col); col.set(hc); hairI.setColorAt(k, col); S.push({ si, ph: r() * 6.28, sp: r.range(0.8, 1.2), s: r.range(0.9, 1.1), bald: r() < 0.1 }); });
   const d = new THREE.Object3D();
@@ -51,12 +52,14 @@ export function audience(seatPos, { seed = 5, fill = 0.9, palette = [0xe76f51, 0
       d.rotation.set(0, 0, 0); d.scale.setScalar(s.s);
       d.position.set(x, y + 0.85 + up * 0.08, z); d.updateMatrix(); bodyI.setMatrixAt(k, d.matrix);
       d.position.set(x, y + 1.28 + up * 0.1, z); d.updateMatrix(); headI.setMatrixAt(k, d.matrix);
-      d.position.set(x, y + 1.3 + up * 0.1, z - 0.01); d.rotation.set(-0.25, 0, 0); d.scale.set(s.s, s.bald ? 0.0001 : s.s, s.s); d.updateMatrix(); hairI.setMatrixAt(k, d.matrix);
+      d.position.set(x, y + 1.37 + up * 0.1, z + 0.02); d.rotation.set(-0.7, 0, 0); d.scale.set(s.s, s.bald ? 0.0001 : s.s, s.s); d.updateMatrix(); hairI.setMatrixAt(k, d.matrix);
+      for (const sd of [-1, 1]) { d.rotation.set(0, 0, 0); d.scale.setScalar(s.s); d.position.set(x + sd * 0.09 * s.s, y + 1.27 + up * 0.1, z - 0.2 * s.s); d.updateMatrix(); eyeW.setMatrixAt(k * 2 + (sd > 0 ? 1 : 0), d.matrix); d.position.z -= 0.035 * s.s; d.updateMatrix(); eyeB.setMatrixAt(k * 2 + (sd > 0 ? 1 : 0), d.matrix); }
+      d.rotation.set(0, 0, 0); d.scale.set(s.s * (1 + cheer * 0.8), s.s * (0.5 + cheer * 1.4), s.s * 0.5); d.position.set(x, y + 1.15 + up * 0.1, z - 0.2 * s.s); d.updateMatrix(); mouthI.setMatrixAt(k, d.matrix);
       for (const sd of [-1, 1]) { d.scale.setScalar(s.s); d.position.set(x + sd * 0.27, y + 1.0 + up * 0.35, z + 0.02); d.rotation.set(0, 0, -sd * (0.15 + up * 2.6) * 0.5 - 0.0 * sd); d.updateMatrix(); armI.setMatrixAt(k * 2 + (sd > 0 ? 1 : 0), d.matrix); }
     });
-    for (const m of [bodyI, headI, armI, hairI]) m.instanceMatrix.needsUpdate = true;
+    for (const m of [bodyI, headI, armI, hairI, eyeW, eyeB, mouthI]) m.instanceMatrix.needsUpdate = true;
   };
-  g.add(bodyI, headI, armI, hairI); g.count = n; g.update(0);
+  g.add(bodyI, headI, armI, hairI, eyeW, eyeB, mouthI); g.count = n; g.update(0);
   return g;
 }
 export function judgesTable(w = 6) { const g = new THREE.Group(); add(g, rbox(w, 0.08, 1.0, 0.04), mat(0x2a1a14, { rough: 0.35 }), [0, 0.88, 0]); add(g, rbox(w, 0.85, 0.12, 0.03), mat(0x3a2418, { rough: 0.45 }), [0, 0.42, 0.45]); add(g, box(w + 0.1, 0.05, 1.05), mat(C.gold, { metal: 0.8 }), [0, 0.9, 0]); return g; }

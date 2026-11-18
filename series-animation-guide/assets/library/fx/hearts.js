@@ -40,7 +40,7 @@ export function makeHeartTag(color = 0xff3f7f) {
     g.visible = true;
     const k = age < 0.35 ? (Math.sin(Math.min(1, age / 0.35) * Math.PI * 0.9) * 0.3 + Math.min(1, age / 0.35)) : 1;
     g.scale.setScalar(size * k);
-    g.position.y = Math.sin(age * 4) * 0.04;
+    h.position.y = Math.sin(age * 4) * 0.04;
     if (cam) { const p = new THREE.Vector3(); g.getWorldPosition(p); g.rotation.y = Math.atan2(cam.position.x - p.x, cam.position.z - p.z) - (g.parent ? g.parent.rotation.y : 0); }
     h.rotation.z = Math.sin(age * 3) * 0.12;
   };

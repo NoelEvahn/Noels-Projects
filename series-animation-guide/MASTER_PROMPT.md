@@ -1,4 +1,4 @@
-# VIDEO SERIES MASTER PROMPT v2 — "What if every X, Y doubled?"
+# VIDEO SERIES MASTER PROMPT v3 — "What if every X, Y doubled?"
 
 Fill in the slots, attach the files, and send.
 
@@ -13,23 +13,27 @@ SLOTS (fill these in)
 4. CATCHPHRASE:  the only word(s) characters may say (attach the sample)
                  + PITCH (default: two registers, 1.10x and 1.15x the sample)
 5. MUSIC:        attached track name
-6. EXTRA GAGS:   optional
+6. CAT GAG:     Gerald's bit for this episode (new location + new unbothered action in every scene,
+                 his own stat for the HUD chip, and the final callback). See "Gerald" below.
+7. EXTRA GAGS:   optional
 
 ATTACHED: (a) catchphrase sound effect, (b) music track, (c) optional look reference image
           (a contact sheet of a previous episode).
-Attach the audio again in every new session; files from older sessions can't be reached.
+The audio and look reference live in `series-animation-guide/assets/` (bomboclat.mp3, charlies_inferno.mp3, look_reference.jpg);
+use them unless new files are attached.
 ```
 
 ## Instructions to Claude
 
 ### Workflow
-1. Read this prompt and any attached files. Check the toolchain in the session scratchpad. Never add anything to the repository.
-2. Plan the episode yourself, then write a detailed brief: beat grid, exact counter maths, a shot list of at least 110 shots, the voice table, the narration, a defect checklist, and the report format. Give the executor starter character code (the episode-1/2 rig: hero, mum, dad, kid, grandma and the other presets) and the look reference.
-3. A **Sonnet 5.5 high-effort executor** subagent builds the whole thing. It must provide partial re-render tools (frame ranges, preview scale) so fixes stay cheap.
-4. When it finishes, check the format, the counter and the contact sheets yourself.
-5. Then run an **Opus 5.5 medium-effort advisor** subagent. It only reviews and advises and never writes code.
-6. Send the user v1 and the review straight away. Then do one fix round with the executor, check it again and send v2. Keep v1 as a backup.
-7. Start immediately. Ask questions only if a slot is missing.
+1. **Check the asset library first.** Read `series-animation-guide/assets/library/INDEX.md` (characters, animals, props, sets, FX, hand/hold/sit APIs, screenshots) and `assets/library/cat/CAT_BIBLE.md` (Gerald the recurring cat and his episode log). Import what exists instead of rebuilding it. Anything new you build (character, prop, set, FX) goes into the library with code **and** a screenshot (add it to `registry.js`, regenerate screenshots, update `INDEX.md`). The hero and family never change.
+2. Read this prompt and any attached files. Check the toolchain in the session scratchpad (node deps and Python venv live outside the repo). The repo may only receive content for `series-animation-guide/` (the library, episode folders, this prompt, the README); work directly on `main`, per the repository's `CLAUDE.md`. Never add anything else, and never name anything after the repository.
+3. Plan the episode yourself, then write a detailed brief (`episode-N/BRIEF.md`): beat grid, exact counter maths, a shot list of at least 110 shots, the voice table, the narration, the Gerald plan, a defect checklist, and the report format. Put every spoken event (story narration, Gerald roasts, catchphrase moments) on one timeline table on the 0.4 s grid first and check that nothing overlaps.
+4. A **Sonnet 5.5 high-effort executor** subagent builds the whole thing (when the user says "just two people", the orchestrator builds it itself and the Opus advisor only reviews). It must provide partial re-render tools (frame ranges, preview scale) so fixes stay cheap.
+5. When it finishes, check the format, the counter and the contact sheets yourself.
+6. Then run an **Opus 5.5 medium-effort advisor** subagent. It only reviews and advises and never writes code.
+7. Send the user v1 and the review straight away. Then do one fix round with the executor, check it again and send v2. Keep v1 as a backup.
+8. Start immediately. Ask questions only if a slot is missing.
 
 ### Format
 - Vertical 9:16, 1080×1920, 30 fps, H.264 High + AAC-LC stereo 48 kHz.
@@ -47,7 +51,7 @@ The seven-step scale is fixed. What happens inside each step must be new for eve
 7. **Silence, then the ENDING slot, then a cosmic pull-back** (75.2–90 s): everyone reacts, he comes home, delivers the catchphrase deadpan, then a freeze-frame title card with the final value.
 
 Rules:
-- Max **2 recurring tropes** per episode (reporter, government/bank room, fisherman, astronaut, house exterior, a crowd field of the cast). Any trope that does return must look and play differently: a new angle, a new gag, a new set.
+- Max **2 recurring tropes** per episode (reporter, government/bank room, fisherman, astronaut, house exterior, a crowd field of the cast; Gerald does not count). Any trope that does return must look and play differently: a new angle, a new gag, a new set.
 - Every location must be recognisable within 0.3 s and must suit the TOPIC. The topic's props drive the gags; episode 2 went pennies → avalanche → bills → briefcases → SOLD tags.
 
 ### Shot density — 1.5× episode 2
@@ -58,7 +62,7 @@ Rules:
 - Key props must first appear in a **wide or establishing shot** before their close-ups. In v1 of ep2 the auction duck was never shown.
 
 ### Detail level — keep episode-2 quality (the user said the detail was really good)
-- Fully dressed sets: no plain boxes or walls.
+- Fully dressed sets: no plain boxes or walls. Use the library's sets and characters; held items sit in the palm (`hold()`), seated characters sit on a seat (`POSES.sitOn`), nothing clips.
 - Characters with big eyes, brows, mouths and exaggerated reactions.
 - Instanced props in large numbers (coins, bills, debris, crowds).
 - Per-location palettes, soft shadows, a warm key light and ACES tone mapping.
@@ -83,6 +87,12 @@ Rules:
 - Give each speaker a different delivery: excited, disbelief, confused, deadpan, broadcast or radio, small group, big crowd, whole-world crowd.
 - **About 14 voiced lines.** Every other reaction is silent open-mouth shock with no caption.
 - Each voiced line gets a punch-zoom, mouth movement synced to the audio, and a big yellow caption.
+
+### Gerald — the recurring cat (cast, not a trope)
+- Gerald (`ANIMALS.gerald`, orange tabby, half-lidded eyes) appears in **every scene** of every episode, shown in a wide/establishing shot first, doing something unbothered that suits the location. He is never counted, never impressed, never speaks or meows (no audio from him).
+- **Narrator roasts:** 4–7 extra deadpan lines of 2 s or less ("Gerald remained unconvinced."), one per appearance, mixed like the narration, captions in pink-orange with the key word yellow. Never repeat a roast from an earlier episode; log every line and gag in `cat/CAT_BIBLE.md`. If they will not fit the speech timeline, cut roasts (to 4–5), never the story lines. Keep roasts out of the scene-7 silence window.
+- **HUD chip:** a small chip near the counter shows Gerald's own stat for the topic (ep3: `GERALD · LOVES YOU: NO`); it never changes. It stays inside the 60 px side margins and out of the top 110 px / bottom 300 px.
+- **Final callback:** Gerald is in the closing room and in the title card; he is the holdout. Build callbacks to earlier episodes. Family-safe: he is never harmed, he is always the calm one.
 
 ### Narrator
 - Five short deadpan lines, in scenes 1, 2, 4, 5 and 6: the premise first, then dry understatements.

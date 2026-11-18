@@ -58,10 +58,12 @@ export function drawHeroFace(c, cx, cy, s, { mouth = 0.6, heartEyes = false } = 
 export function billboard(w = 6, h = 3.4, { label = 'THAT GUY', counter = '♥ 8,589,934,592', bg = '#ff3f7f' } = {}) {
   const g = new THREE.Group();
   add(g, rbox(w + 0.5, h + 0.5, 0.35, 0.1), mat(0x20222c, { metal: 0.4 }), [0, 0, 0]);
-  const tex = canvasTex(1024, Math.round(1024 * h / w), (c, ww, hh) => { const gr = c.createLinearGradient(0, 0, ww, hh); gr.addColorStop(0, bg); gr.addColorStop(1, '#ffb3d1'); c.fillStyle = gr; c.fillRect(0, 0, ww, hh); drawHeroFace(c, ww * 0.3, hh * 0.5, hh * 0.9, { heartEyes: true }); c.fillStyle = '#fff'; c.strokeStyle = '#7a0f3a'; c.lineWidth = 10; c.textAlign = 'center'; c.font = `${hh * 0.2}px Anton, Impact, sans-serif`; c.strokeText(label, ww * 0.7, hh * 0.42); c.fillText(label, ww * 0.7, hh * 0.42); c.font = `${hh * 0.1}px Inter, sans-serif`; c.lineWidth = 6; c.strokeText(counter, ww * 0.7, hh * 0.7); c.fillText(counter, ww * 0.7, hh * 0.7); });
+  const draw = (c, ww, hh, lab, cnt) => { const gr = c.createLinearGradient(0, 0, ww, hh); gr.addColorStop(0, bg); gr.addColorStop(1, '#ffb3d1'); c.fillStyle = gr; c.fillRect(0, 0, ww, hh); drawHeroFace(c, ww * 0.3, hh * 0.5, hh * 0.9, { heartEyes: true }); c.fillStyle = '#fff'; c.strokeStyle = '#7a0f3a'; c.lineWidth = 10; c.textAlign = 'center'; c.font = `${hh * 0.2}px Anton, Impact, sans-serif`; c.strokeText(lab, ww * 0.7, hh * 0.42); c.fillText(lab, ww * 0.7, hh * 0.42); c.font = `${hh * 0.1}px Inter, sans-serif`; c.lineWidth = 6; const px = Math.min(hh * 0.1, (ww * 0.5) / (cnt.length * 0.62)); c.font = `800 ${px}px Inter, sans-serif`; c.strokeText(cnt, ww * 0.7, hh * 0.7); c.fillText(cnt, ww * 0.7, hh * 0.7); };
+  const tex = canvasTex(1024, Math.round(1024 * h / w), (c, ww, hh) => draw(c, ww, hh, label, counter));
   const sc = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false })); sc.position.z = 0.19; g.add(sc);
   add(g, cyl(0.12, 0.12, 4, 8), mat(0x20222c), [-w * 0.3, -h / 2 - 2, -0.1]); add(g, cyl(0.12, 0.12, 4, 8), mat(0x20222c), [w * 0.3, -h / 2 - 2, -0.1]);
-  g.screen = sc; return g;
+  g.screen = sc; g.redraw = (cnt, lab = label) => { const cv = tex.image, c = cv.getContext('2d'); draw(c, cv.width, cv.height, lab, cnt); tex.needsUpdate = true; };
+  return g;
 }
 // Instanced skyline of boxy buildings with lit windows (faces +Z). Returns Group.
 export function skyline({ n = 14, spread = 40, hmin = 6, hmax = 28, seed = 1, palette = [0x4a5a7a, 0x5a6a8a, 0x3a4a6a, 0x6a7a9a, 0x7a6a8a] } = {}) {
