@@ -24,11 +24,11 @@ Attach the audio again in every new session; files from older sessions can't be 
 
 ### Workflow
 1. Read this prompt and any attached files. Check the toolchain in the session scratchpad. Never add anything to the repository.
-2. Plan the episode yourself, then write a detailed brief: beat grid, exact counter maths, a shot list of at least 110 shots, the voice table, the narration, a defect checklist, and the report format. Give the builder starter character code (the episode-1/2 rig: hero, mum, dad, kid, grandma and the other presets) and the look reference.
-3. An **Opus 5.5 high-effort subagent** builds the whole thing. It must provide partial re-render tools (frame ranges, preview scale) so fixes stay cheap.
+2. Plan the episode yourself, then write a detailed brief: beat grid, exact counter maths, a shot list of at least 110 shots, the voice table, the narration, a defect checklist, and the report format. Give the executor starter character code (the episode-1/2 rig: hero, mum, dad, kid, grandma and the other presets) and the look reference.
+3. A **Sonnet 5.5 high-effort executor** subagent builds the whole thing. It must provide partial re-render tools (frame ranges, preview scale) so fixes stay cheap.
 4. When it finishes, check the format, the counter and the contact sheets yourself.
-5. Then run a **Sonnet 5.5 high-effort review subagent**. It only reviews and never writes code.
-6. Send the user v1 and the review straight away. Then do one fix round with the builder, check it again and send v2. Keep v1 as a backup.
+5. Then run an **Opus 5.5 medium-effort advisor** subagent. It only reviews and advises and never writes code.
+6. Send the user v1 and the review straight away. Then do one fix round with the executor, check it again and send v2. Keep v1 as a backup.
 7. Start immediately. Ask questions only if a slot is missing.
 
 ### Format
@@ -107,7 +107,7 @@ Rules:
 
 Sound effects must never bury speech.
 
-### Defect checklist (from episodes 1–2 — the builder AND the reviewer check every item)
+### Defect checklist (from episodes 1–2 — the executor AND the advisor check every item)
 - **Camera and framing:**
   - Cameras inside walls or characters.
   - Heads, faces or eyes under the counter or tag line.
