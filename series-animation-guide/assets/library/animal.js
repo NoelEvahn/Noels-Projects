@@ -2,6 +2,7 @@
 //   const g = makeAnimal('cat', ANIMALS.gerald); g.pose(APOSES.loaf(t)); g.face({lid:0.45});
 import * as THREE from 'three';
 import { mat, add, sph, cyl, cap, cone, tor, canvasTex, C } from './util.js';
+import { buildCat } from './cat.js';
 
 const SPEC = {
   cat:    { bodyR: 0.27, bodyLen: 0.2, headR: 0.27, legH: 0.2, legR: 0.07, tail: { n: 6, len: 0.13, r: 0.05 }, ear: 'tri' },
@@ -27,6 +28,7 @@ function furTexture(o) {
 
 export function makeAnimal(kind = 'cat', o = {}) {
   const sp = SPEC[kind]; o = { ...ANIMALS[kind === 'cat' ? 'gerald' : kind], ...o };
+  if (kind === 'cat') return buildCat(o);   // Gerald v2 (cat.js)
   const S = sp, root = new THREE.Group(), pivot = new THREE.Group(); root.add(pivot);
   const fur = mat(o.fur, { rough: 0.85 }), furMap = mat(0xffffff, { rough: 0.85, map: furTexture(o) }), belly = mat(o.belly ?? o.fur, { rough: 0.85 });
   const body = new THREE.Group(); body.position.y = S.legH + S.bodyR * 0.8; pivot.add(body);
@@ -108,7 +110,7 @@ export function makeAnimal(kind = 'cat', o = {}) {
 
 // Drop the animal so its lowest point rests on y=0 of its root (fixes hovering in sit/loaf/sleep on fences, seats, registers).
 const _box = new THREE.Box3(), _v = new THREE.Vector3();
-function plantA(a) {
+export function plantA(a) {
   a.pivot.position.y = 0; a.root.updateMatrixWorld(true);
   _box.makeEmpty(); const tailRoot = a.tail[0]?.parent; a.pivot.traverse((o) => { let q = o; while (q && q !== a.pivot) { if (q === tailRoot) return; q = q.parent; } if (o.isMesh && o.visible) { o.geometry.boundingBox ?? o.geometry.computeBoundingBox(); _box.union(o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld)); } });
   a.root.getWorldPosition(_v); const sc = a.root.getWorldScale(new THREE.Vector3()).y;
@@ -116,7 +118,7 @@ function plantA(a) {
 }
 // Secondary motion layered on every pose: breathing, slow head drift, tail sway, ear twitches, blinks. Pure functions of t.
 const life = (t, k = 1) => ({ squash: 1 + Math.sin(t * 2.4) * 0.012 * k, hy: Math.sin(t * 0.37) * 0.12 * k + Math.sin(t * 0.91) * 0.04 * k, hz: Math.sin(t * 0.53) * 0.05 * k, tailWave: 0.22 * k, tailT: t, _t: t });
-const AJ = { bob: 0, pitch: 0, hx: 0, hy: 0, hz: 0, neckX: 0, legFL: 0, legFR: 0, legBL: 0, legBR: 0, tuck: 0, tailBase: 0.6, tailCurl: 0.15, tailWave: 0, tailT: 0, squash: 1, yaw: 0, roll: 0 };
+export const AJ = { bob: 0, pitch: 0, hx: 0, hy: 0, hz: 0, neckX: 0, legFL: 0, legFR: 0, legBL: 0, legBR: 0, tuck: 0, tailBase: 0.6, tailCurl: 0.15, tailWave: 0, tailT: 0, squash: 1, yaw: 0, roll: 0 };
 function applyAPose(a, p) {
   const j = { ...AJ, ...p }, S = a.S;
   a.pivot.position.y = j.bob; a.pivot.rotation.y = j.yaw;
@@ -147,7 +149,7 @@ export const APOSES = {
 // every pose gets the life layer (pose values win for keys they set, squash/hy multiply in)
 for (const [k, f] of Object.entries(APOSES)) APOSES[k] = (t = 0, ...rest) => { const p = f(t, ...rest), l = life(t, k === 'sleep' ? 0.4 : 1); return { ...l, ...p, squash: (p.squash ?? 1) * l.squash, hy: (p.hy ?? 0) + l.hy, hz: (p.hz ?? 0) + l.hz, tailWave: Math.max(p.tailWave ?? 0, l.tailWave), tailT: p.tailT ?? t, _t: t }; };
 const AFD = { lid: 0.0, look: [0, 0], pupil: 1, open: 0 };
-function applyAFace(a, f) {
+export function applyAFace(a, f) {
   const o = { ...AFD, lid: a.opts.lid ?? 0, ...f }, R = a.S.headR;
   const bp = ((a._t ?? 0) + (a.opts.seed ?? 0) * 0.7) % 3.7; if (f.blink !== false && bp < 0.16) o.lid = Math.max(o.lid, 1 - Math.abs(bp - 0.08) / 0.08 * 0.6);   // slow, lazy blink
   for (const e of a.eyes) { e.lp.rotation.x = -Math.PI / 2 + o.lid * Math.PI * 1.02; e.pg.position.x = o.look[0] * R * 0.1; e.pg.position.y = o.look[1] * R * 0.1; e.pupil.scale.x = (a.kind === 'cat' ? 0.55 : 1) * o.pupil; e.pupil.scale.y = (a.kind === 'cat' ? 1.15 : 1) * o.pupil; }

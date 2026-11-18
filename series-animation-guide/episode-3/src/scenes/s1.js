@@ -66,7 +66,7 @@ export default {
     ];
     // slower edit: ~2 s shots, each holding the camera of the gag / voiced line it covers
     S.shots = regroup(S.shots, [[0, 2.0, 1.2], [2.0, 4.0, 0.4], [4.0, 5.6, 4.8], [5.6, 7.2, 5.6], [7.2, 9.6, 8.0]]);
-    S.shots[2] = { ...S.shots[2], a: cam([-4.9, 1.45, 1.75], [-7.5, 1.5, 1.6], 40), b: cam([-5.2, 1.45, 1.7], [-7.5, 1.5, 1.6], 38) };   // Gerald on the fence: camera just above the rail so he is clearly sitting on it
+    S.shots[2] = { ...S.shots[2], a: cam([-5.0, 1.75, 1.7], [-7.5, 1.32, 1.6], 34), b: cam([-5.3, 1.72, 1.65], [-7.5, 1.34, 1.6], 32) };   // Gerald on the fence: camera just above the rail so he is clearly sitting on it
     return S;
   },
   frame(t, S, ctx) {

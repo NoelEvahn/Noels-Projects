@@ -34,3 +34,12 @@ Tag figures (≈8.3B population, ≈117B people ever lived) were not web-checked
 * **Pacing:** `regroup()` in `src/common.js` merges the old 133 cuts into 47 (about 2 s each); each held shot reuses the camera of the gag or voiced line it covers. Cut lists sit right after each scene's `S.shots`.
 * **Theatre rebuilt** (raked rows, aisles, seated audience facing the stage). Skyline and plazas remodelled with geometry. **Rule: never add textures.**
 * Audio not rebuilt yet: the preview plays v1's soundtrack (timeline unchanged, so it still lines up).
+
+## The story, scene by scene (every scene = the next, bigger ring of people who love the hero)
+1. **Garden BBQ (0–9.6 s, 1 → 16):** grandma falls for him, then the family, then the neighbours over the fences. He is confused. Gerald, on the fence, is not.
+2. **The street (9.6–20.8 s, 32 → 1,024):** every house on the street comes out with hearts; grandma is lost; the crowd grows and he runs.
+3. **The theatre (20.8–32 s, 2,048 → 32,768):** he ducks into a theatre, wanders onto the stage mid magic act, and the whole audience and the judges fall for him (golden buzzer). Gerald gives it a four from the front row.
+4. **The state and the lab (32–44.8 s, 65,536 → 4.2 M):** the map shows the love spreading over the state; scientists put him on a Lovometer test platform; the meter breaks. Gerald, beside him, does not register.
+5. **Cloud Nine (44.8–57.6 s, 8.4 M → 268 M):** the whole country ties heart balloons to him and he floats up to cloud nine.
+6. **The world (57.6–75.2 s, 537 M → 137 B):** his face on every billboard on Earth, the planet turns pink, he runs out of living people and the ghosts join in.
+7. **Finale (75.2–90 s):** silence, one hug that ripples across the planet and out into space; back home, Gerald still says no.

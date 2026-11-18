@@ -1,4 +1,4 @@
-// S4 — THE ENTIRE STATE (32–44.8): the state map glows pink, Gerald at the bakery, then the lab where the hero is the test subject on the Lovometer. 65,536 -> 4,194,304.
+// S4 — THE ENTIRE STATE (32–44.8): the state map glows pink, then the lab where the hero is the test subject on the Lovometer. 65,536 -> 4,194,304.
 import { THREE, makeCharacter, PRESETS, POSES, FACES, randomPerson, rng, clamp, smooth, lerp, easeOutBack, easeOutCubic, orbit, cam, shot, pick, regroup, pops, place, V, D2R } from '../common.js';
 import { makeStage } from '../../../assets/library/stage.js';
 import { reliefMap, car, schoolBus } from '../../../assets/library/props/world.js';
@@ -18,7 +18,7 @@ export default {
     const S = { stage, scene, g: {} };
     const grp = (k) => { const g = new THREE.Group(); g.position.set(...OFF[k]); scene.add(g); S.g[k] = g; return g; };
     // ---------- relief map ----------
-    { const g = grp('map'); const rm = reliefMap({ size: 12, seed: 5 }); g.add(rm); S.rm = rm; const mesh = rm.children[0]; const col = mesh.geometry.attributes.color; S.mapBase = Float32Array.from(col.array); S.mapPos = mesh.geometry.attributes.position;
+    { const g = grp('map'); const rm = reliefMap({ size: 12, seed: 5 }); g.add(rm); S.rm = rm; const mesh = rm.children[0]; const col = mesh.geometry.attributes.color; S.mapBase = Float32Array.from(col.array); S.mapPos = mesh.geometry.attributes.position; S.land = Float32Array.from({ length: S.mapPos.count }, (_, i) => clamp((rm.mask(S.mapPos.getX(i), S.mapPos.getZ(i)) - 0.08) * 8));   // pink spreads over land only (never the sea)
       S.pins = []; const r = rng(11); const pp = S.mapPos; for (let i = 0; i < 16; i++) { let x, z, tries = 0; do { x = r.range(-5, 5); z = r.range(-5, 5); } while (rm.mask(x, z) < 0.12 && tries++ < 200); let best = 1e9, y = 0; for (let k = 0; k < pp.count; k += 3) { const d = (pp.getX(k) - x) ** 2 + (pp.getZ(k) - z) ** 2; if (d < best) { best = d; y = pp.getY(k); } } const pin = new THREE.Group(); const stem = add(pin, new THREE.CylinderGeometry(0.03, 0.03, 0.5, 6), mat(0xffffff), [0, 0.25, 0]); const h = makeHeart(0xff3f7f, 0.5, 0.5); h.position.y = 0.7; pin.add(h); pin.position.set(x, y, z); pin.userData = { x, z, h }; g.add(pin); S.pins.push(pin); }
       S.home = [-3.0, 0, 2.6]; S.mapBg = add(g, new THREE.CylinderGeometry(14, 14, 0.3, 32), mat(0x2a5a8a), [0, -0.3, 0]); }
     // ---------- marching band ----------
@@ -53,8 +53,8 @@ export default {
       { const pf = new THREE.Group(); add(pf, new THREE.CylinderGeometry(0.75, 0.82, 0.18, 32), mat(0xdfe6ee, { rough: 0.4, metal: 0.3 }), [0, 0.09, 0]); add(pf, new THREE.TorusGeometry(0.76, 0.03, 8, 40), glow(0xff5c9a, 1.4), [0, 0.18, 0], [Math.PI / 2, 0, 0]);
         for (const sx of [-1, 1]) { add(pf, new THREE.CylinderGeometry(0.03, 0.03, 1.9, 8), mat(0x9aa4b0, { metal: 0.6, rough: 0.3 }), [sx * 0.85, 0.95, -0.2]); add(pf, new THREE.SphereGeometry(0.08, 12, 8), glow(0xff5c9a, 1.2), [sx * 0.85, 1.92, -0.2]); }
         const sign = textBoard(1.3, 0.36, [{ text: 'TEST SUBJECT: THAT GUY', size: 0.095, color: '#ffffff', y: 0.52, weight: 900 }], { bg: '#ff4f8b', border: null, radius: 10 }); sign.position.set(-1.45, 1.05, -0.1); sign.rotation.y = 0.25; pf.add(sign);
-        pf.position.set(0, 0, -2.3); g.add(pf); }
-      S.labCat = makeAnimal('cat', ANIMALS.gerald); g.add(S.labCat.root); S.labCat.root.position.set(5.4, 0.99 + 0.3, -4.4); S.labCat.root.scale.setScalar(0.7); S.labCat.root.rotation.y = -0.4; S.lab.anchors.rat.root.position.set(5.6, 0.99 + 0.4, -4.6); }
+        pf.position.set(0, 0, -0.6); g.add(pf); }
+      S.labCat = makeAnimal('cat', ANIMALS.gerald); g.add(S.labCat.root); S.labCat.root.position.set(-1.25, 0.96, -2.05); /* on the bench right behind the test platform: his love does not register */ S.labCat.root.scale.setScalar(1.0); S.labCat.root.rotation.y = -0.25; S.lab.anchors.rat.root.position.set(5.6, 0.99 + 0.4, -4.6); }
     // ---------- shots ----------
     const O = (k, v) => v.map((n, i) => n + OFF[k][i]);
     const oc = (k, p, t, fov) => cam(O(k, p), O(k, t), fov);
@@ -78,8 +78,8 @@ export default {
       { ...shot(44.4, 44.8, oc('lab', [0.6, 2.2, 4.6], [1.0, 2.1, 1.0], 32)), g: 'lab' },                                                       // chief "Bombo."
     ];
     // slower edit: ~2 s shots, each holding the camera of the gag / voiced line it covers
-    S.shots = regroup(S.shots, [[32.0, 34.4, 32.0], [34.4, 36.8, 35.2], [36.8, 39.2, 38.4], [39.2, 41.2, 40.0], [41.2, 43.2, 41.2], [43.2, 44.8, 44.4]]);
-    S.shots[4] = { ...S.shots[4], a: oc('lab', [0.2, 1.75, 2.4], [-0.3, 1.45, -2.3], 44), b: oc('lab', [0.1, 1.7, 1.9], [-0.3, 1.45, -2.3], 42), g: 'lab' };   // hero on the test platform, Lovometer behind him (narration)
+    S.shots = regroup(S.shots, [[32.0, 34.4, 32.0], [34.4, 36.8, 38.4], [36.8, 39.2, 38.4], [39.2, 41.2, 40.0], [41.2, 43.2, 43.6], [43.2, 44.8, 44.4]]);
+    S.shots[2] = { ...S.shots[2], a: oc('lab', [0.3, 1.8, 3.6], [-0.2, 1.55, -0.6], 44), b: oc('lab', [0.2, 1.75, 3.1], [-0.2, 1.55, -0.6], 42), g: 'lab' };   // hero on the test platform, Lovometer behind him (narration)
     return S;
   },
   frame(t, S, ctx) {
@@ -89,7 +89,7 @@ export default {
     if (key === 'map') {
       // pink spreads from home across the state
       const R = 1.6 + (t - 32) * 2.2, col = S.rm.children[0].geometry.attributes.color, p = S.mapPos;
-      for (let i = 0; i < p.count; i++) { const d = Math.hypot(p.getX(i) - S.home[0], p.getZ(i) - S.home[2]); const k = clamp((R - d) / 0.8) * 0.85; const j = i * 3; col.array[j] = lerp(S.mapBase[j], 1.0, k); col.array[j + 1] = lerp(S.mapBase[j + 1], 0.32, k); col.array[j + 2] = lerp(S.mapBase[j + 2], 0.58, k); }
+      for (let i = 0; i < p.count; i++) { const d = Math.hypot(p.getX(i) - S.home[0], p.getZ(i) - S.home[2]); const k = clamp((R - d) / 0.8) * 0.85 * S.land[i]; const j = i * 3; col.array[j] = lerp(S.mapBase[j], 1.0, k); col.array[j + 1] = lerp(S.mapBase[j + 1], 0.32, k); col.array[j + 2] = lerp(S.mapBase[j + 2], 0.58, k); }
       col.needsUpdate = true;
       S.pins.forEach((pin) => { const d = Math.hypot(pin.userData.x - S.home[0], pin.userData.z - S.home[2]); const k = easeOutBack(clamp((R - d) / 0.6)); pin.scale.setScalar(Math.max(0.0001, k)); pin.userData.h.rotation.y = t * 2; });
       r.banner = t < 33.6 ? { text: 'THE ENTIRE STATE', y: 1180, t0: 32.0, rot: -0.03 } : t >= 38.0 && t < 38.4 ? { text: 'ALL OF IT', y: 1180, t0: 38.0 } : null;
@@ -111,7 +111,7 @@ export default {
     if (key === 'lab') {
       const level = t < 38.4 ? 0.1 : t < 40.0 ? lerp(0.1, 1.0, clamp((t - 38.4) / 1.6)) : 1.2;
       S.lab.update(t, { level, snapK: Math.max(0, t - 40.0) });
-      place(S.heroLab, 0, 0.18, -2.3, 0);
+      place(S.heroLab, 0, 0.18, -0.6, 0);
       S.heroLab.pose(t < 40.0 ? { ...POSES.idle(t), aRs: 0.5 + Math.max(0, Math.sin(t * 2.2)) * 1.2, aRe: 0.8, hR: 'open', hz: 0.06 } : { ...POSES.shock(t), lean: -0.1 });
       S.heroLab.face(t < 40.0 ? { ...FACES.happy, smile: 0.5 } : { ...FACES.shock, open: 0.5 });
       place(S.assist, -1.6, 0, 1.2, 0.2); place(S.chief, 1.2, 0, 1.0, -0.2); place(S.sciB, -4.4, 0, 0.6, 0.5);
