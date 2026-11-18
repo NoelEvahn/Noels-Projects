@@ -291,7 +291,7 @@ export function createVegetation({ scene, renderer }) {
   // per-instance tint palette (multiplies the card albedo; linear): lush, fresh, yellow-green, dry straw, dark, sun-bleached, lush-2, lush-3
   // natural varied greens: deep, warm green, olive-yellow, straw, dark shade, sun-bleached, cool green, pale; 8-11: needle browns, rust, olive litter, dark duff; 12-15: fern / sapling greens
   const TINTS = [[0.62, 0.78, 0.56], [0.7, 0.82, 0.54], [0.9, 0.88, 0.54], [1.0, 0.84, 0.54], [0.5, 0.66, 0.5], [1.1, 0.95, 0.62], [0.68, 0.86, 0.68], [0.96, 0.95, 0.7],
-    [0.62, 0.52, 0.42], [0.95, 0.7, 0.45], [0.7, 0.72, 0.42], [0.45, 0.38, 0.3], [0.55, 0.78, 0.5], [0.7, 0.9, 0.55], [0.46, 0.64, 0.44], [0.8, 0.95, 0.6]];
+    [1.05, 0.88, 0.7], [1.45, 1.05, 0.7], [1.0, 1.05, 0.6], [0.78, 0.62, 0.48], [0.8, 1.08, 0.66], [0.95, 1.22, 0.72], [0.66, 0.9, 0.58], [1.1, 1.3, 0.8]];
   const LAWN_T = [0, 1, 2, 4, 6, 0, 1, 4, 2, 0, 6, 1];
   const gcCache = new Map(); // chunk key -> {n, x: Uint16 (1/655 m), z, y: Float32, m: Uint8 [type, scale, rot, tint, rank] * n}
   const gcPending = new Set();

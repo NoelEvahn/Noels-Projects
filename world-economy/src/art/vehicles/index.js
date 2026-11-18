@@ -35,7 +35,7 @@ function carBody(g, p, S, lod, R, id) {
   // greenhouse: glass loft + painted roof skin + pillars
   const [zA, zB, zC, zD] = S.cabin.map((c) => c * hl);
   const yB = lerpBelt(S.belt, S.cabin[0]) - 0.02, rf = S.roof, ins = 0.12;
-  g.mat('tex.glass_window', 0x9aa4ac);
+  g.mat('tex.glass_window', 0xdce6ee); // light tint: in shade the glass reads blue-grey, not black
   const cab = [[zA, yB, hw - 0.06], [zB, rf, hw - ins - 0.1], [zC, rf, hw - ins - 0.1], [zD, lerpBelt(S.belt, S.cabin[3]) - 0.02, hw - 0.06]];
   for (let i = 0; i < 3; i++) {
     const [z0, y0, w0] = cab[i], [z1, y1, w1] = cab[i + 1];
