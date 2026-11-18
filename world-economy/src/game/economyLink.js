@@ -74,7 +74,11 @@ export function createEconomyLink({ sim, game, bus, clock }) {
   sim.setServices(services);
 
   // ---- jobs ------------------------------------------------------------------------------------------------------------------
-  const env = { pos: () => here(), mode: () => (game.player.mode === 'foot' ? 'foot' : game.player.mode === 'boat' ? 'boat' : 'vehicle'), poi: (id) => poiPos(id), snap: snapRoad };
+  const env = {
+    pos: () => here(), mode: () => (game.player.mode === 'foot' ? 'foot' : game.player.mode === 'boat' ? 'boat' : 'vehicle'), poi: (id) => poiPos(id), snap: snapRoad,
+    /** telemetry of the vehicle or boat the player drives (null on foot): speed m/s (signed), yaw, collided = decaying impact magnitude; read by driveLeg and dockLeg */
+    vehicle: () => { const v = game.activeVehicle(); return v ? { speed: v.sim.speed, yaw: v.sim.yaw, collided: v.sim.collided || 0 } : null; },
+  };
   game.jobs = {
     start(jobId, opts = {}) {
       if (link.controller) return { ok: false, error: 'ERR.BUSY' };

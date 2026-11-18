@@ -113,6 +113,67 @@ export function reach({ target, radius = 3, interact = true, mode = null, timeou
   });
   return s;
 }
+/** Drive leg with a condition meter (Annex C 2.3 parcel condition, 2.5 taxi comfort): reads `env.vehicle()` = {speed, yaw, collided} of the player's vehicle.
+ *  Hard braking (> 4.5 m/s2), hard cornering (> 4 m/s2 lateral) and collisions drain the meter (fragile parcels 1.6x); a smooth ride refills a comfort meter slowly.
+ *  Meter 0 fails the leg (strike, no pay); with `hitFail` a collision harder than that impulse fails at once (taxi). Score at the stop = 0.4 + 0.6 x meter.
+ *  Without telemetry (headless bots, on foot) the meter stays full and this behaves like `reach` with `mode`. */
+export function driveLeg({ target, radius = 12, mode = 'vehicle', timeout = 140, meter = 'comfort', fragile = false, hitFail = Infinity, label = '' } = {}) {
+  let cond = 1, pv = null, py = 0, ph = 0, hits = 0;
+  const k = fragile ? 1.6 : 1;
+  const s = base('driveLeg', {
+    label,
+    update(dt, inp, env) {
+      if (s.res !== 'active') return s.res;
+      s.t += dt;
+      const tel = env.vehicle ? env.vehicle() : null;
+      if (tel && env.mode() === mode && dt > 0) {
+        if (pv !== null) {
+          const ax = (tel.speed - pv) / dt; let dy = tel.yaw - py; while (dy > Math.PI) dy -= 2 * Math.PI; while (dy < -Math.PI) dy += 2 * Math.PI;
+          const lat = Math.abs(tel.speed * dy / dt), hard = 0.06 * Math.max(0, -ax - 4.5) + 0.05 * Math.max(0, lat - 4);
+          cond -= dt * k * hard; if (meter === 'comfort' && hard === 0) cond += dt * 0.004;
+        }
+        if (tel.collided > 1.2 && ph <= 1.2) { hits++; cond -= (fragile ? 0.35 : 0.2) * Math.min(2, tel.collided / 3); if (tel.collided >= hitFail) cond = 0; }
+        ph = tel.collided; pv = tel.speed; py = tel.yaw;
+      }
+      cond = clamp(cond, 0, 1);
+      if (cond <= 0) { s.score = 0; s.res = 'fail'; return s.res; }
+      const p = env.pos(), tg = typeof target === 'function' ? target() : target;
+      if (tg && Math.hypot(p[0] - tg[0], p[2] - tg[2]) <= radius && (!mode || env.mode() === mode)) { s.score = clamp(0.4 + 0.6 * cond, 0.4, 1); s.res = 'done'; }
+      else if (s.t > timeout) s.res = 'fail';
+      return s.res;
+    },
+    hud: () => ({ type: 'driveLeg', target: typeof target === 'function' ? target() : target, radius, mode, meter: cond, kind: meter }),
+    hint: () => ({ goto: typeof target === 'function' ? target() : target, radius, mode, press: null }),
+  });
+  Object.defineProperty(s, 'meter', { get: () => cond }); Object.defineProperty(s, 'hits', { get: () => hits });
+  return s;
+}
+/** Dock leg (Annex C 3.3, 4.3): bring a boat inside `radius` of the berth and hold below `maxSpeed` for `hold` seconds. Precision = how close the final position is
+ *  and how softly it arrived; each bump (collision impulse > 1.2) costs score and a third hard bump (impulse >= 6) fails. Without telemetry speed counts as 0. */
+export function dockLeg({ target, radius = 4, maxSpeed = 0.6, hold = 0.6, mode = 'boat', timeout = 140, label = '' } = {}) {
+  let steady = 0, bumps = 0, ph = 0, hard = false, arrive = 0;
+  const s = base('dockLeg', {
+    label,
+    update(dt, inp, env) {
+      if (s.res !== 'active') return s.res;
+      s.t += dt;
+      const tel = env.vehicle ? env.vehicle() : null, speed = tel ? Math.abs(tel.speed) : 0;
+      if (tel && tel.collided > 1.2 && ph <= 1.2) { bumps++; if (tel.collided >= 6) hard = true; }
+      ph = tel ? tel.collided : 0;
+      if (bumps >= 3 || hard && bumps >= 2) { s.score = 0; s.res = 'fail'; return s.res; }
+      const p = env.pos(), tg = typeof target === 'function' ? target() : target, d = tg ? Math.hypot(p[0] - tg[0], p[2] - tg[2]) : 1e9;
+      const ok = d <= radius && speed <= maxSpeed && (!mode || env.mode() === mode);
+      if (ok) { steady += dt; arrive = Math.max(arrive, speed); } else steady = 0;
+      if (steady >= hold) { s.score = clamp(1 - 0.5 * d / radius - 0.5 * arrive / Math.max(0.01, maxSpeed) * 0.4 - 0.15 * bumps, 0.3, 1); s.res = 'done'; }
+      else if (s.t > timeout) s.res = 'fail';
+      return s.res;
+    },
+    hud: () => ({ type: 'dockLeg', target: typeof target === 'function' ? target() : target, radius, maxSpeed, bumps, steady: clamp(steady / hold, 0, 1) }),
+    hint: () => ({ goto: typeof target === 'function' ? target() : target, radius, mode, press: null }),
+  });
+  Object.defineProperty(s, 'bumps', { get: () => bumps });
+  return s;
+}
 /** Choice: cycle a cursor (turnLeft/turnRight) and confirm with interact. Used for diagnosis, document checks, orders. */
 export function choice({ rng, options = 4, correct, timeout = 25, type = 'inspect' } = {}) {
   const ok = correct === undefined ? rng.int(0, options - 1) : correct; let cur = 0;
@@ -153,4 +214,4 @@ export function wait({ seconds = 2, label = '' } = {}) {
   const s = base('wait', { label, update(dt) { if (s.res !== 'active') return s.res; s.t += dt; if (s.t >= seconds) { s.score = 1; s.res = 'done'; } return s.res; }, hud: () => ({ type: 'wait', progress: clamp(s.t / seconds, 0, 1) }), hint: () => ({}) });
   return s;
 }
-export const PRIMITIVES = { timingBar, holdRing, tensionBar, sequence, balance, reach, choice, gauge, wait };
+export const PRIMITIVES = { timingBar, holdRing, tensionBar, sequence, balance, reach, driveLeg, dockLeg, choice, gauge, wait };
