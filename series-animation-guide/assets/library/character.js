@@ -412,9 +412,13 @@ function buildFace(ch, o) {
   F.mouth = { g: mouth, mm, tongue, teeth, smile };
   ch.F = F;
 }
+// Film clock for automatic secondary motion (blinks, breathing). The page sets CLOCK.t once per frame before drawing,
+// so every character stays a pure function of time. Faces may pass blink:false to hold the eyes (e.g. a stare).
+export const CLOCK = { t: 0 };
 const FACE_DEFAULT = { open: 0, smile: 0.25, brow: 0, browTilt: 0, pupil: [0, 0], pupilSize: 1, eye: 1, lid: 0, wide: 1, teeth: false };
 function applyFace(ch, f) {
   const o = { ...FACE_DEFAULT, ...f }, R = ch.R, F = ch.F;
+  if (f.blink !== false) { const bp = (CLOCK.t + (ch.opts.seed ?? 1) * 1.37) % 3.3; if (bp < 0.14) o.lid = Math.max(o.lid, 1 - Math.abs(bp - 0.07) / 0.07 * 0.15); }
   for (let i = 0; i < 2; i++) {
     const e = F.eyes[i], s = e.s;
     e.eg.scale.setScalar(o.eye);
@@ -449,7 +453,8 @@ function applyPose(ch, p) {
   ch.hips.position.y = HIPS_Y + j.bob;
   ch.torso.rotation.set(j.lean, j.twist, j.roll);
   ch.head.rotation.set(j.hx, j.hy, j.hz);
-  ch.body.scale.set(1 / Math.sqrt(j.squash), j.squash, 1 / Math.sqrt(j.squash));
+  const breath = 1 + Math.sin(CLOCK.t * 2.2 + (ch.opts.seed ?? 1)) * 0.008;   // gentle breathing on everyone
+  ch.body.scale.set(1 / Math.sqrt(j.squash), j.squash * breath, 1 / Math.sqrt(j.squash));
   ch.body.position.y = 0; ch.hips.rotation.y = j.rotY;
   ch.aL.sh.rotation.set(-j.aLf, 0, j.aLs); ch.aL.el.rotation.x = -j.aLe;
   ch.aR.sh.rotation.set(-j.aRf, 0, -j.aRs); ch.aR.el.rotation.x = -j.aRe;

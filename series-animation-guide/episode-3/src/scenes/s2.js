@@ -74,7 +74,7 @@ export default {
       shot(20.0, 20.8, cam([hh(20.0)[0] - 9, 5.2, 5.2], [hh(20.4)[0] - 1, 1.0, 1.0], 56), cam([hh(20.8)[0] - 9, 4.8, 5.0], [hh(20.8)[0] - 1, 1.0, 1.0], 56)), // crowd chases
     ];
     // slower edit: ~2 s shots, each holding the camera of the gag / voiced line it covers
-    S.shots = regroup(S.shots, [[9.6, 12.4, 10.4], [12.4, 15.2, 13.6], [15.2, 17.2, 15.6], [17.2, 18.8, 17.2], [18.8, 20.8, 18.4]]);
+    S.shots = regroup(S.shots, [[9.6, 12.0, 10.4], [12.0, 15.6, 13.2], [15.6, 18.4, 17.2], [18.4, 20.8, 18.4]]);
     return S;
   },
   frame(t, S, ctx) {

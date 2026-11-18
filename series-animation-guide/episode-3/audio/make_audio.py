@@ -11,7 +11,9 @@ VOICES = [(m.group(1), float(m.group(2))) for m in re.finditer(r"id: '(\w+)', t:
 ROASTS = [(m.group(1), float(m.group(2))) for m in re.finditer(r"id: '(r\d)', t: ([\d.]+)", js_list('ROASTS'))]
 NARR = [(m.group(1), float(m.group(2))) for m in re.finditer(r"id: '(n\d)', t: ([\d.]+)", js_list('NARRATION'))]
 TIERS = {10: 1, 20: 1, 32: 1, 40: 2, 60: 3, 66: 4, 74: 3, 80: 4}
-CUTS = sorted({float(x) for f in glob.glob(os.path.join(os.path.dirname(__file__), '../src/scenes/s*.js')) for x in re.findall(r'shot\((\d+(?:\.\d+)?),', open(f).read())})
+# the edit's real cuts: the regroup() lists in each scene (t0 of each held shot)
+CUTS = sorted({float(m) for f in glob.glob(os.path.join(os.path.dirname(__file__), '../src/scenes/s*.js')) for blk in re.findall(r'regroup\(S\.shots, (\[\[.*?\]\])\)', open(f).read()) for m in re.findall(r'\[([\d.]+),', blk)})
+SFX_GAIN = 10 ** (-8 / 20)    # user feedback: SFX far too loud -> whole SFX bus 8 dB down
 # ------------------------------------------------------------------ SFX
 def env(n, a=0.002, d=0.1, curve=4.0): t = np.arange(n) / SR; return np.minimum(1, t / a) * np.exp(-curve * t / d)
 def tone(f, dur, a=0.002, d=None, harm=(1, 0.3, 0.1)):
@@ -43,11 +45,11 @@ for k, tick in enumerate(np.arange(0, 90, 2.0)):
 # whoosh at cuts (quieter in the montage where cuts are 0.2 s apart)
 for c in CUTS:
     if 76.0 <= c <= 80.0 or c in (0.0,) : continue
-    close = any(abs(c - o) < 0.3 and o != c for o in CUTS); place(sfx, whoosh(0.22 if close else 0.3, bool(int(c * 10) % 2), 0.11 if close else 0.2), c - 0.14)
+    place(sfx, whoosh(0.35, bool(int(c * 10) % 2), 0.05), c - 0.16)   # barely-there air on a cut (the old 0.2 'shh' on every cut was the loudest thing in the mix)
 # story beats
 for t in (0.2, 2.0, 4.0, 4.0, 6.0, 6.08, 6.16, 6.24, 8.0, 8.04, 8.08, 8.12, 8.16, 8.2, 8.24, 8.28): place(sfx, pop(0.35), t)
 place(sfx, whoosh(0.4, True, 0.35), 7.35)                                   # burger flies
-for t in np.arange(12, 19, 0.25): place(sfx, pop(0.22), t + rng.uniform(0, 0.1))     # chalk hearts / balloons popping up
+for t in np.arange(12, 19, 0.6): place(sfx, pop(0.12), t + rng.uniform(0, 0.1))     # chalk hearts / balloons popping up
 place(sfx, noise(0.25) * env(int(0.25 * SR), 0.001, 0.08, 6) * 0.5, 14.0); place(sfx, chime(1318, 0.5, 0.5), 14.0)       # confetti pop
 place(sfx, whoosh(0.5, True, 0.4), 19.0)
 # crowd murmur beds (noise, band-limited) scaled to the scene
@@ -101,6 +103,7 @@ def smooth_env(x, atk=0.02, rel=0.25):
         v = x[i] + ka * (v - x[i]) if x[i] > v else x[i] + kr * (v - x[i]); out[i] = v
     return out
 g_duck = 10 ** (-5 * smooth_env(duck_n[::48].repeat(48)[:N] if False else duck_n) / 20) * 10 ** (-2.5 * smooth_env(duck_v) / 20)
+sfx *= SFX_GAIN
 mix = mus * g_duck[:, None] + voice + narr + sfx
 mix[int(77.6 * SR):int(80.0 * SR)] = mus[int(77.6 * SR):int(80.0 * SR)] * 0 + (sfx[int(77.6 * SR):int(80.0 * SR)] + narr[int(77.6 * SR):int(80.0 * SR)])
 # ------------------------------------------------------------------ master: -14 LUFS, limiter ceiling ~ -3.2 dB, then verify true peak after AAC elsewhere

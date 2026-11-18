@@ -1,7 +1,8 @@
 import numpy as np, soundfile as sf, subprocess, os, json, tempfile
 import scipy.signal as ss
 SR = 48000
-BUILD = os.environ.get('EP_BUILD', '/tmp/ep3_build'); AUD = os.path.join(BUILD, 'audio'); os.makedirs(AUD, exist_ok=True)
+HERE = os.path.dirname(os.path.abspath(__file__)); ASSETS = os.path.join(HERE, '../../assets')
+BUILD = os.environ.get('EP_BUILD', os.path.join(HERE, '../build')); AUD = os.path.join(BUILD, 'audio'); os.makedirs(AUD, exist_ok=True)
 def read(path, sr=SR):
     y, s = sf.read(path, always_2d=True)
     if s != sr:

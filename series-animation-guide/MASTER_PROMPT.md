@@ -54,6 +54,12 @@ Rules:
 - Max **2 recurring tropes** per episode (reporter, government/bank room, fisherman, astronaut, house exterior, a crowd field of the cast; Gerald does not count). Any trope that does return must look and play differently: a new angle, a new gag, a new set.
 - Every location must be recognisable within 0.3 s and must suit the TOPIC. The topic's props drive the gags; episode 2 went pennies → avalanche → bills → briefcases → SOLD tags.
 
+### Keep the premise on screen (user feedback on episode 3: "it drifts off, no meaning, too crowded")
+- **Every shot must show the hero, or something that is clearly about him** (his face on a billboard, a meter measuring him, a crowd turned toward him). The viewer must always see *why the number doubled*.
+- Cut random gag shots that don't involve him (traffic, marching bands, school buses, strangers' close-ups). A gag earns its place only by showing more people loving *him*.
+- Crowds frame the hero; they never replace him. No close-ups of random crowd faces. Gerald's shots are the only exception, and he stays near the hero's location.
+- Each scene's escalation reads in one wide shot: hero in frame, the new, bigger group of lovers around him, the counter above.
+
 ### Pacing — READ THIS FIRST (user feedback on episode 3: "way too fast, confusing")
 Episode 3 v1 cut every ~0.7 s and the user rejected it: confusing, text overlapping, glitchy backgrounds, unreadable sets. **Episodes 1 and 2 held each shot about 2–3 seconds, and that is the target.**
 - **Average shot length 2.0–3.0 s; about 30–45 shots in 90 s.** Every cut on the 0.4 s grid. **No shot shorter than 1.6 s**, except at most one 3–4 shot montage per episode (min 0.8 s each). No more than 3 shots per scene beat unless the shots are long.
@@ -104,7 +110,7 @@ Episode 3 v1 cut every ~0.7 s and the user rejected it: confusing, text overlapp
 
 ### Narrator
 - Five short deadpan lines, in scenes 1, 2, 4, 5 and 6: the premise first, then dry understatements.
-- Piper TTS (en_US-ryan-high), mixed quietly inside the music.
+- Kokoro TTS (`bm_george`, local neural voice), natural pace, mixed quietly inside the music.
 - Captions word by word in white, with key words in yellow. Check with ASR that the audio matches the captions.
 
 ### Music and edit
@@ -115,6 +121,9 @@ Episode 3 v1 cut every ~0.7 s and the user rejected it: confusing, text overlapp
 - Scene 7: the music filters down, about 2 s of true silence (the music stem at digital zero), then slams back on the big moment. Record scratch at the freeze-frame.
 
 ### Mix (approved levels)
+- **SFX stay well under everything** (user: "SFX way too loud"). No whoosh on every cut; at most a barely audible air on a cut. The SFX bus sits about 8 dB below the old episode-3 mix.
+- **Narrator voice must sound natural** (user: the Piper voice sounded robotic). Use Kokoro (`bm_george`, local) or better; never Piper.
+
 | Item | Level |
 |---|---|
 | Master | −14 LUFS integrated, true peak ≤ −1 dBTP after AAC (limiter ceiling about −3.2 dB, gain reduction ≤ 6 dB), no clipping |

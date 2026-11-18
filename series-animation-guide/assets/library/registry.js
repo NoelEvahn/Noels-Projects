@@ -16,6 +16,7 @@ import * as LAB from './props/lab.js';
 import * as SKY from './props/sky.js';
 import * as WORLD from './props/world.js';
 import * as HEARTS from './fx/hearts.js';
+import * as NAT from './props/nature.js';
 import { rng } from './util.js';
 import { makeAnimal, APOSES, AFACES, ANIMALS } from './animal.js';
 
@@ -134,3 +135,10 @@ reg({ id: 'detail_seated', cat: 'characters', title: 'Seated physics: sitOn(seat
   build: () => { const g = new THREE.Group(); const seat = (preset, S, x, ry, chairObj, face) => { const c = makeCharacter(PRESETS[preset]); const sc = PRESETS[preset].height ?? 1; c.pose({ ...POSES.sitOn(0, S / sc), aLf: 0.6, aRf: 0.6 }); c.face(face); c.root.position.set(x, 0, 0.02); c.root.rotation.y = ry; g.add(c.root); if (chairObj) { chairObj.position.set(x, 0, 0); chairObj.rotation.y = ry; g.add(chairObj); } return c; };
     seat('grandma', 0.34, -2.2, 0.35, HOME.lawnChair(0x2bb7b0), FACES.happy); seat('hero', 0.34, -0.7, -0.3, HOME.lawnChair(0xff8a2b), FACES.smug); const t = HOME.picnicTable(); t.position.set(1.8, 0, 0.0); t.scale.setScalar(0.8); g.add(t); const m = makeCharacter(PRESETS.mum); m.pose({ ...POSES.sitOn(0, 0.34), aLf: 0.7, aRf: 0.7 }); m.face(FACES.happy); m.root.position.set(1.4, 0, 0.62); m.root.rotation.y = Math.PI; g.add(m.root);
     return { obj: g, cam: { pos: [1.0, 1.3, 5.2], target: [0.2, 0.7, 0], fov: 38 } }; } });
+
+reg({ id: 'prop_nature', cat: 'props', title: 'Nature kit', note: 'roundTree, pineTree, birchTree, bushClump(dots), rock, log, stump, grass/flowers/pebbles via groundCover (wind: updateNature(t))', stage: { sky: ['#8ccaf5', '#eaf6ff'], ground: 0x6aa84f, keyPos: [5, 9, 7], shadow: { extent: 9 } },
+  build: () => { const g = new THREE.Group(); g.add(NAT.groundCover({ area: [-6, -4, 6, 4], density: 9, rocks: 0, seed: 3 }));
+    [[NAT.roundTree({ seed: 1 }), -3.8, -2.2], [NAT.pineTree({ seed: 2 }), -1.4, -2.8], [NAT.birchTree({ seed: 3 }), 1.2, -2.6], [NAT.roundTree({ seed: 4, leaf: 0x7cb342, h: 2.2 }), 3.6, -2.0], [NAT.bushClump({ seed: 5, dots: 0xff5c8a }), -2.4, 0.4], [NAT.bushClump({ seed: 6 }), 2.6, 0.6], [NAT.rock({ seed: 7, size: 0.7 }), -0.6, 0.8], [NAT.rock({ seed: 8, size: 0.35 }), 0.4, 1.4], [NAT.log({}), 1.4, 1.2], [NAT.stump({}), -1.4, 1.8]].forEach(([o, x, z]) => { o.position.set(x, 0, z); g.add(o); });
+    NAT.updateNature(1.3); return { obj: g, cam: { pos: [0, 2.6, 7.5], target: [0, 1.0, -0.6], fov: 50 } }; } });
+reg({ id: 'prop_grass_close', cat: 'props', title: 'Grass close-up', note: 'groundCover density 14: tufts graded dark->light, flowers, pebbles', stage: { sky: ['#8ccaf5', '#eaf6ff'], ground: 0x5a9a40, keyPos: [5, 9, 7], shadow: { extent: 5 } },
+  build: () => { const g = NAT.groundCover({ area: [-3, -3, 3, 2], density: 14, flowerK: 0.12, pebbleK: 0.06, seed: 9 }); NAT.updateNature(0.4); return { obj: g, cam: { pos: [0, 0.7, 2.4], target: [0, 0.15, 0], fov: 45 } }; } });

@@ -17,6 +17,7 @@ export const shot = (t0, t1, a, b = null, o = {}) => ({ t0, t1, a, b: b ?? a, ..
 // Slower edit (user feedback: "way too fast"): cuts = [[t0, t1, keyTime], ...]. Each new shot reuses the camera (and location key g)
 // of the original shot playing at keyTime, held for the whole t0..t1, so its A->B move is stretched (slower). Keep cuts on the 0.4 s grid.
 export function regroup(shots, cuts) {
+  if (typeof location !== "undefined" && /[?&]orig(=|&|$)/.test(location.search)) return shots;   // ?orig shows the original fast cut (review tool)
   return cuts.map(([t0, t1, k]) => { let s = shots[0]; for (const x of shots) if (k >= x.t0 - 1e-6) s = x; return { ...s, t0, t1 }; });
 }
 export function pick(shots, t) { let s = shots[0], idx = 0; for (let i = 0; i < shots.length; i++) if (t >= shots[i].t0 - 1e-6) { s = shots[i]; idx = i; } const u = clamp((t - s.t0) / Math.max(1e-6, s.t1 - s.t0)); return { shot: s, idx, u, cam: mix(s.a, s.b, o_ease(u, s.ease)) }; }

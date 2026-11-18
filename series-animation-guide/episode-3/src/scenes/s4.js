@@ -1,11 +1,11 @@
-// S4 — THE ENTIRE STATE (32–44.8): relief map glows pink, rapid cuts (marching band, traffic, bakery, office, school bus), then the scientists' lab. 65,536 -> 4,194,304.
+// S4 — THE ENTIRE STATE (32–44.8): the state map glows pink, Gerald at the bakery, then the lab where the hero is the test subject on the Lovometer. 65,536 -> 4,194,304.
 import { THREE, makeCharacter, PRESETS, POSES, FACES, randomPerson, rng, clamp, smooth, lerp, easeOutBack, easeOutCubic, orbit, cam, shot, pick, regroup, pops, place, V, D2R } from '../common.js';
 import { makeStage } from '../../../assets/library/stage.js';
 import { reliefMap, car, schoolBus } from '../../../assets/library/props/world.js';
 import { buildLab } from '../../../assets/library/sets/lab.js';
 import { makeAnimal, APOSES, ANIMALS } from '../../../assets/library/animal.js';
 import { makeHeartField, makeHeart } from '../../../assets/library/fx/hearts.js';
-import { mat, add, box, sph, cyl, cap, rbox, textBoard, heartGeo, canvasTex } from '../../../assets/library/util.js';
+import { mat, glow, add, box, sph, cyl, cap, rbox, textBoard, heartGeo, canvasTex } from '../../../assets/library/util.js';
 import * as HOLD from '../../../assets/library/props/holdables.js';
 
 const SKY = { sky: ['#9fd8ff', '#fff3d6'], ground: null, fog: ['#e8f4ff', 60, 200], shadow: { extent: 16 }, keyPos: [6, 12, 8] };
@@ -49,7 +49,12 @@ export default {
     // ---------- school bus ----------
     { const g = grp('bus'); add(g, box(40, 0.2, 20), mat(0x44485a), [0, -0.1, 0]); const bus = schoolBus(); bus.position.set(0, 0, -2.5); g.add(bus); S.busM = bus; S.kids = Array.from({ length: 8 }, (_, i) => { const c = makeCharacter({ ...PRESETS.kid, seed: i }); g.add(c.root); c.root.position.set(-5 + i * 1.5, 0, 1.4 + (i % 2) * 0.5); c.root.rotation.y = 0.0; return c; }); }
     // ---------- lab ----------
-    { const g = grp('lab'); const lab = buildLab(); g.add(lab.group); S.lab = lab; const mk = (p) => { const c = makeCharacter(PRESETS[p]); g.add(c.root); return c; }; S.assist = mk('scientistA'); S.chief = mk('chiefScientist'); S.sciB = mk('scientistB'); S.clip = HOLD.clipboard(); S.sciB.hold(S.clip, 'R', { rot: [Math.PI / 2, 0, 0.0], pos: [0, 0.05, 0.12] }); S.labCat = makeAnimal('cat', ANIMALS.gerald); g.add(S.labCat.root); S.labCat.root.position.set(5.4, 0.99 + 0.3, -4.4); S.labCat.root.scale.setScalar(0.7); S.labCat.root.rotation.y = -0.4; S.lab.anchors.rat.root.position.set(5.6, 0.99 + 0.4, -4.6); }
+    { const g = grp('lab'); const lab = buildLab(); g.add(lab.group); S.lab = lab; const mk = (p) => { const c = makeCharacter(PRESETS[p]); g.add(c.root); return c; }; S.assist = mk('scientistA'); S.chief = mk('chiefScientist'); S.sciB = mk('scientistB'); S.clip = HOLD.clipboard(); S.sciB.hold(S.clip, 'R', { rot: [Math.PI / 2, 0, 0.0], pos: [0, 0.05, 0.12] }); S.heroLab = mk('hero');   // the hero is the test subject: the Lovometer is measuring how loved HE is
+      { const pf = new THREE.Group(); add(pf, new THREE.CylinderGeometry(0.75, 0.82, 0.18, 32), mat(0xdfe6ee, { rough: 0.4, metal: 0.3 }), [0, 0.09, 0]); add(pf, new THREE.TorusGeometry(0.76, 0.03, 8, 40), glow(0xff5c9a, 1.4), [0, 0.18, 0], [Math.PI / 2, 0, 0]);
+        for (const sx of [-1, 1]) { add(pf, new THREE.CylinderGeometry(0.03, 0.03, 1.9, 8), mat(0x9aa4b0, { metal: 0.6, rough: 0.3 }), [sx * 0.85, 0.95, -0.2]); add(pf, new THREE.SphereGeometry(0.08, 12, 8), glow(0xff5c9a, 1.2), [sx * 0.85, 1.92, -0.2]); }
+        const sign = textBoard(1.3, 0.36, [{ text: 'TEST SUBJECT: THAT GUY', size: 0.095, color: '#ffffff', y: 0.52, weight: 900 }], { bg: '#ff4f8b', border: null, radius: 10 }); sign.position.set(-1.45, 1.05, -0.1); sign.rotation.y = 0.25; pf.add(sign);
+        pf.position.set(0, 0, -2.3); g.add(pf); }
+      S.labCat = makeAnimal('cat', ANIMALS.gerald); g.add(S.labCat.root); S.labCat.root.position.set(5.4, 0.99 + 0.3, -4.4); S.labCat.root.scale.setScalar(0.7); S.labCat.root.rotation.y = -0.4; S.lab.anchors.rat.root.position.set(5.6, 0.99 + 0.4, -4.6); }
     // ---------- shots ----------
     const O = (k, v) => v.map((n, i) => n + OFF[k][i]);
     const oc = (k, p, t, fov) => cam(O(k, p), O(k, t), fov);
@@ -73,7 +78,8 @@ export default {
       { ...shot(44.4, 44.8, oc('lab', [0.6, 2.2, 4.6], [1.0, 2.1, 1.0], 32)), g: 'lab' },                                                       // chief "Bombo."
     ];
     // slower edit: ~2 s shots, each holding the camera of the gag / voiced line it covers
-    S.shots = regroup(S.shots, [[32.0, 34.4, 32.0], [34.4, 36.8, 35.2], [36.8, 39.2, 38.4], [39.2, 41.2, 40.0], [41.2, 43.2, 42.0], [43.2, 44.8, 44.4]]);
+    S.shots = regroup(S.shots, [[32.0, 34.4, 32.0], [34.4, 36.8, 35.2], [36.8, 39.2, 38.4], [39.2, 41.2, 40.0], [41.2, 43.2, 41.2], [43.2, 44.8, 44.4]]);
+    S.shots[4] = { ...S.shots[4], a: oc('lab', [0.2, 1.75, 2.4], [-0.3, 1.45, -2.3], 44), b: oc('lab', [0.1, 1.7, 1.9], [-0.3, 1.45, -2.3], 42), g: 'lab' };   // hero on the test platform, Lovometer behind him (narration)
     return S;
   },
   frame(t, S, ctx) {
@@ -105,6 +111,9 @@ export default {
     if (key === 'lab') {
       const level = t < 38.4 ? 0.1 : t < 40.0 ? lerp(0.1, 1.0, clamp((t - 38.4) / 1.6)) : 1.2;
       S.lab.update(t, { level, snapK: Math.max(0, t - 40.0) });
+      place(S.heroLab, 0, 0.18, -2.3, 0);
+      S.heroLab.pose(t < 40.0 ? { ...POSES.idle(t), aRs: 0.5 + Math.max(0, Math.sin(t * 2.2)) * 1.2, aRe: 0.8, hR: 'open', hz: 0.06 } : { ...POSES.shock(t), lean: -0.1 });
+      S.heroLab.face(t < 40.0 ? { ...FACES.happy, smile: 0.5 } : { ...FACES.shock, open: 0.5 });
       place(S.assist, -1.6, 0, 1.2, 0.2); place(S.chief, 1.2, 0, 1.0, -0.2); place(S.sciB, -4.4, 0, 0.6, 0.5);
       const warn = clamp((t - 38.4) / 1.6);
       S.assist.pose(t < 40.0 ? { ...POSES.idle(t), aRf: 0.5, aRe: 1.0, lean: warn * -0.2, hx: -warn * 0.15 } : { ...POSES.shock(t), lean: -0.2, aLs: 1.4 + Math.sin(t * 12) * 0.2 }); S.assist.face(t < 39.6 ? { ...FACES.question, open: 0.2 } : t < 40.0 ? { ...FACES.shock, open: 0.3 } : { ...FACES.scream, open: mo('labassistant', t) });

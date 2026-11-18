@@ -1,7 +1,7 @@
 # Builds every catchphrase variant from the user's sample. Registers: 1.10x and 1.15x of the sample f0 (measured with pyin and printed).
 import numpy as np, soundfile as sf, librosa, json, os, sys
 from common import *
-SRC = '/home/user/Noels-Projects/series-animation-guide/assets/bomboclat.mp3'
+SRC = os.path.join(ASSETS, 'bomboclat.mp3')
 y0 = mono(read(SRC)); print('source', len(y0) / SR, 's')
 # voice window + syllable boundaries from the envelope
 e = envelope(y0, SR, 200); t_e = np.arange(len(e)) / 200

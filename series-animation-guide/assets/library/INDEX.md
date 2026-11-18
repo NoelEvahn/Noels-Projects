@@ -61,6 +61,7 @@ Outfits: hoodie tee jersey stripes coat suit dress cardigan jumpsuit toga fur ar
 | `stage.js` | curtain, velvetStage, marquee, seatRows, **audience** (instanced, cheer anim), judgesTable, spotlightBeam, scoreboard, confettiCannon |
 | `lab.js` | **lovometer** (`setLevel`, `snap` = needle breaks off), labBench, flask, bubbles, testTubeRack, ratCage, wallMonitor, heartOGram, pinkTank, wallChart |
 | `sky.js` | cloud, cloudFloor, hotAirBalloon, airliner, cabinWall, parachuteCanopy, rainbow, sunDisc, bird |
+| `nature.js` | **groundCover**(area, clear, density, scale, heightFn) fills any floor with wind-swaying grass tufts + flowers + pebbles (+ rocks, logs); `grass`, `flowers`, `pebbles`, `rock`, `log`, `stump`, `roundTree`, `pineTree`, `birchTree`, `bushClump(dots)`, `treeLine(points)`; call `updateNature(t)` once per frame. Lawns where people walk: `scale ≈ 0.45`. Geometry + vertex colours only |
 | `world.js` | **makeEarth** (`setPink(0..1)` turns the night lights pink), makeMoon, starfield, makeGalaxy, solarSystem, drawHeroFace, **billboard** (`redraw(counterText)` repaints the screen every frame), skyline, landmark(bigben/sydney/tokyo/burj/empire/christ/pyramid/liberty), car, iceCreamTruck, schoolBus, reliefMap |
 
 ## Sets (`sets/`) — screens `set_*.jpg`
@@ -80,6 +81,8 @@ Each set pairs with a `*_STAGE` lighting preset (or `plazaStage(city)`) for `mak
 ## Rules (learned the hard way)
 * **Never add textures.** "More detail" means more geometry (real windows, trims, seams, bolts, props), better shapes, colour and lighting, never image maps, bump/normal maps or procedural surface patterns. Canvas is only for readable text (signs, boards, screens).
 * Characters, props and sets never clip: arms/legs are tapered lathe limbs with overlapping joint spheres, held items sit in the palm anchor, seated characters use `POSES.sit(t, seatHeight)` + `plant`.
+* **No bare floors:** every outdoor ground gets `groundCover` (and a tree line or bushes at the edges).
+* Animals are auto-grounded (`plantA`, tail excluded) and breathe/blink/sway by themselves; people blink and breathe from `CLOCK.t` (set it once per frame).
 * Never `offsetHSL` dark colours (use `shade(hex, factor)`); never `Math.random`/`Date.now` (use `rng(seed)`); instanced meshes are updated with explicit matrices.
 * Text on boards/billboards is head-on and authored with `textBoard`/canvas so it can auto-fit.
 * Do not name anything after the repository; keep new additions inside `series-animation-guide/`.

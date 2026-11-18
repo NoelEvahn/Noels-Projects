@@ -3,6 +3,8 @@ import * as THREE from 'three';
 import { makeRenderer, makeCamera, lookFrom, aimKey } from '../../assets/library/stage.js';
 import * as TL from './timeline.js';
 import * as HUD from './hud.js';
+import { updateNature } from '../../assets/library/props/nature.js';
+import { CLOCK } from '../../assets/library/character.js';
 
 const q = new URLSearchParams(location.search);
 const SCALE = parseFloat(q.get('scale') || '1');
@@ -38,6 +40,7 @@ function draw(i) {
   const t = i / TL.FPS;
   const sc = TL.sceneAt(t);
   const { mod, s } = built[sc.id];
+  updateNature(t); CLOCK.t = t;   // grass sway, blinks and breathing: pure functions of t
   const r = mod.frame(t, s, ctx) || {};
   const cam = r.cam;
   // counter shake on the camera (tiny), stronger on tier hits
@@ -71,6 +74,7 @@ function draw(i) {
 // VideoHub contract: renderOut(t) draws second t synchronously; renderFrame(i) is kept for tools/render.mjs
 window.renderOut = (t) => draw(Math.min(TL.FRAMES - 1, Math.round(t * TL.FPS)));
 window.renderFrame = (i) => { draw(i); return out.toDataURL('image/jpeg', parseFloat(q.get('q') || '0.92')); };
+window.VH_DEBUG = built;   // inspection from the console (scene objects per id)
 window.VH_SCENES = TL.SCENES.map((x) => ({ name: x.name, t0: x.t0, t1: x.t1 }));
 window.renderOut(0);
 window.READY = true;

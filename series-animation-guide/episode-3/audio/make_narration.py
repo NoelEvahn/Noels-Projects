@@ -1,9 +1,12 @@
-# Piper (en_US-ryan-high) narration + Gerald roasts; word timings by ASR alignment (faster-whisper) for the captions.
+# Kokoro narration + Gerald roasts (local neural TTS: far less robotic than Piper); word timings by ASR alignment (faster-whisper) for the captions.
+# Model files: KOKORO_DIR (default ../../../../series-deps/models) with kokoro-v1.0.onnx + voices-v1.0.bin. Voice: KOKORO_VOICE (default bm_george, dry British narrator).
 import numpy as np, soundfile as sf, subprocess, json, os, re, tempfile
 import librosa
 from common import *
-VOICE = os.environ.get('PIPER_VOICE', '/tmp/claude-0/-home-user-Noels-Projects/2970dd30-890b-5809-9aba-4641d8c5757b/scratchpad/ep3/voices/en_US-ryan-high.onnx')
-PY = os.environ.get('PIPER_PY', '/tmp/claude-0/-home-user-Noels-Projects/2970dd30-890b-5809-9aba-4641d8c5757b/scratchpad/ep3/venv/bin/python')
+KDIR = os.environ.get('KOKORO_DIR', os.path.join(HERE, '../../../../series-deps/models'))
+from kokoro_onnx import Kokoro
+tts = Kokoro(os.path.join(KDIR, 'kokoro-v1.0.onnx'), os.path.join(KDIR, 'voices-v1.0.bin'))
+KVOICE = os.environ.get('KOKORO_VOICE', 'bm_george')
 src = open(os.path.join(os.path.dirname(__file__), '../src/timeline.js')).read()
 def grab(name):
     blk = re.search(r'export const %s = \[(.*?)\n\];' % name, src, re.S).group(1)
@@ -14,13 +17,10 @@ from faster_whisper import WhisperModel
 asr = WhisperModel('tiny.en', device='cpu', compute_type='int8')
 os.makedirs(f'{AUD}/narr', exist_ok=True); WORDS = {}; report = []
 for L in LINES:
-    with tempfile.TemporaryDirectory() as d:
-        wav = os.path.join(d, 'l.wav')
-        subprocess.run([PY, '-m', 'piper', '-m', VOICE, '-f', wav], input=L['text'].encode(), check=True, capture_output=True)
-        y, sr = sf.read(wav)
+    y, sr = tts.create(L['text'], voice=KVOICE, speed=1.0, lang='en-gb')
     y = librosa.resample(y, orig_sr=sr, target_sr=SR)
     nz = np.where(np.abs(y) > 0.01)[0]; y = y[max(0, nz[0] - int(0.02 * SR)): min(len(y), nz[-1] + int(0.08 * SR))]
-    tempo = 1.12 if L['id'].startswith('n') else 1.08
+    tempo = 1.0   # natural pace; only sped up if a line would overrun its limit
     lim = LIMITS.get(L['id'])
     for _ in range(4):
         z = rubberband(y, SR, tempo=tempo); dur = len(z) / SR

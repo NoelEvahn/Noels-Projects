@@ -22,7 +22,7 @@ export function fence(L = 6, { h = 1.0, color = 0xfdfaf0 } = {}) {
   const im = new THREE.InstancedMesh(box(0.14, h, 0.05), mat(color, { rough: 0.8 }), n); const d = new THREE.Object3D();
   for (let i = 0; i < n; i++) { d.position.set(-L / 2 + (i + 0.5) * (L / n), h / 2, 0); d.updateMatrix(); im.setMatrixAt(i, d.matrix); }
   im.castShadow = im.receiveShadow = true; g.add(im);
-  add(g, box(L, 0.07, 0.07), mat(color), [0, h * 0.28, -0.04]); add(g, box(L, 0.07, 0.07), mat(color), [0, h * 0.78, -0.04]);
+  add(g, box(L, 0.07, 0.07), mat(color), [0, h * 0.28, -0.04]); add(g, box(L, 0.05, 0.16), mat(color), [0, h + 0.025, 0]);   // flat top board (cats sit on it) add(g, box(L, 0.07, 0.07), mat(color), [0, h * 0.78, -0.04]);
   return g;
 }
 export function grill() {

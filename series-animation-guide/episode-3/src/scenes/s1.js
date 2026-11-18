@@ -32,7 +32,7 @@ export default {
     const tab = (() => { const g = new THREE.Group(); const b = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.02, 0.22), new THREE.MeshStandardMaterial({ color: 0x15151c })); g.add(b); const s = new THREE.Mesh(new THREE.BoxGeometry(0.27, 0.005, 0.19), new THREE.MeshBasicMaterial({ color: 0x55c0ff })); s.position.y = 0.012; g.add(s); return g; })(); kid.hold(tab, 'R', { pos: [0, 0.06, 0.1], rot: [0.4, 0, 0], grip: 'flat' }); S.tab = tab;
     // dog + cat
     const dog = makeAnimal('dog', ANIMALS.dog); scene.add(dog.root); S.dog = dog; place(dog, 5.0, 0, 2.2, -0.6);
-    const cat = makeAnimal('cat', ANIMALS.gerald); scene.add(cat.root); S.cat = cat; cat.root.position.set(-7.5, 1.15 + 0.115, 1.6); cat.root.rotation.y = 1.25;
+    const cat = makeAnimal('cat', ANIMALS.gerald); scene.add(cat.root); S.cat = cat; cat.root.position.set(-7.5, 1.15 + 0.05, 1.6); cat.root.rotation.y = 1.25;
     // neighbours: 4 over the fences at 6.0, 8 more at 8.0
     const nbPresets = ['neighbourMan', 'neighbourWoman', 'neighbourTeen', 'neighbourGranny'];
     S.wave1 = nbPresets.map((p, i) => { const c = mk('nb' + i, p); const left = i < 2; place(c, left ? -8.5 : 8.5, 0.0, left ? -1.6 + i * 3.2 : 1.8 - (i - 2) * 3.4, left ? Math.PI / 2 : -Math.PI / 2); c.root.position.y = 0.35; return c; });
@@ -65,7 +65,8 @@ export default {
       shot(8.8, 9.6, orbit([2.0, 0.95, 2.7], -8, 2.2, 0.15, 34), orbit([2.0, 0.95, 2.7], -4, 1.5, 0.15, 32)),            // kid voice + tablet drops
     ];
     // slower edit: ~2 s shots, each holding the camera of the gag / voiced line it covers
-    S.shots = regroup(S.shots, [[0, 2.4, 0], [2.4, 4.0, 2.0], [4.0, 5.6, 4.4], [5.6, 7.2, 6.4], [7.2, 9.6, 8.0]]);
+    S.shots = regroup(S.shots, [[0, 2.0, 1.2], [2.0, 4.0, 0.4], [4.0, 5.6, 4.8], [5.6, 7.2, 5.6], [7.2, 9.6, 8.0]]);
+    S.shots[2] = { ...S.shots[2], a: cam([-4.9, 1.45, 1.75], [-7.5, 1.5, 1.6], 40), b: cam([-5.2, 1.45, 1.7], [-7.5, 1.5, 1.6], 38) };   // Gerald on the fence: camera just above the rail so he is clearly sitting on it
     return S;
   },
   frame(t, S, ctx) {

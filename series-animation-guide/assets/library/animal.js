@@ -65,8 +65,9 @@ export function makeAnimal(kind = 'cat', o = {}) {
     eyes.push({ eg, pg, pupil, lp, s });
   }
   // ears
+  const ears = [];
   for (const s of [-1, 1]) {
-    const e = new THREE.Group(); e.position.set(s * R * 0.62, R * 0.68, -R * 0.05); head.add(e);
+    const e = new THREE.Group(); e.position.set(s * R * 0.62, R * 0.68, -R * 0.05); head.add(e); ears.push(e);
     if (S.ear === 'tri') { add(e, cone(R * 0.34, R * 0.6, 4), fur, [0, R * 0.2, 0], [0, Math.PI / 4, -s * 0.2]); add(e, cone(R * 0.2, R * 0.4, 4), mat(0xf5a0a8), [0, R * 0.16, R * 0.06], [0, Math.PI / 4, -s * 0.2]); }
     else if (S.ear === 'floppy') add(e, sph(R * 0.38, 14, 10), mat(o.stripe ?? o.fur), [s * R * 0.12, -R * 0.35, 0], [0, 0, s * 0.3], [0.5, 1.3, 0.8]);
     else if (S.ear === 'long') { add(e, cap(R * 0.2, R * 1.0, 6, 12), fur, [s * R * 0.12, R * 0.65, 0], [0, 0, -s * 0.18], [1, 1, 0.5]); add(e, cap(R * 0.12, R * 0.8, 6, 12), mat(o.inner), [s * R * 0.12, R * 0.65, R * 0.07], [0, 0, -s * 0.18], [1, 1, 0.4]); }
@@ -98,12 +99,23 @@ export function makeAnimal(kind = 'cat', o = {}) {
 
   const a = { root, pivot, body, neck, head, legs, tail, eyes, S, kind, opts: o };
   root.scale.setScalar(o.scale ?? 1);
-  a.pose = (p) => applyAPose(a, p);
+  a.ears = ears;
+  a.pose = (p) => { applyAPose(a, p); if (!p.air) plantA(a); };   // always grounded on whatever it stands/sits on (p.air: jumping)
   a.face = (f) => applyAFace(a, f);
   a.pose(APOSES.stand(0)); a.face({});
   return a;
 }
 
+// Drop the animal so its lowest point rests on y=0 of its root (fixes hovering in sit/loaf/sleep on fences, seats, registers).
+const _box = new THREE.Box3(), _v = new THREE.Vector3();
+function plantA(a) {
+  a.pivot.position.y = 0; a.root.updateMatrixWorld(true);
+  _box.makeEmpty(); const tailRoot = a.tail[0]?.parent; a.pivot.traverse((o) => { let q = o; while (q && q !== a.pivot) { if (q === tailRoot) return; q = q.parent; } if (o.isMesh && o.visible) { o.geometry.boundingBox ?? o.geometry.computeBoundingBox(); _box.union(o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld)); } });
+  a.root.getWorldPosition(_v); const sc = a.root.getWorldScale(new THREE.Vector3()).y;
+  a.pivot.position.y = -(_box.min.y - _v.y) / sc + (a.lift ?? 0);
+}
+// Secondary motion layered on every pose: breathing, slow head drift, tail sway, ear twitches, blinks. Pure functions of t.
+const life = (t, k = 1) => ({ squash: 1 + Math.sin(t * 2.4) * 0.012 * k, hy: Math.sin(t * 0.37) * 0.12 * k + Math.sin(t * 0.91) * 0.04 * k, hz: Math.sin(t * 0.53) * 0.05 * k, tailWave: 0.22 * k, tailT: t, _t: t });
 const AJ = { bob: 0, pitch: 0, hx: 0, hy: 0, hz: 0, neckX: 0, legFL: 0, legFR: 0, legBL: 0, legBR: 0, tuck: 0, tailBase: 0.6, tailCurl: 0.15, tailWave: 0, tailT: 0, squash: 1, yaw: 0, roll: 0 };
 function applyAPose(a, p) {
   const j = { ...AJ, ...p }, S = a.S;
@@ -114,6 +126,8 @@ function applyAPose(a, p) {
   a.head.rotation.set(j.hx, j.hy, j.hz);
   const L = a.legs; // FL, FR, BL, BR
   [j.legFL, j.legFR, j.legBL, j.legBR].forEach((v, i) => { L[i].rotation.x = v; L[i].scale.set(1, 1 - j.tuck * 0.85, 1); L[i].position.y = -S.bodyR * 0.45 + j.tuck * S.legH * 0.3; });
+  if (a.ears) { const tw = Math.max(0, Math.sin((j._t ?? 0) * 0.83 + 1.3) - 0.93) * 12; a.ears.forEach((e, i) => { e.rotation.z = (i ? -1 : 1) * tw * 0.25; }); }
+  a._t = j._t ?? 0;
   a.tail.forEach((s, i) => { s.rotation.x = (i === 0 ? -j.tailBase : 0) + (i > 0 ? j.tailCurl : 0); s.rotation.y = Math.sin(j.tailT * 3 - i * 0.7) * j.tailWave * (i === 0 ? 0.3 : 1); });
 }
 const as = Math.sin, API = Math.PI;
@@ -130,9 +144,12 @@ export const APOSES = {
   shock: (t = 0) => ({ squash: 1.08, bob: 0.1, tailBase: 1.4, tailCurl: 0.0, tailWave: 0.6, tailT: t * 6, hx: -0.2, legFL: 0.2, legFR: 0.2 }),
   lookAway: (t = 0) => ({ hy: 0.7, hx: -0.1, tailBase: 0.3, tailCurl: 0.3, tailWave: 0.3, tailT: t, neckX: 0.05 }),
 };
+// every pose gets the life layer (pose values win for keys they set, squash/hy multiply in)
+for (const [k, f] of Object.entries(APOSES)) APOSES[k] = (t = 0, ...rest) => { const p = f(t, ...rest), l = life(t, k === 'sleep' ? 0.4 : 1); return { ...l, ...p, squash: (p.squash ?? 1) * l.squash, hy: (p.hy ?? 0) + l.hy, hz: (p.hz ?? 0) + l.hz, tailWave: Math.max(p.tailWave ?? 0, l.tailWave), tailT: p.tailT ?? t, _t: t }; };
 const AFD = { lid: 0.0, look: [0, 0], pupil: 1, open: 0 };
 function applyAFace(a, f) {
   const o = { ...AFD, lid: a.opts.lid ?? 0, ...f }, R = a.S.headR;
+  const bp = ((a._t ?? 0) + (a.opts.seed ?? 0) * 0.7) % 3.7; if (f.blink !== false && bp < 0.16) o.lid = Math.max(o.lid, 1 - Math.abs(bp - 0.08) / 0.08 * 0.6);   // slow, lazy blink
   for (const e of a.eyes) { e.lp.rotation.x = -Math.PI / 2 + o.lid * Math.PI * 1.02; e.pg.position.x = o.look[0] * R * 0.1; e.pg.position.y = o.look[1] * R * 0.1; e.pupil.scale.x = (a.kind === 'cat' ? 0.55 : 1) * o.pupil; e.pupil.scale.y = (a.kind === 'cat' ? 1.15 : 1) * o.pupil; }
   if (a.head.userData.tongue) a.head.userData.tongue.visible = o.open > 0.3;
 }

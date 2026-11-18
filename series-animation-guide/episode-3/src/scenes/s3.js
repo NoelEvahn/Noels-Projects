@@ -66,7 +66,7 @@ export default {
       shot(31.6, 32.0, orbit([0.3, 1.5, -9], 10, 3.4, 0.2, 40)),                                                                // hero bows in confetti
     ];
     // slower edit: ~2 s shots, each holding the camera of the gag / voiced line it covers
-    S.shots = regroup(S.shots, [[20.8, 24.0, 20.8], [24.0, 25.6, 24.8], [25.6, 27.2, 24.0], [27.2, 28.8, 28.0], [28.8, 30.4, 29.2], [30.4, 32.0, 30.8]]);
+    S.shots = regroup(S.shots, [[20.8, 22.4, 20.8], [22.4, 24.0, 27.2], [24.0, 25.6, 24.8], [25.6, 27.2, 25.6], [27.2, 28.8, 28.4], [28.8, 30.4, 29.2], [30.4, 32.0, 31.2]]);
     return S;
   },
   frame(t, S, ctx) {

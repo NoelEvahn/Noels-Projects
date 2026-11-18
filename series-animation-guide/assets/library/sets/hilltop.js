@@ -1,5 +1,6 @@
 // Golden-hour hilltop: rolling terrain, rounded trees (instanced), flowers, distant town. update(waveR) bends trees as the love-wave passes.
 import * as THREE from 'three';
+import { groundCover } from '../props/nature.js';
 import { mat, add, sph, cyl, rng, C } from '../util.js';
 export const HILL_STAGE = { sky: ['#6a3a9a', '#ffb060', '#ff8a5a'], ground: null, fog: ['#ffb27a', 40, 200], hemiSky: 0xffc8a0, hemiGround: 0x7a5a3a, hemiI: 1.0, key: 0xffb070, keyI: 2.6, keyPos: [-10, 5, 8], shadow: { extent: 20 } };
 export const hillH = (x, z) => 3.2 * Math.exp(-((x * x + z * z) / 520)) + 0.9 * Math.sin(x * 0.07 + 1) * Math.cos(z * 0.06) + 0.6 * Math.sin(z * 0.11) - 0.0;
@@ -36,5 +37,7 @@ export function buildHilltop({ seed = 4, trees = 90, R = 90 } = {}) {
   // distant town
   const town = new THREE.Group(); for (let i = 0; i < 40; i++) { const x = -40 + (i % 8) * 6 + r.range(-1, 1), z = -70 - Math.floor(i / 8) * 6 + r.range(-1, 1); const h = new THREE.Group(); add(h, new THREE.BoxGeometry(2.4, 1.8, 2.4), mat(r.pick([0xf0d8b0, 0xf4b8a8, 0xbfe0c8, 0xf6e2a0])), [0, 0.9, 0]); add(h, new THREE.ConeGeometry(2, 1.3, 4), mat(0xb4503a), [0, 2.4, 0], [0, Math.PI / 4, 0]); h.position.set(x, hillH(x, z) * 0 - 0.2, z); town.add(h); } g.add(town);
   const sun = new THREE.Mesh(new THREE.SphereGeometry(7, 24, 16), new THREE.MeshBasicMaterial({ color: 0xffd9a0, toneMapped: false })); sun.position.set(-60, 14, -120); g.add(sun);
+  // meadow on the hilltop around the hero's mark (clear circle at the centre), wildflowers, rocks and logs, tree clumps nearer the camera ring
+  g.add(groundCover({ area: [-16, -16, 16, 16], heightFn: hillH, clear: [{ x: 0, z: 0, r: 1.6 }], density: 7, scale: 0.55, flowerK: 0.14, pebbleK: 0.02, rocks: 6, logs: 2, seed: 41 }));
   return { group: g, update: (waveR, t = 0) => place(waveR, t), trees: T };
 }

@@ -7,6 +7,7 @@ import { makeAnimal, APOSES, ANIMALS } from '../../../assets/library/animal.js';
 import { makeHeartField, makeConfetti, makeSparkles } from '../../../assets/library/fx/hearts.js';
 import { balloonBunch, heartBalloon, tray } from '../../../assets/library/props/holdables.js';
 import { starfield } from '../../../assets/library/props/world.js';
+import { groundCover, treeLine } from '../../../assets/library/props/nature.js';
 import { mat, add, cyl, sph, box, canvasTex } from '../../../assets/library/util.js';
 
 const GROUND_Y = -60;                                       // launch field sits far below the cloud layer
@@ -24,6 +25,9 @@ export default {
     add(field, new THREE.CylinderGeometry(60, 60, 0.3, 48), mat(0x6fbf52), [0, -0.15, 0]); for (let i = 0; i < 7; i++) { const t = new THREE.Group(); add(t, new THREE.CylinderGeometry(0.2, 0.3, 2.5, 8), mat(0x7a5232), [0, 1.2, 0]); add(t, new THREE.SphereGeometry(1.6, 14, 10), mat(0x49b04e), [0, 3.4, 0]); t.position.set(-22 + i * 7.5, 0, -16); field.add(t); }
     S.hero = makeCharacter(PRESETS.hero); scene.add(S.hero.root); S.bunch = balloonBunch(26, 1.6); S.hero.holdUpright(S.bunch, 'R');
     S.fans = Array.from({ length: 30 }, (_, i) => { const c = randomPerson(rng(60 + i)); field.add(c.root); const a = i / 30 * 6.283, d = 4 + (i % 5) * 1.5; c.root.position.set(Math.sin(a) * d, 0, Math.cos(a) * d - 3); c.root.rotation.y = Math.atan2(-Math.sin(a), -Math.cos(a)) + 3.14; const b = heartBalloon([0xff3f7f, 0xff8fb8, 0xffd23f, 0x4aa0e0, 0xb07aff][i % 5], 1.3); c.hold = null; c.root.add(b); b.position.set(0.3, 0.9, 0.2); c.bal = b; c.rel = 45.2 + (i / 30) * 1.1; return c; });
+    // meadow + tree line so the launch field is a real place (clear patches where the hero and Gerald sit)
+    field.add(groundCover({ area: [-16, -14, 16, 12], clear: [{ x: 0, z: 0, r: 1.2 }, { x: 3.4, z: 3.0, r: 0.7 }], density: 5, scale: 0.55, flowerK: 0.2, pebbleK: 0.02, rocks: 5, logs: 1, seed: 51 }));
+    field.add(treeLine(Array.from({ length: 22 }, (_, i) => { const a = -0.6 + i / 21 * 4.4; return [Math.cos(a + 1.6) * 18, Math.sin(a + 1.6) * -18 - 2]; }), { seed: 52 }));
     S.catG = makeAnimal('cat', ANIMALS.gerald); field.add(S.catG.root); S.catG.root.position.set(3.4, 0, 3.0); S.catG.root.rotation.y = 2.6;
     // swarm of balloons rising past the camera during the ascent
     S.swarm = makeHeartField(260, { colors: [0xff3f7f, 0xff8fb8, 0xffd23f, 0x4aa0e0, 0xb07aff, 0xffffff], emissive: 0.4 }); scene.add(S.swarm); const r = rng(5); S.swP = Array.from({ length: 260 }, () => ({ x: r.range(-26, 26), z: r.range(-26, 16), sp: r.range(2.5, 6), y0: r.range(-80, 40), s: r.range(0.5, 1.1), ph: r() * 6 }));
@@ -63,7 +67,7 @@ export default {
       shot(56.4, 57.6, cam([0, B + 2, 12], [0, B + 3, 0], 56), cam([0, B + 20, 14], [0, B + 22, 0], 56)),                                      // rising towards space
     ];
     // slower edit: ~2 s shots, each holding the camera of the gag / voiced line it covers
-    S.shots = regroup(S.shots, [[44.8, 46.4, 44.8], [46.4, 48.4, 46.8], [48.4, 50.4, 48.8], [50.4, 52.4, 51.2], [52.4, 54.8, 53.2], [54.8, 57.6, 54.0]]);
+    S.shots = regroup(S.shots, [[44.8, 46.4, 44.8], [46.4, 48.4, 46.8], [48.4, 50.4, 48.4], [50.4, 52.4, 51.2], [52.4, 54.8, 53.2], [54.8, 57.6, 55.6]]);
     S.shots[1].a = cam(F(4.9, 0.6, 0.9), F(3.4, 0.45, 3.0), 54); S.shots[1].b = cam(F(4.7, 0.55, 1.2), F(3.4, 0.4, 3.0), 50);   // held on Gerald in the grass; the hero lifts out of the top of frame during the roast
     return S;
   },

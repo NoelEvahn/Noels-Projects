@@ -3,11 +3,12 @@
 import * as THREE from 'three';
 import { mat, add, sph, box, cyl, cap, rng, canvasTex, heartGeo, C } from '../util.js';
 import { makeHeart } from '../fx/hearts.js';
+import { groundCover, bushClump, rock } from '../props/nature.js';
 import { tree, bush, flowerPatch, fence, grill, burger, picnicTable, lawnChair, pool, bunting, gazebo, houseBack, trashCan } from '../props/home.js';
 
 export function buildGarden({ wrecked = 0, seed = 4 } = {}) {
   const r = rng(seed), g = new THREE.Group();
-  const lawn = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.MeshStandardMaterial({ map: canvasTex(256, 256, (c, w, h) => { for (let i = 0; i < 8; i++) { c.fillStyle = i % 2 ? '#79c85a' : '#6fbf52'; c.fillRect(0, i * h / 8, w, h / 8); } }, { repeat: [3, 3] }), roughness: 0.95 }));
+  const lawn = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.MeshStandardMaterial({ color: 0x6fbf52, roughness: 0.95 }));
   lawn.rotation.x = -Math.PI / 2; lawn.receiveShadow = true; g.add(lawn);
   const house = houseBack(12, 4.6); house.position.set(0, 0, -6); g.add(house);
   // patio slabs
@@ -21,6 +22,12 @@ export function buildGarden({ wrecked = 0, seed = 4 } = {}) {
   [[-8.8, -4], [9, -3], [-9.5, 5], [9.5, 6]].forEach(([x, z], i) => { const t = tree(r, { h: 3.4 + i * 0.2, s: 1.6 }); t.position.set(x, 0, z); g.add(t); });
   // flowers + beds
   const fp = flowerPatch(rng(2), 22, 3.2); fp.position.set(-3.5, 0, -4.4); g.add(fp); const fp2 = flowerPatch(rng(3), 22, 3.2); fp2.position.set(3.8, 0, -4.4); g.add(fp2);
+  // real grass (no textures): short mown lawn where people walk, taller tufts, flowers and pebbles along the fences and the house bed
+  g.add(groundCover({ area: [-7.3, -3.3, 7.3, 9], density: 11, scale: 0.42, flowerK: 0.012, pebbleK: 0.004, seed: 21 }));
+  for (const sx of [-1, 1]) g.add(groundCover({ area: sx < 0 ? [-7.4, -3.4, -6.4, 9] : [6.4, -3.4, 7.4, 9], density: 16, scale: 1, flowerK: 0.18, pebbleK: 0.05, seed: 22 + sx }));
+  g.add(groundCover({ area: [-6, -3.6, 6, -3.35], density: 30, scale: 0.8, flowerK: 0.25, seed: 25 }));
+  for (const [x, z, d] of [[-6.6, 7.5, 0xff5c8a], [6.7, 2.4, null], [-6.8, -2.6, 0xffd23f]]) { const b = bushClump({ seed: x * 7 + z, s: 1.2, dots: d }); b.position.set(x, 0, z); g.add(b); }
+  for (const [x, z, s] of [[6.6, 8.2, 0.5], [-6.7, 4.0, 0.35]]) { const k = rock({ seed: x + z, size: s }); k.position.set(x, 0, z); g.add(k); }
   // grill + burgers
   const gr = grill(); gr.position.set(-3.2, 0, -1.8); gr.rotation.y = 0.5; g.add(gr);
   const burgers = []; for (let i = 0; i < 4; i++) { const b = burger(); b.position.set(-3.2 + (i % 2 - 0.5) * 0.25, 0.93, -1.8 + (i > 1 ? 0.2 : -0.1)); b.scale.setScalar(1.1); g.add(b); burgers.push(b); }
