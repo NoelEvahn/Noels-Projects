@@ -1,0 +1,102 @@
+{
+ "preset": "high",
+ "rows": [
+  {
+   "name": "T3_0800",
+   "ok": true,
+   "ms": 583500,
+   "mean": 71.3,
+   "variance": 3144.5,
+   "colors": 1318,
+   "calls": 133,
+   "tris": 412364,
+   "shadowCalls": 73,
+   "programs": 38
+  },
+  {
+   "name": "T1_0800",
+   "ok": true,
+   "ms": 638609,
+   "mean": 48.4,
+   "variance": 2682.6,
+   "colors": 950,
+   "calls": 162,
+   "tris": 698648,
+   "shadowCalls": 90,
+   "programs": 47
+  },
+  {
+   "name": "T4_0800",
+   "ok": true,
+   "ms": 344257,
+   "mean": 67.8,
+   "variance": 4449.8,
+   "colors": 1160,
+   "calls": 61,
+   "tris": 446365,
+   "shadowCalls": 73,
+   "programs": 38
+  },
+  {
+   "name": "T5_0800",
+   "ok": true,
+   "ms": 349300,
+   "mean": 121.4,
+   "variance": 4242.2,
+   "colors": 1895,
+   "calls": 169,
+   "tris": 353673,
+   "shadowCalls": 84,
+   "programs": 48
+  },
+  {
+   "name": "T6_0800",
+   "ok": true,
+   "ms": 602194,
+   "mean": 100.6,
+   "variance": 4632.6,
+   "colors": 796,
+   "calls": 184,
+   "tris": 876418,
+   "shadowCalls": 100,
+   "programs": 42
+  },
+  {
+   "name": "T7_0800",
+   "ok": true,
+   "ms": 600049,
+   "mean": 116.5,
+   "variance": 5385.2,
+   "colors": 1104,
+   "calls": 172,
+   "tris": 394967,
+   "shadowCalls": 97,
+   "programs": 49
+  },
+  {
+   "name": "T2_0800",
+   "ok": true,
+   "ms": 2272350,
+   "mean": 45.1,
+   "variance": 2885.5,
+   "colors": 1063,
+   "calls": 239,
+   "tris": 359550,
+   "shadowCalls": 123,
+   "programs": 43
+  },
+  {
+   "name": "T8_0800",
+   "ok": true,
+   "ms": 747978,
+   "mean": 55.7,
+   "variance": 1907,
+   "colors": 1126,
+   "calls": 226,
+   "tris": 875435,
+   "shadowCalls": 93,
+   "programs": 44
+  }
+ ],
+ "errors": []
+}

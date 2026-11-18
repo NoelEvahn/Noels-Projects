@@ -594,3 +594,22 @@ Software GL (counters only; fps is not measurable here). `node test/perf/perf.sp
 | Ultra V16 | 127 (600) | 1.19M (2.0M) | 175 (420) | 44 (60) |
 
 Notes: Low program count is at its budget (40) in lake and forest views; the lily/blob material is one shared program and the ambient car paint meshes carry an instanceColor attribute so parked and ambient cars share one carpaint program. `cpuMs` is JS submission time measured with other processes running on the same machine; High V03 read 6.2 ms in one run and 4.5 ms (baseline) earlier, so the 5 ms High CPU check is noise-limited here. Fill-rate cost of the alpha cards (lawn, marram, cattail, daisy) is not measurable under software GL; Low runs 0.4x density at 30 m.
+
+## Terrain Relief (Sonnet)
+
+Software GL, counters only (fps is not measurable here). `node test/perf/perf.spec.cjs --presets=low,high --views=V01,V03,V08,V13,V16` against a private build, 320x180, 08:00, machine shared with other agents' runs. Terrain mesh topology is unchanged (LOD0 4 m cells = 1,650 tris per chunk including skirts; LOD1 12.5 m cells), so the terrain share of every row is identical to Detail Batch 1; the rows below also contain the Detail Batch 2 additions. All rows are inside the Annex G 2.3 absolute budgets; the script's "baseline x1.10" flags (shadowTris, geoMB, calls) come from Batch 2 geometry, not from terrain.
+
+| Preset / view | calls (budget) | tris (budget) | shadow calls | programs (budget) |
+|---|---|---|---|---|
+| Low V01 | 125 (220) | 262k (350k) | 30 (60) | 38 (40) |
+| Low V03 | 159 (220) | 253k (350k) | 30 (60) | 38 (40) |
+| Low V08 | 90 (220) | 260k (350k) | 25 (60) | 40 (40) |
+| Low V13 | 102 (220) | 254k (350k) | 22 (60) | 40 (40) |
+| Low V16 | 77 (220) | 285k (350k) | 25 (60) | 40 (40) |
+| High V01 | 242 (450) | 412k (1.2M) | 119 (280) | 44 (60) |
+| High V03 | 315 (450) | 417k (1.2M) | 130 (280) | 46 (60) |
+| High V08 | 150 (450) | 377k (1.2M) | 94 (280) | 48 (60) |
+| High V13 | 184 (450) | 544k (1.2M) | 87 (280) | 49 (60) |
+| High V16 | 121 (450) | 883k (1.2M) | 98 (280) | 49 (60) |
+
+Terrain viewpoints T1-T8 (`test/screenshots/terrain1`, High, 960x540): 61-239 calls, 354k-876k tris. Height grid build: about 0.43 s -> about 1.0 s in Node (relief on an 8 m lattice, chamfer distance, ditches); the browser boot mark shows about 1.2 s under load (budget 1.5 s on the reference desktop). The scripted ring fly-through reported 34 slice overruns (max 46.6 ms in a `mat.world` merge) and "ring route did not complete" under 7-10 load average from other agents' browsers; not attributable to terrain (no terrain code runs in `final:mat.world`) but not re-verified on an idle machine. Shader cost is not measurable here: the splat adds slope exposure and a height weight per layer tap (no extra taps), two noise taps within 60 m, and on High/Ultra one extra layer tap within 22 m on gravel / sand / dirt / mud.
