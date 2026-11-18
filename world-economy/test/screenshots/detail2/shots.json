@@ -1,0 +1,30 @@
+{
+ "preset": "high",
+ "rows": [
+  {
+   "name": "V01_0800",
+   "ok": true,
+   "ms": 346141,
+   "mean": 92.8,
+   "variance": 2891.2,
+   "colors": 1531,
+   "calls": 299,
+   "tris": 483111,
+   "shadowCalls": 125,
+   "programs": 46
+  },
+  {
+   "name": "V13_0800",
+   "ok": true,
+   "ms": 438728,
+   "mean": 109.9,
+   "variance": 4186.1,
+   "colors": 1124,
+   "calls": 208,
+   "tris": 713018,
+   "shadowCalls": 97,
+   "programs": 47
+  }
+ ],
+ "errors": []
+}

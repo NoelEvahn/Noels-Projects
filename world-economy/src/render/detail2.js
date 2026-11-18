@@ -87,7 +87,7 @@ export function createDetail2({ scene }) {
   const wireGeo = new THREE.BufferGeometry(); wireGeo.setAttribute('position', new THREE.BufferAttribute(wirePos, 3).setUsage(THREE.DynamicDrawUsage)); wireGeo.setIndex(new THREE.BufferAttribute(wireIdx, 1)); wireGeo.setDrawRange(0, 0);
   { const wc = decalCell('wire'), uv = new Float32Array(wireVerts * 2); for (let i = 0; i < wireVerts; i++) { uv[i * 2] = (wc[0] + wc[2]) / 2; uv[i * 2 + 1] = (wc[1] + wc[3]) / 2; } wireGeo.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); }
   // one-instance InstancedMesh on the blob program (a plain Mesh would compile a second variant); the decal cell is solid dark grey
-  const wire = new THREE.InstancedMesh(wireGeo, MatLib.get('mat.blob'), 1); wire.setMatrixAt(0, new THREE.Matrix4()); wire.count = 1; wire.frustumCulled = false; wire.matrixAutoUpdate = false; wire.name = 'd2.wires'; wire.visible = false; wire.renderOrder = 3; wire.castShadow = false; wire.receiveShadow = false; group.add(wire);
+  const wire = new THREE.InstancedMesh(wireGeo, MatLib.get('mat.wire'), 1); wire.setMatrixAt(0, new THREE.Matrix4()); wire.count = 1; wire.frustumCulled = false; wire.matrixAutoUpdate = false; wire.name = 'd2.wires'; wire.visible = false; wire.renderOrder = 3; wire.castShadow = false; wire.receiveShadow = false; group.add(wire);
 
   const frustum = new THREE.Frustum(), pv = new THREE.Matrix4(), sph = new THREE.Sphere();
   function fillM(a, o, x, y, z, yaw, sx, sy, sz) {
@@ -107,7 +107,7 @@ export function createDetail2({ scene }) {
         const mx = (W[i] + W[i + 3]) * 0.5, mz = (W[i + 2] + W[i + 5]) * 0.5, dx = mx - cam.x, dz = mz - cam.z, d2 = dx * dx + dz * dz;
         if (d2 > T.wire * T.wire) continue;
         sph.center.set(mx, (W[i + 1] + W[i + 4]) * 0.5, mz); sph.radius = 36; if (!frustum.intersectsSphere(sph)) continue;
-        const ax = W[i], ay = W[i + 1], az = W[i + 2], bx = W[i + 3], by = W[i + 4], bz = W[i + 5], L = Math.hypot(bx - ax, bz - az), sag = 0.0125 * L, hw = 0.0065;
+        const ax = W[i], ay = W[i + 1], az = W[i + 2], bx = W[i + 3], by = W[i + 4], bz = W[i + 5], L = Math.hypot(bx - ax, bz - az), sag = 0.0125 * L, hw = 0.009;
         const nx = -(bz - az) / L, nz = (bx - ax) / L; // horizontal normal of the span
         for (let k = 0; k < SEGS; k++) {
           const t0 = k / SEGS, t1 = (k + 1) / SEGS;

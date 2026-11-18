@@ -613,3 +613,29 @@ Software GL, counters only (fps is not measurable here). `node test/perf/perf.sp
 | High V16 | 121 (450) | 883k (1.2M) | 98 (280) | 49 (60) |
 
 Terrain viewpoints T1-T8 (`test/screenshots/terrain1`, High, 960x540): 61-239 calls, 354k-876k tris. Height grid build: about 0.43 s -> about 1.0 s in Node (relief on an 8 m lattice, chamfer distance, ditches); the browser boot mark shows about 1.2 s under load (budget 1.5 s on the reference desktop). The scripted ring fly-through reported 34 slice overruns (max 46.6 ms in a `mat.world` merge) and "ring route did not complete" under 7-10 load average from other agents' browsers; not attributable to terrain (no terrain code runs in `final:mat.world`) but not re-verified on an idle machine. Shader cost is not measurable here: the splat adds slope exposure and a height weight per layer tap (no extra taps), two noise taps within 60 m, and on High/Ultra one extra layer tap within 22 m on gravel / sand / dirt / mud.
+
+## Detail Batch 2 (Sonnet)
+
+Software GL, counters only (fps is not measurable here). `node test/perf/perf.spec.cjs --presets=low,medium,high,ultra --views=V01,V03,V08,V10,V13,V16` at 320x180, 08:00, on a private build copy. The working tree also contained the terrain agent's relief work at the time, so part of any growth is not ours. Every row is inside the Annex G 2.3 budgets for calls, tris, shadow calls and shadow tris, programs, memory; the spec's own "baseline x 1.10" comparison fails on several rows (baseline.json was not rebased: it would bake in the terrain work too) and `cpuMs > 5` on software GL.
+
+| Preset / view | calls (budget) | tris (budget) | shadow calls | programs (budget) |
+|---|---|---|---|---|
+| Low V01 | 125 (220) | 262k (350k) | 30 (60) | 38 (40) |
+| Low V03 | 159 (220) | 253k (350k) | 30 (60) | 38 (40) |
+| Low V08 | 90 (220) | 260k (350k) | 25 (60) | 40 (40) |
+| Low V13 | 96 (220) | 260k (350k) | 22 (60) | 40 (40) |
+| Low V16 | 77 (220) | 294k (350k) | 25 (60) | 40 (40) |
+| Medium V03 | 213 (320) | 396k (700k) | 79 (140) | 42 (50) |
+| Medium V16 | 106 (320) | 524k (700k) | 57 (140) | 44 (50) |
+| High V01 | 230 (450) | 419k (1.2M) | 119 (280) | 34 (60) |
+| High V03 | 284 (450) | 416k (1.2M) | 130 (280) | 34 (60) |
+| High V13 | 167 (450) | 535k (1.2M) | 88 (280) | 39 (60) |
+| High V16 | 113 (450) | 727k (1.2M) | 98 (280) | 39 (60) |
+| Ultra V03 | 383 (600) | 577k (2.0M) | 221 (420) | 42 (60) |
+| Ultra V16 | 125 (600) | 1.46M (2.0M) | 171 (420) | 44 (60) |
+
+Highest measured 08:00 screenshot counters (High, 960x540): V01 299 calls / 483k tris, V03 301 / 453k, V13 208 / 713k, V16 143 / 751k. Added by Batch 2 on High: about 11 calls from `detail2` (3 bird meshes, duck, swan, rings, fish, hull collar, hull shade, weeds, wires), 4 ground-cover types (needles, mushrooms, logs, saplings), no extra calls for props (merged into chunk batches).
+
+- **Programs:** the first version of leaves, motes and wires compiled 4 new programs and put Low at 41-44 of 40. Leaves and motes are now kinds 4 and 5 of the puff program, wires use the blob program (3 materials share it), so Low is back at 38-40.
+- **Streaming (fly-through, High):** 28 overruns, max step 11.7 ms at `terrainArrays` (the terrain agent's relief work); the earlier worst step was a 47k-vertex `mat.world` finalise (18 ms) caused by Batch 2 facade details; `chunkManager` now never lets a writer grow past 24k vertices because of one big batch. The forced-GC variant is informational (154 ms at `terrainArrays`). The gating overrun count is therefore not 0 and is not caused by detail work any more.
+- Ground cover: 3.7 candidates / m2, lawn cap 26k (Batch 1 drew 3.8k lawn tufts in the V01 ring; the new count was not re-measured). Fill rate of the alpha-tested cards is not measurable without a GPU.
