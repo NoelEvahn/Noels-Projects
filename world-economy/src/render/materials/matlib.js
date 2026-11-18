@@ -20,7 +20,8 @@ function blobLike(ring) {
   vRA = 1.0;
   #ifdef USE_INSTANCING
     { vec3 ip = vec3(instanceMatrix[3][0], instanceMatrix[3][1], instanceMatrix[3][2]); float ph = dot(ip.xz, vec2(0.71, 0.53));
-      if (uRing > 0.5) { float pr = fract(uTime * 0.36 + dot(ip.xz, vec2(0.37, 0.21))); transformed.xz *= 0.45 + pr * 0.95; vRA = smoothstep(0.0, 0.12, pr) * (1.0 - pr) * 0.9; }
+      if (uRing > 1.5) { /* static geometry in world coordinates (overhead wires) */ }
+      else if (uRing > 0.5) { float pr = fract(uTime * 0.36 + dot(ip.xz, vec2(0.37, 0.21))); transformed.xz *= 0.45 + pr * 0.95; vRA = smoothstep(0.0, 0.12, pr) * (1.0 - pr) * 0.9; }
       else {
       float rip = sin(uTime * 1.5 + ph * 3.0 + length(position.xz) * 4.0) * 0.012 + sin(uTime * 2.3 + ph) * 0.01;
       transformed.y += rip * (0.4 + length(position.xz) * 1.5); transformed.xz += vec2(sin(uTime * 0.4 + ph), cos(uTime * 0.37 + ph * 1.3)) * 0.012; }
@@ -63,6 +64,8 @@ const MAKERS = {
   'mat.blob': () => blobLike(0),
   // expanding ripple rings on water (piles, ducks): same program as mat.blob (uRing = 1): the vertex shader grows each instance on a 2.8 s cycle (phase from its position) and fades it out
   'mat.ripple': () => blobLike(1),
+  // overhead wires: the blob program with no motion (uRing = 2; the geometry is in world coordinates)
+  'mat.wire': () => blobLike(2),
   'mat.particle': () => { const m = new THREE.MeshBasicMaterial({ map: particleAtlas, transparent: true, depthWrite: false, fog: true, vertexColors: true }); patchMaterial(m, { key: ':pt' }); return m; },
   // Stage 2 materials (kept for the blockout fallback path)
   'mat.blockout': () => { const m = std({ vertexColors: true, roughness: 0.92 }); patchMaterial(m, { key: ':bo' }); lit.add(m); return m; },
