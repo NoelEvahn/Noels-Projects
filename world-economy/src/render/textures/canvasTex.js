@@ -107,7 +107,7 @@ export function makeLeafAtlas(size = 1024) {
   // 12 lawn tuft: short dense fan of fine blades (tinted per instance), base at bottom
   { const [x, y] = cell(12); g.save(); g.translate(x, y);
     for (let k = 0; k < 34; k++) { const bx = cw * (0.5 + (R() - 0.5) * 0.62), h = ch * (0.28 + 0.4 * R()), lean = (bx - cw * 0.5) * 0.85 + (R() - 0.5) * cw * 0.1;
-      blade(bx, ch, h, lean, cw * (0.045 + 0.03 * R()), mix3([44, 84, 30], [60, 100, 38], R()), mix3([104, 156, 58], [150, 196, 82], R())); }
+      blade(bx, ch, h, lean, cw * (0.045 + 0.03 * R()), mix3([34, 64, 24], [46, 78, 30], R()), mix3([78, 118, 44], [112, 150, 60], R())); }
     g.restore(); }
   // 13 marram dune grass: long arching pale blades in a clump
   { const [x, y] = cell(13); g.save(); g.translate(x, y);

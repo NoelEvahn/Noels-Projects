@@ -575,3 +575,22 @@ unknown/stub ids return `null`, zero console errors.
 Stubs (48 P1/P2 ids registered in `data/sounds.js`, patches added by Stage 6): `sfx.ui.slider`, `sfx.player.cloth`, `sfx.player.breath_tired`, `sfx.door.garage_roll`, `sfx.door.sliding`, `sfx.switch.light`, `sfx.veh.brake_squeal`, `sfx.veh.crane_hook`, `sfx.veh.container_lock`, `sfx.veh.container_set`, `sfx.veh.scrape`, `sfx.veh.crane_slew`, `sfx.boat.anchor_chain`, `sfx.boat.bilge`, `sfx.boat.sonar_ping`, `sfx.water.pour`, `sfx.water.bail`, `sfx.fish.net_scoop`, `sfx.fish.cooler_lid`, `sfx.fish.scale_beep`, `sfx.fish.fillet_cut`, `sfx.tool.dig`, `sfx.tool.tamp`, `sfx.tool.plant`, `sfx.tool.hammer`, `sfx.tool.nailgun`, `sfx.tool.rivet`, `sfx.tool.extinguish`, `sfx.tool.camera_shutter`, `sfx.tool.binoculars`, `sfx.tool.saw_hand`, `sfx.tool.jackhammer`, `sfx.tool.wheelbarrow`, `sfx.tool.spray_hose`, `sfx.office.key`, `sfx.office.mouse`, `sfx.office.printer`, `sfx.office.paper`, `sfx.office.phone_ring`, `sfx.office.stamp`, `sfx.tray.wobble`, `sfx.tray.tray_spill`, `sfx.tray.glass_clink`, `sfx.tray.bill`, `sfx.weather.rain_start`, `sfx.world.traffic_light_tick`, `sfx.world.ship_bell`, `sfx.world.crowd_cheer`
 
 Rendered: 250 ids (132 P0, 118 P1, 0 P2), passing: 250.
+
+## Detail Batch 1 (Sonnet)
+
+Software GL (counters only; fps is not measurable here). `node test/perf/perf.spec.cjs --presets=low,medium,high,ultra --views=V01,V03,V08,V10,V12,V13,V16`, 320x180, 08:00. Every row is inside the Annex G 2.3 budgets. Baseline rows for these views were rebased (calls grew by 0-11 per row, within the x1.10 + 4 guard everywhere except medium V01/V03 and ultra V01).
+
+| Preset / view | calls (budget) | tris (budget) | shadow calls | programs (budget) |
+|---|---|---|---|---|
+| Low V01 | 122 (220) | 249k (350k) | 30 (60) | 38 (40) |
+| Low V03 | 157 (220) | 237k (350k) | 30 (60) | 38 (40) |
+| Low V08 | 84 (220) | 249k (350k) | 25 (60) | 40 (40) |
+| Low V13 | 93 (220) | 272k (350k) | 22 (60) | 40 (40) |
+| Low V16 | 81 (220) | 308k (350k) | 25 (60) | 40 (40) |
+| High V01 | 217 (450) | 389k (1.2M) | 119 (280) | 33 (60) |
+| High V03 | 275 (450) | 375k (1.2M) | 130 (280) | 33 (60) |
+| High V13 | 161 (450) | 529k (1.2M) | 85 (280) | 38 (60) |
+| High V16 | 113 (450) | 724k (1.2M) | 97 (280) | 39 (60) |
+| Ultra V16 | 127 (600) | 1.19M (2.0M) | 175 (420) | 44 (60) |
+
+Notes: Low program count is at its budget (40) in lake and forest views; the lily/blob material is one shared program and the ambient car paint meshes carry an instanceColor attribute so parked and ambient cars share one carpaint program. `cpuMs` is JS submission time measured with other processes running on the same machine; High V03 read 6.2 ms in one run and 4.5 ms (baseline) earlier, so the 5 ms High CPU check is noise-limited here. Fill-rate cost of the alpha cards (lawn, marram, cattail, daisy) is not measurable under software GL; Low runs 0.4x density at 30 m.
