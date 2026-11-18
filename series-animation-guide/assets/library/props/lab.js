@@ -1,0 +1,41 @@
+// Lab props: Lovometer dial, benches, glassware with bubbles, test-tube rack, rat cage + wheel, wall monitor, heart-o-gram, wall chart.
+import * as THREE from 'three';
+import { mat, glow, add, sph, box, cyl, cap, cone, tor, rbox, rng, canvasTex, textBoard, C } from '../util.js';
+import { makeHeart } from '../fx/hearts.js';
+
+// Large circular analogue gauge. g.setLevel(v): 0..1 = dial range, >1.0 pins the needle; g.snap(k): needle breaks off and falls.
+export function lovometer(r = 1.2) {
+  const g = new THREE.Group();
+  const face = canvasTex(512, 512, (c, w, h) => {
+    c.fillStyle = '#fff8ec'; c.beginPath(); c.arc(w / 2, h / 2, w / 2, 0, 7); c.fill();
+    const zone = (a0, a1, col) => { c.strokeStyle = col; c.lineWidth = 46; c.beginPath(); c.arc(w / 2, h / 2, w * 0.36, a0, a1); c.stroke(); };
+    const A = (k) => Math.PI * (1.05 + 0.9 * k);
+    zone(A(0), A(0.3), '#5ac878'); zone(A(0.3), A(0.55), '#ffd23f'); zone(A(0.55), A(0.8), '#ff8fb8'); zone(A(0.8), A(1), '#e5173f');
+    c.fillStyle = '#222'; c.textAlign = 'center'; c.font = '800 34px Inter, sans-serif';
+    c.fillText('LOVOMETER 3000', w / 2, h * 0.3); c.font = '700 26px Inter, sans-serif'; c.fillText('MEH', w * 0.2, h * 0.62); c.fillText('AWW', w * 0.38, h * 0.2 + 30); c.fillText('IN LOVE', w * 0.7, h * 0.2 + 36); c.fillStyle = '#e5173f'; c.fillText('VERY', w * 0.85, h * 0.6);
+    for (let i = 0; i <= 20; i++) { const a = A(i / 20); c.strokeStyle = '#222'; c.lineWidth = i % 5 === 0 ? 6 : 3; c.beginPath(); c.moveTo(w / 2 + Math.cos(a) * w * 0.44, h / 2 + Math.sin(a) * w * 0.44); c.lineTo(w / 2 + Math.cos(a) * w * 0.48, h / 2 + Math.sin(a) * w * 0.48); c.stroke(); }
+  });
+  add(g, cyl(r, r, 0.22, 48), mat(0x3a3f4a, { metal: 0.6, rough: 0.35 }), [0, 0, 0], [Math.PI / 2, 0, 0]);
+  add(g, tor(r, 0.07, 10, 48), mat(0xc8ccd6, { metal: 0.8, rough: 0.25 }), [0, 0, 0.1]);
+  const fm = new THREE.Mesh(new THREE.CircleGeometry(r * 0.96, 48), new THREE.MeshBasicMaterial({ map: face, toneMapped: false })); fm.position.z = 0.115; g.add(fm);
+  const pivot = new THREE.Group(); pivot.position.z = 0.14; g.add(pivot);
+  const needle = add(pivot, cone(0.045 * r, r * 0.8, 8), mat(0xe5173f, { rough: 0.3 }), [0, r * 0.4, 0.0], [0, 0, 0], [1, 1, 0.5]);
+  add(pivot, sph(0.09 * r, 14, 10), mat(0x222222), [0, 0, 0.02]);
+  const glass = add(g, sph(r * 0.97, 32, 12, 0, Math.PI * 2, 0, Math.PI * 0.12), mat(0xdff3ff, { opacity: 0.18, rough: 0.05 }), [0, 0, 0.12], [Math.PI / 2, 0, 0], [1, 0.3, 1]); glass.castShadow = false;
+  g.setLevel = (v, shake = 0) => { pivot.rotation.z = Math.PI * 0.45 - Math.PI * 0.9 * Math.min(1.12, Math.max(0, v)) + shake; };
+  g.setLevel(0);
+  g.snap = (k) => { // k seconds after break: needle flies off with gravity
+    if (k <= 0) { needle.visible = true; needle.position.set(0, r * 0.4, 0); needle.rotation.set(0, 0, 0); needle.parent.position.z = 0.14; return; }
+    needle.parent.rotation.z += 0; needle.position.set(0.5 * k * r, r * 0.4 + 0.9 * k * r - 3.0 * k * k * r, 0.3 * k); needle.rotation.z = k * 9; needle.visible = k < 1.4;
+  };
+  g.needle = needle; return g;
+}
+export function labBench(w = 3, d = 1.0) { const g = new THREE.Group(); add(g, rbox(w, 0.08, d, 0.03), mat(0x20262e, { rough: 0.35 }), [0, 0.92, 0]); add(g, box(w - 0.1, 0.84, d - 0.1), mat(0xdfe6ee, { rough: 0.5 }), [0, 0.42, 0]); for (let i = 0; i < Math.floor(w / 0.75); i++) add(g, rbox(0.62, 0.7, 0.03, 0.02), mat(0xc4ccd6), [-w / 2 + 0.55 + i * 0.75, 0.42, d / 2 - 0.04]); return g; }
+export function flask(color = 0xff5c9a, h = 0.5) { const g = new THREE.Group(); add(g, cyl(0.04, 0.04, 0.2, 12, 1, true), mat(0xdff3ff, { opacity: 0.35, side: THREE.DoubleSide, rough: 0.05 }), [0, h * 0.78, 0]); add(g, sph(0.19, 20, 14), mat(0xdff3ff, { opacity: 0.3, rough: 0.05 }), [0, 0.2, 0]); add(g, sph(0.16, 20, 14, 0, 6.283, 0.35 * Math.PI, 0.65 * Math.PI), mat(color, { emissive: color, emissiveIntensity: 0.3, rough: 0.2 }), [0, 0.19, 0]); return g; }
+export function bubbles(n = 14, color = 0xffc2de) { const im = new THREE.InstancedMesh(new THREE.SphereGeometry(0.03, 8, 6), new THREE.MeshStandardMaterial({ color, transparent: true, opacity: 0.6, roughness: 0.1 }), n); im.castShadow = false; const d = new THREE.Object3D(); im.update = (t, h = 0.6) => { for (let i = 0; i < n; i++) { const k = ((t * 0.6 + i / n) % 1); d.position.set(Math.sin(i * 3) * 0.1, k * h, Math.cos(i * 5) * 0.1); d.scale.setScalar(0.5 + (i % 3) * 0.4); d.updateMatrix(); im.setMatrixAt(i, d.matrix); } im.instanceMatrix.needsUpdate = true; }; im.update(0); return im; }
+export function testTubeRack(n = 6) { const g = new THREE.Group(); add(g, rbox(0.7, 0.04, 0.16, 0.01), mat(0x8a5a3a), [0, 0.12, 0]); add(g, rbox(0.7, 0.04, 0.16, 0.01), mat(0x8a5a3a), [0, 0.01, 0]); const cs = [0xff5c9a, 0x7bff9a, 0xffd23f, 0x4aa0e0, 0xb07aff, 0xff8a2b]; for (let i = 0; i < n; i++) { const x = -0.28 + i * (0.56 / (n - 1)); add(g, cap(0.032, 0.18, 4, 10), mat(0xdff3ff, { opacity: 0.4, rough: 0.05 }), [x, 0.14, 0]); add(g, cap(0.026, 0.1, 4, 10), mat(cs[i % 6], { emissive: cs[i % 6], emissiveIntensity: 0.3 }), [x, 0.1, 0]); } return g; }
+export function ratCage() { const g = new THREE.Group(); add(g, box(0.9, 0.06, 0.6), mat(0x9a9aa6), [0, 0.03, 0]); for (let i = 0; i <= 12; i++) { add(g, cyl(0.008, 0.008, 0.5, 4), mat(0xb8bcc8, { metal: 0.7 }), [-0.43 + i * 0.0717, 0.31, 0.29]); add(g, cyl(0.008, 0.008, 0.5, 4), mat(0xb8bcc8, { metal: 0.7 }), [-0.43 + i * 0.0717, 0.31, -0.29]); } for (let i = 0; i <= 7; i++) { for (const s of [-1, 1]) add(g, cyl(0.008, 0.008, 0.5, 4), mat(0xb8bcc8, { metal: 0.7 }), [s * 0.44, 0.31, -0.29 + i * 0.083]); } add(g, box(0.9, 0.02, 0.6), mat(0xb8bcc8, { metal: 0.7 }), [0, 0.57, 0]); const wheel = new THREE.Group(); add(wheel, tor(0.17, 0.012, 6, 24), mat(0xff5c5c), [0, 0, 0]); for (let i = 0; i < 4; i++) add(wheel, cyl(0.006, 0.006, 0.34, 4), mat(0xff5c5c), [0, 0, 0], [0, 0, i * Math.PI / 4 + Math.PI / 2]); wheel.position.set(-0.2, 0.2, 0.0); g.add(wheel); g.wheel = wheel; return g; }
+export function wallMonitor(w = 2.2, h = 1.3, drawFn) { const g = new THREE.Group(); add(g, rbox(w + 0.12, h + 0.12, 0.08, 0.03), mat(0x15161c), [0, 0, 0]); const tex = canvasTex(512, Math.round(512 * h / w), drawFn ?? ((c, ww, hh) => { c.fillStyle = '#071a14'; c.fillRect(0, 0, ww, hh); c.strokeStyle = '#1b5a3c'; c.lineWidth = 1; for (let i = 0; i < 12; i++) { c.beginPath(); c.moveTo(i * ww / 12, 0); c.lineTo(i * ww / 12, hh); c.stroke(); } c.strokeStyle = '#ff5c9a'; c.lineWidth = 5; c.beginPath(); for (let x = 0; x < ww; x++) { const y = hh * 0.85 - Math.pow(x / ww, 3.2) * hh * 0.75 + Math.sin(x * 0.1) * 3; x ? c.lineTo(x, y) : c.moveTo(x, y); } c.stroke(); c.fillStyle = '#9bffc9'; c.font = '700 30px Inter'; c.fillText('LOVE LEVELS', 20, 40); })); const sc = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false })); sc.position.z = 0.045; g.add(sc); return g; }
+export function heartOGram() { const g = new THREE.Group(); add(g, cyl(0.28, 0.32, 0.18, 20), mat(0x2a3040, { metal: 0.5 }), [0, 0.09, 0]); const h = makeHeart(0xff5c9a, 0.6, 0.9); h.material.transparent = true; h.material.opacity = 0.75; h.position.y = 0.7; g.add(h); const ring = add(g, tor(0.35, 0.012, 6, 32), glow(0xff8fb8, 1), [0, 0.35, 0], [Math.PI / 2, 0, 0]); ring.castShadow = false; g.heart = h; g.update = (t) => { h.rotation.y = t * 1.5; h.position.y = 0.7 + Math.sin(t * 2) * 0.04; }; return g; }
+export function pinkTank(h = 2.4, r = 0.55) { const g = new THREE.Group(); add(g, cyl(r, r, h, 24, 1, true), mat(0xdff3ff, { opacity: 0.25, rough: 0.05, side: THREE.DoubleSide }), [0, h / 2 + 0.2, 0]); add(g, cyl(r * 0.96, r * 0.96, h * 0.85, 24), mat(0xff5c9a, { emissive: 0xff3f80, emissiveIntensity: 0.4, opacity: 0.8, rough: 0.2 }), [0, h * 0.43 + 0.2, 0]); add(g, cyl(r * 1.1, r * 1.1, 0.2, 24), mat(0x3a3f4a, { metal: 0.6 }), [0, 0.1, 0]); add(g, cyl(r * 1.1, r * 1.1, 0.2, 24), mat(0x3a3f4a, { metal: 0.6 }), [0, h + 0.3, 0]); return g; }
+export function wallChart(title = 'LOVE × 2', lines = ['1 → 2 → 4 → 8 → ???']) { return textBoard(1.8, 1.2, [{ text: title, size: 0.12, color: '#ffd23f', y: 0.25, font: 'Anton, Inter, sans-serif', weight: 400 }, ...lines.map((t, i) => ({ text: t, size: 0.065, color: '#ffffff', y: 0.55 + i * 0.16 }))], { bg: '#1a2a4a', border: '#9bd0ff' }); }

@@ -1,0 +1,7 @@
+{
+  "name": "series-asset-library",
+  "private": true,
+  "type": "module",
+  "description": "Reusable 3D characters, props, sets and FX for the 'What if every X, Y doubled?' series (three.js, deterministic).",
+  "dependencies": { "three": "0.170.0", "@fontsource/anton": "5.1.0" }
+}
