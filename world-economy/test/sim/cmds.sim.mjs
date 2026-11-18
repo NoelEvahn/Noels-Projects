@@ -249,6 +249,19 @@ test('invest, tax, notes, settings, debug, time selects', () => {
   assert.ok(Q(sim, 'reports.pnl', { scope: 'player', period: 'week' }).byType); assert.ok(Q(sim, 'reports.netWorth').breakdown); assert.ok(Array.isArray(Q(sim, 'reports.cashflow', { days: 3 })));
   advance(sim, 3 * 1440, { real: 0 }); assert.ok(Q(sim, 'reports.netWorth').history.length >= 2);
 });
+test('job.startOwnShift: errors, no wage, one assist hour per business hour while working', () => {
+  const sim = makeSim({ seed: 31, bus: true }); rich(sim, 6000000);
+  err(C(sim, 'job.startOwnShift', { bizId: 'b99' }), 'ERR.NOT_FOUND');
+  const v = sim.cmd('biz.create', { typeId: 'biz.vending', options: { payFrom: 'card' } }).data.bizId; err(C(sim, 'job.startOwnShift', { bizId: v }), 'ERR.REQUIREMENT');
+  const bizId = sim.cmd('biz.create', { typeId: 'biz.cafe', siteId: 'site.city.food.03', options: { payFrom: 'card' } }).data.bizId; ok(sim.cmd('biz.deposit', { bizId, amount: 300000 }));
+  ok(sim.cmd('biz.setHours', { bizId, from: 9, to: 20 })); err(C(sim, 'job.startOwnShift', { bizId }), 'ERR.CLOSED');   // 08:00, not yet open
+  advance(sim, 60, { real: 0 });
+  sim.setServices({ near: () => false }); err(C(sim, 'job.startOwnShift', { bizId }), 'ERR.OUT_OF_RANGE'); sim.setServices({ near: null });
+  const cash0 = sim.ledger.balance('cash'); const r = runShift({ sim, jobId: 'x', ownBiz: bizId, style: 'good', pace: 1.5, scoreScale: 0.9, minutes: 180, bus: sim.bus, onMinute: () => advance(sim, 1, { real: 0 }) });
+  ok(r, 'own shift'); assert.ok(r.summary.tasks >= 1, 'tasks done'); assert.equal(r.summary.gross, 0); assert.equal(r.summary.net, 0); assert.equal(r.summary.own, bizId);
+  assert.ok(r.summary.assistHours >= 1, 'assist hours given: ' + r.summary.assistHours); assert.equal(sim.ledger.balance('cash'), cash0, 'no wage from an owner shift'); invariant(sim);
+  assert.ok(Q(sim, 'skills.all').find((x) => x.id === 'skill.city.restaurant').xp > 0, 'xp still earned');
+});
 test('every Sim.cmd and Sim.select is covered by a test', () => {
   const sim = makeSim();
   const missingC = sim.cmdNames().filter((n) => !COV.has(n)), missingS = sim.selectNames().filter((n) => !SEL.has(n));

@@ -64,6 +64,16 @@ export function createEconomyLink({ sim, game, bus, clock }) {
       link.shiftId = r.data.shiftId; link.jobId = jobId; link.controller.start(r.data.shiftId);
       return r;
     },
+    /** work a shift in your own business (staffAssist): same minigames as the matching job, at the business's door, no wage, hourly assist bonus */
+    startOwn(bizId, opts = {}) {
+      if (link.controller) return { ok: false, error: 'ERR.BUSY' };
+      const r = sim.cmd('job.startOwnShift', { bizId }); if (!r.ok) return r;
+      const b = sim.select('biz.detail', { bizId }), site = b && SITE_BY_ID[b.siteId], door = site && site.near ? poiPos(site.near) : null;
+      const ownEnv = { ...env, poi: (id) => (id === r.data.poi && door ? door : poiPos(id)) };
+      link.controller = createController(r.data.jobId, { sim, input: opts.input || game.inputRef, env: opts.env || ownEnv, seed: (clock ? clock.state.total : 1) | 1, spot: opts.spot, bus });
+      link.shiftId = r.data.shiftId; link.jobId = r.data.jobId; link.controller.start(r.data.shiftId);
+      return r;
+    },
     stop(reason = 'ended') {
       if (!link.controller) return { ok: false };
       const c = link.controller; link.controller = null; c.stop(reason); return { ok: true };

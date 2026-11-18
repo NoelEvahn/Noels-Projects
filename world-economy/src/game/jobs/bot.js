@@ -35,12 +35,16 @@ export function botTick(ctrl, inp, env, style, st, dt) {
   if (h.press && (h.when === undefined || h.when) && st.cool <= 0) { inp.press(h.press); st.cool = 0.12; }
 }
 /** Play one shift headless. `clock.minute()` is called once per 60 fixed steps (1 game minute at scale 1). */
-export function runShift({ sim, jobId, style = 'good', minutes = 60, seed = 1, env = createFakeEnv(), onMinute = null, bus = null, spot, pace = 1, scoreScale = 1 }) {
+export function runShift({ sim, jobId, style = 'good', minutes = 60, seed = 1, env = createFakeEnv(), onMinute = null, bus = null, spot, pace = 1, scoreScale = 1, ownBiz = null }) {
   const inp = createFakeInput();
-  const ap = sim.cmd('job.apply', { jobId });
-  if (!ap.ok && ap.error !== 'ERR.BUSY') return { ok: false, error: ap.error, detail: ap.detail };
-  const st = sim.cmd('job.startShift', { jobId });
-  if (!st.ok) return { ok: false, error: st.error, detail: st.detail };
+  let st;
+  if (ownBiz) { st = sim.cmd('job.startOwnShift', { bizId: ownBiz }); if (!st.ok) return { ok: false, error: st.error, detail: st.detail }; jobId = st.data.jobId; }   // hands-on shift in your own business (no wage)
+  else {
+    const ap = sim.cmd('job.apply', { jobId });
+    if (!ap.ok && ap.error !== 'ERR.BUSY') return { ok: false, error: ap.error, detail: ap.detail };
+    st = sim.cmd('job.startShift', { jobId });
+    if (!st.ok) return { ok: false, error: st.error, detail: st.detail };
+  }
   let summary = null; const off = bus ? bus.on('job:shiftEnd', (p) => { summary = p.summary; }) : null;
   const ctrl = createController(jobId, { sim, input: inp, env, seed, spot, pace, scoreScale });
   ctrl.start(st.data.shiftId);

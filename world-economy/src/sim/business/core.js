@@ -645,5 +645,8 @@ export function createBusiness(ctx) {
     'biz.contracts': ({ bizId } = {}) => ({ open: (S().bizMeta.contracts || []).filter((c) => !c.takenBy), active: (S().bizMeta.contracts || []).filter((c) => c.takenBy && (!bizId || c.takenBy === bizId)) }),
     'biz.suggestTargets': ({ bizId }) => { const b = get(bizId); return b ? suggestTargets(b) : null; },
   };
-  return { defaults, get, create, cmds, selects, hourly, daily, weekly, assetValue, storageCap, isCold, isFood, suggestTargets, orderFor, quality: H.quality, capacity: H.capacity };
+  /** owner-shift hooks (jobsSim): is the business trading this hour, and set the one-hour assist that the hourly model consumes */
+  const openNow = (bizId) => { const b = get(bizId); if (!b) return false; const t = ctx.now(); return H.isOpen(b, hourOf(t), t); };
+  function setAssist(bizId, hours, score) { const b = get(bizId); if (!b || b.suspended || !openNow(bizId)) return false; b.assist = { hours: Math.max(hours, b.assist ? b.assist.hours : 0), score: clamp(score, 0, 1) }; return true; }
+  return { defaults, get, create, openNow, setAssist, cmds, selects, hourly, daily, weekly, assetValue, storageCap, isCold, isFood, suggestTargets, orderFor, quality: H.quality, capacity: H.capacity };
 }

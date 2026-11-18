@@ -1,10 +1,13 @@
 // Jobs (Annex C 1): employment, shifts, seeded task issue, validated reports, payout at shift end.
 import { JOB_BY_ID, JOB_TABLE } from '../data/jobs.js';
 import { ITEM_BY_ID } from '../data/items.js';
+import { SITE_BY_ID } from '../data/businesses.js';
 import { BALANCE } from '../data/balance.js';
 import { TX } from '../data/ids.js';
 import { ok, fail, ERR, clamp, hourOf, weekdayOf, dayOf, posInt } from './util.js';
 
+/** which job's tasks an owner can work in their own business (retail-model hours, boat rental and warehouse read the assist) */
+export const OWN_JOB = { 'biz.restaurant': 'job.city.restaurant', 'biz.cafe': 'job.city.restaurant', 'biz.foodstand': 'job.city.restaurant', 'biz.retail': 'job.city.supermarket', 'biz.supermarket': 'job.city.supermarket', 'biz.boatrental': 'job.lake.boatrental', 'biz.warehouse': 'job.city.warehouse' };
 const TPH = { 'job.city.restaurant': 7, 'job.city.supermarket': 12.5, 'job.city.delivery': 3, 'job.city.construction': 3.5, 'job.city.taxi': 2.5, 'job.city.warehouse': 8, 'job.city.mechanic': 1.25, 'job.city.office': 4, 'job.lake.fishing': 1.2, 'job.lake.fishhut': 9, 'job.lake.boatrental': 5, 'job.lake.restaurant': 3, 'job.ocean.fisherman': 0.1, 'job.ocean.port': 8, 'job.ocean.boatop': 3, 'job.forest.logger': 2.5, 'job.forest.forestry': 3.5 };
 const LAKE_SPOTS = {
   'poi.lake.fish.dock': [['item.fish.carp', 4], ['item.fish.perch', 4], ['item.fish.bass', 1]],
@@ -60,6 +63,7 @@ export function createJobs(ctx) {
     const grade = sh.tasks === 0 ? '-' : avg >= 0.9 ? 'A' : avg >= 0.75 ? 'B' : avg >= 0.6 ? 'C' : avg >= 0.4 ? 'D' : 'F';
     const h = hist(job.id); h.shifts++; h.tasks += sh.tasks; h.earned += net + sh.tips;
     const summary = { tasks: sh.tasks, gross, tax, tips: sh.tips, net, xp: sh.xp, grade, reason, strikes: sh.strikes };
+    if (sh.own) { summary.own = sh.own.bizId; summary.assistHours = sh.own.assisted; }
     S().shift = null;
     ctx.emit('job:shiftEnd', { jobId: job.id, shiftId: sh.id, summary });
     if (net + sh.tips >= 100000) ctx.state.flags.autosaveDue = true;
@@ -137,6 +141,23 @@ export function createJobs(ctx) {
       ctx.emit('job:shiftStart', { jobId, shiftId: sh.id });
       return ok({ shiftId: sh.id, uniform: job.uniform });
     },
+    /** work a shift in your OWN business (Annex D 6.1 staffAssist): the matching job's tasks and minigames, no wage; while you keep completing tasks, each
+     *  business hour gets one skilled extra worker and a quality bonus from your running score. XP still counts toward the job skill. */
+    'job.startOwnShift': ({ bizId }) => {
+      const b = ctx.biz.get(bizId); if (!b) return fail(ERR.NOT_FOUND, 'business');
+      const jobId = OWN_JOB[b.typeId]; if (!jobId) return fail(ERR.REQUIREMENT, 'no hands-on work in this business type');
+      const job = JOB_BY_ID[jobId];
+      if (S().shift) return fail(ERR.BUSY, 'shift in progress');
+      if (ctx.state.needs.sleeping) return fail(ERR.BUSY, 'asleep');
+      if (b.suspended || !ctx.biz.openNow(bizId)) return fail(ERR.CLOSED);
+      if (ctx.needs.energy() < 5) return fail(ERR.REQUIREMENT, 'too tired');
+      const site = SITE_BY_ID[b.siteId];
+      if (ctx.services.near && site && site.near && !ctx.services.near(site.near)) return fail(ERR.OUT_OF_RANGE);
+      const sh = { id: 's' + S().nextShift++, jobId, startT: ctx.now(), tasks: 0, issued: 0, tasksOpen: {}, gross: 0, tips: 0, xp: 0, strikes: 0, scoreSum: 0, scoreN: 0, inaccurate: 0, own: { bizId, lastTaskT: ctx.now(), assisted: 0 } };
+      S().shift = sh;
+      ctx.emit('job:shiftStart', { jobId, shiftId: sh.id, bizId });
+      return ok({ shiftId: sh.id, jobId, poi: job.poi, uniform: job.uniform });
+    },
     'job.endShift': () => endShift('ended'),
     'job.nextTask': ({ shiftId, spot, stand } = {}) => {
       const sh = S().shift; if (!sh || sh.id !== shiftId) return fail(ERR.NOT_FOUND);
@@ -198,6 +219,7 @@ export function createJobs(ctx) {
         const base = spec.basePay + spec.perMetre * (task.params.distance || 0);
         pay = Math.floor(base * q * mult);
       }
+      if (sh.own) pay = 0;   // owner shifts pay no wage: the reward is the business's hour (staffAssist)
       let tip = 0;
       if (job.tips && pay > 0) tip = Math.floor(pay * Math.min(job.tips, BALANCE.tipCap) * clamp((score - 0.5) * 2, 0, 1));
       if (partial === true) { pay = Math.floor(pay / 2); tip = 0; }
@@ -206,7 +228,7 @@ export function createJobs(ctx) {
       ctx.skills.addXp(job.skill, xp);
       ctx.needs.spend(spec.energy);
       hist(job.id).tasksTotal = (hist(job.id).tasksTotal || 0) + 1;
-      applyLinks(job, spec, task);
+      if (!sh.own) applyLinks(job, spec, task); else sh.own.lastTaskT = ctx.now();
       ctx.emit('job:taskDone', { jobId: job.id, shiftId, score, pay, bonus: tip });
       if (ctx.needs.energy() <= 0) { endShift('exhausted'); return ok({ pay, tip, ended: 'exhausted', ...extra }); }
       return ok({ pay, tip, xp, ...extra });
@@ -225,7 +247,9 @@ export function createJobs(ctx) {
   /** per-minute shift timer (Annex C 1.1: ends after 8 game hours) */
   function tickMinute() {
     const sh = S().shift; if (!sh) return;
-    if (ctx.now() - sh.startT >= BALANCE.shiftMaxMinutes) endShift('timeout');
+    if (ctx.now() - sh.startT >= BALANCE.shiftMaxMinutes) { endShift('timeout'); return; }
+    // owner shift: at each hour boundary the business gets the assist hour while the player is actively working (a task within the last 30 minutes)
+    if (sh.own && ctx.now() % 60 === 0 && sh.scoreN > 0 && ctx.now() - sh.own.lastTaskT <= 30) { if (ctx.biz.setAssist(sh.own.bizId, 1, sh.scoreSum / sh.scoreN)) sh.own.assisted++; }
   }
   function daily() {
     const st = S().stand;
