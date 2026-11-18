@@ -52,19 +52,17 @@ export function buildCat(o) {
   for (const s of [-1, 1]) for (let k = 0; k < 3; k++) add(head, cyl(0.0022, 0.0012, R * 1.1, 4), mat(0xfffaf0), [s * R * 0.62, -R * 0.36 + (k - 1) * R * 0.07, R * 0.86], [0, s * 0.35, Math.PI / 2 + s * (k - 1) * 0.12]);
   for (let i = -1; i <= 1; i++) add(head, cap(R * 0.035, R * 0.22, 4, 8), stripe, [i * R * 0.17, R * 0.62, R * 0.62], [0.95, 0, i * 0.25]);
   for (const s of [-1, 1]) for (let k = 0; k < 2; k++) add(head, cap(R * 0.03, R * 0.2, 4, 8), stripe, [s * R * 1.0, R * 0.05 - k * R * 0.17, R * 0.25], [0, s * 0.5, Math.PI / 2]);
-  // eyes: almond green with a dark rim, slit pupil, catchlight, heavy upper lid (his signature)
+  // eyes: series look (episodes 1-2): white ball, round black pupil, no iris colour or catchlight; heavy upper lid is his signature
   const eyes = [];
   for (const s of [-1, 1]) {
-    const eg = new THREE.Group(); eg.position.set(s * R * 0.4, R * 0.12, R * 0.82); eg.rotation.set(0, s * 0.32, s * -0.12); head.add(eg);
-    const er = R * 0.27;
-    add(eg, sph(er, 22, 14), mat(o.iris, { rough: 0.25 }), [0, 0, 0], [0, 0, 0], [1.25, 0.9, 0.5]);
-    add(eg, tor(er, er * 0.08, 6, 24), dark, [0, 0, 0], [0, 0, 0], [1.25, 0.9, 1]);
-    const pg = new THREE.Group(); pg.position.z = er * 0.42; eg.add(pg);
-    const pupil = add(pg, cap(er * 0.16, er * 0.9, 4, 8), mat(0x0a0a0e, { rough: 0.2 }), [0, 0, 0], [0, 0, 0], [1, 1, 0.4]);
-    add(pg, sph(er * 0.16, 8, 6), mat(0xffffff, { emissive: 0xffffff, emissiveIntensity: 0.5 }), [er * 0.3, er * 0.3, er * 0.06], [0, 0, 0], [1, 1, 0.4]);
+    const eg = new THREE.Group(); eg.position.set(s * R * 0.36, R * 0.14, R * 0.8); eg.rotation.set(0, s * 0.28, 0); head.add(eg);
+    const er = R * 0.25;
+    add(eg, sph(er, 24, 16), mat(0xffffff, { rough: 0.35 }), [0, 0, 0], [0, 0, 0], [1, 1.08, 0.62]);
+    const pg = new THREE.Group(); pg.position.z = er * 0.5; eg.add(pg);
+    const pupil = add(pg, sph(er * 0.46, 16, 12), mat(0x0a0a0e, { rough: 0.3 }), [0, 0, 0], [0, 0, 0], [1, 1, 0.4]);
     const lp = new THREE.Group(); eg.add(lp);
-    add(lp, sph(er * 1.08, 22, 10, 0, Math.PI * 2, 0, Math.PI / 2), fur, [0, 0, 0], [0, 0, 0], [1.25, 0.95, 0.62]).castShadow = false;
-    eyes.push({ eg, pg, pupil, lp, s });
+    add(lp, sph(er * 1.06, 22, 10, 0, Math.PI * 2, 0, Math.PI / 2), fur, [0, 0, 0], [0, 0, 0], [1.02, 1.1, 0.66]).castShadow = false;
+    eyes.push({ eg, pg, pupil, lp, s, bx: 1, by: 1 });
   }
   // ears: flat rounded triangles with pink insides and a cream tuft
   const ears = [];

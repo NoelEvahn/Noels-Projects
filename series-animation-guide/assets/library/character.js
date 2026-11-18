@@ -1,4 +1,5 @@
-// Rounded toy-like character rig (the series look): big head, huge eyes, thick brows, tapered limbs, fingered hands.
+// Rounded toy-like character rig (the series look of episodes 1-2): big round head, white ball eyes with black dot pupils,
+// bulb nose, thick brows, tube limbs, ball (mitten) hands. Fingered hands: opts.fingers = true. Older detailed rig: archive/detailed-2026-11.
 // Character faces +Z, feet at y=0. Usage:
 //   const hero = makeCharacter(PRESETS.hero);  scene.add(hero.root);
 //   hero.pose(POSES.run(t)); hero.face({open:0.8, brow:1, eye:1.3}); hero.hand('R','fist');
@@ -161,7 +162,7 @@ function makeHand(ch, s, skinM, detail) {
   const hand = new THREE.Group();
   const H = { root: hand, fingers: [], thumb: null, s };
   add(hand, sph(0.062, 18, 14), skinM, [0, -0.068, 0], [0, 0, 0], [0.82, 1.05, 0.95]);   // palm
-  if (detail === 'low') { add(hand, sph(0.075, 12, 10), skinM, [0, -0.1, 0.0]); H.fingers = []; return H; }
+  if (detail === 'low' || !ch.opts.fingers) { add(hand, sph(0.078, 16, 12), skinM, [0, -0.1, 0.0], [0, 0, 0], [0.95, 1, 1]); H.fingers = []; return H; }
   const L = [0.05, 0.06, 0.054, 0.042], Z = [0.034, 0.012, -0.011, -0.031], R = 0.0185;
   for (let i = 0; i < 4; i++) {
     const k1 = new THREE.Group(); k1.position.set(0, -0.112, Z[i]); hand.add(k1);
@@ -253,7 +254,7 @@ function buildOutfit(ch, o, skinM) {
 export const DEFAULTS = {
   skin: C.skinPeach, hair: { style: 'short', color: 0x4a3322 }, brow: 0x2b1d14, seed: 1,
   outfit: { type: 'tee', color: C.blue }, pants: { type: 'long', color: 0x3a3f66 }, shoes: C.white, shoeSole: 0xeeeeee, socks: 0xffffff, belt: null,
-  height: 1, head: 1.12, width: 1, eyeColor: 0xffffff, iris: 0x1a1a22, eyeSize: 1.2, acc: [], hands: null, nose: 1, lashes: false, blush: 0.5, freckles: false, detail: 'high',
+  height: 1, head: 1.12, width: 1, eyeColor: 0xffffff, iris: 0x1a1a22, eyeSize: 1.05, acc: [], hands: null, nose: 1, lashes: false, blush: 0.5, freckles: false, detail: 'high',
 };
 
 export function makeCharacter(opts = {}) {
@@ -374,35 +375,28 @@ function plant(ch) {
 }
 
 // ---------- face ----------
-const IRIS = [0x6b3f1f, 0x3d7fc4, 0x4f8a3c, 0x8a5a2b, 0x2f6a8a, 0x5a3a20];   // brown, blue, green, hazel, teal, dark brown
 function buildFace(ch, o) {
   const R = ch.R, h = ch.head, es = o.eyeSize;
   const F = { eyes: [], brows: [], lids: [] };
   const sclera = mat(o.eyeColor, { rough: 0.3 }), pupilM = mat(o.iris, { rough: 0.25 }), skinM = ch.skin;
   const lashM = mat(0x1a1210);
   for (const s of [-1, 1]) {
-    const eg = new THREE.Group(); eg.position.set(s * R * 0.335, R * 0.12, R * 0.8); eg.rotation.y = s * 0.22; h.add(eg);
+    const eg = new THREE.Group(); eg.position.set(s * R * 0.31, R * 0.1, R * 0.8); eg.rotation.y = s * 0.2; h.add(eg);
     add(eg, sph(R * 0.3 * es, 32, 22), sclera, [0, 0, 0], [0, 0, 0], [1, 1.12, 0.6]);
-    const pg = new THREE.Group(); pg.position.z = R * 0.3 * es * 0.6 * 0.88; eg.add(pg);
-    // coloured iris ring (darker rim, lighter centre) + pupil + two catchlights: eyes read as eyes, not black buttons
-    const irisC = o.irisColor ?? IRIS[(o.seed ?? 1) % IRIS.length];
-    add(pg, sph(R * 0.17 * es, 28, 16), mat(shade(irisC, 0.55), { rough: 0.3 }), [0, 0, -R * 0.012 * es], [0, 0, 0], [1, 1, 0.4]);
-    add(pg, sph(R * 0.15 * es, 28, 16), mat(irisC, { rough: 0.25 }), [0, 0, -R * 0.004 * es], [0, 0, 0], [1, 1, 0.42]);
-    const pupil = add(pg, sph(R * 0.095 * es, 24, 16), pupilM, [0, 0, R * 0.006 * es], [0, 0, 0], [1, 1, 0.45]);
-    const glint = mat(0xffffff, { emissive: 0xffffff, emissiveIntensity: 0.6 });
-    add(pg, sph(R * 0.05 * es, 10, 8), glint, [R * 0.055 * es, R * 0.06 * es, R * 0.06 * es], [0, 0, 0], [1, 1, 0.5]);
-    add(pg, sph(R * 0.022 * es, 8, 6), glint, [-R * 0.06 * es, -R * 0.05 * es, R * 0.058 * es], [0, 0, 0], [1, 1, 0.5]);
+    const pg = new THREE.Group(); pg.position.z = R * 0.3 * es * 0.6 * 0.9; eg.add(pg);
+    // series look: plain black dot pupil, no iris colour, no catchlights
+    const pupil = add(pg, sph(R * 0.115 * es, 24, 16), pupilM, [0, 0, 0], [0, 0, 0], [1, 1, 0.45]);
     const lidPivot = new THREE.Group(); eg.add(lidPivot);
     const lid = add(lidPivot, sph(R * 0.312 * es, 28, 14, 0, Math.PI * 2, 0, Math.PI / 2), skinM, [0, 0, 0], [0, 0, 0], [1, 1.12, 0.62]); lid.castShadow = false;
     if (o.lashes) for (let k = 0; k < 3; k++) { const ang = (0.55 + k * 0.28); add(lidPivot, cap(R * 0.014, R * 0.07, 3, 5), lashM, [s * Math.sin(ang) * R * 0.3 * es, Math.cos(ang) * R * 0.3 * es * 1.12 * 0.95, R * 0.07], [0, 0, -s * (0.4 + k * 0.5) + (s > 0 ? 0 : 0)]); }
     const brow = new THREE.Group(); brow.position.set(s * R * 0.335, R * 0.5, R * 0.87); brow.rotation.y = s * 0.3; h.add(brow);
-    add(brow, cap(R * 0.085, R * 0.28, 5, 12), mat(o.brow, { rough: 0.8 }), [0, 0, 0], [0, 0, Math.PI / 2]);
+    add(brow, cap(R * 0.095, R * 0.24, 5, 12), mat(o.brow, { rough: 0.8 }), [0, 0, 0], [0, 0, Math.PI / 2]);
     F.eyes.push({ eg, pupil, pg, s, es }); F.lids.push(lidPivot); F.brows.push({ g: brow, s, baseY: R * 0.52 });
     // cheeks
     if (o.blush > 0) add(h, sph(R * 0.14, 12, 8), mat(new THREE.Color(o.skin).lerp(new THREE.Color(0xff6a7a), 0.28 * o.blush).getHex(), { rough: 0.7 }), [s * R * 0.58, -R * 0.2, R * 0.74], [0, s * 0.5, 0], [1, 0.7, 0.35]);
     if (o.freckles) for (let k = 0; k < 4; k++) add(h, sph(R * 0.022, 6, 5), mat(0x9a5a3a), [s * R * (0.45 + (k % 2) * 0.1), -R * (0.05 + (k >> 1) * 0.07), R * 0.9], [0, 0, 0], [1, 1, 0.3]);
   }
-  add(h, sph(R * 0.12 * o.nose, 16, 12), mat(o.skin, { rough: 0.5 }), [0, -R * 0.12, R * 0.97], [0, 0, 0], [1, 0.9, 0.9]);
+  add(h, sph(R * 0.16 * o.nose, 18, 14), mat(shade(o.skin, 0.96), { rough: 0.5 }), [0, -R * 0.14, R * 0.98], [0, 0, 0], [1, 0.92, 0.95]);
   const mouth = new THREE.Group(); mouth.position.set(0, -R * 0.45, R * 0.9); h.add(mouth);
   const darkM = new THREE.MeshStandardMaterial({ color: 0x4a1218, roughness: 0.4 });
   const mm = new THREE.Mesh(sph(1, 24, 16), darkM); mouth.add(mm);
@@ -521,7 +515,7 @@ export const FACES = {
 
 // ---------- presets (all complete; no implicit merge with hero) ----------
 export const PRESETS = {
-  hero: { skin: SKIN.peach, seed: 3, hair: { style: 'messy', color: 0x4a2f1c }, outfit: { type: 'hoodie', color: 0xe53935 }, pants: { type: 'shorts', color: 0x2f6fd6 }, shoes: C.white, acc: ['headband:' + '0xffd23f'] },
+  hero: { skin: SKIN.peach, seed: 3, hair: { style: 'curly', color: 0x4a2f1c }, outfit: { type: 'hoodie', color: 0xe53935 }, pants: { type: 'shorts', color: 0x2f6fd6 }, shoes: C.white, acc: ['headband:' + '0xffd23f'] },
   mum: { skin: SKIN.tan, lashes: true, seed: 5, hair: { style: 'bun', color: 0x2d1b14 }, outfit: { type: 'tee', color: 0x8a52c9 }, pants: { type: 'long', color: 0x3a3f66 }, shoes: 0xb84a6a, acc: [] },
   dad: { skin: SKIN.peach, hair: { style: 'short', color: 0x22170f }, outfit: { type: 'hoodie', color: 0x2fa66a }, pants: { type: 'long', color: 0x4a4a52 }, shoes: 0x333333, width: 1.12, acc: ['beard:0x4a3426'] },
   kid: { skin: SKIN.peach, freckles: true, hair: { style: 'spiky', color: 0x7a4a22 }, outfit: { type: 'tee', color: 0xffb300 }, pants: { type: 'shorts', color: 0x4aa0e0 }, shoes: 0xee4444, height: 0.62, head: 1.18 },

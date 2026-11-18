@@ -25,13 +25,13 @@ export default {
     S.hero = makeCharacter(PRESETS.hero); scene.add(S.hero.root); S.hero.root.position.set(0, hillH(0, 0), 0);
     S.wave = makeLoveWave({ maxR: 80, height: 10, debris: 200 }); S.wave.position.set(0, hillH(0, 0) + 0.2, 0); scene.add(S.wave);
     // tiny people on the hillside get a heart as the wave passes
-    const r = rng(31); S.folks = Array.from({ length: 56 }, (_, i) => { const a = r() * 6.283, d = r.range(8, 46); const c = randomPerson(r); scene.add(c.root); c.root.position.set(Math.cos(a) * d, hillH(Math.cos(a) * d, Math.sin(a) * d), Math.sin(a) * d); c.root.rotation.y = a + Math.PI; c.d = d; return c; });
-    S.folkHearts = makeHeartField(56, { color: 0xff3f7f, emissive: 0.6 }); scene.add(S.folkHearts);
+    const r = rng(31); S.folks = Array.from({ length: 24 }, (_, i) => { const a = r() * 6.283, d = r.range(8, 46); const c = randomPerson(r); scene.add(c.root); c.root.position.set(Math.cos(a) * d, hillH(Math.cos(a) * d, Math.sin(a) * d), Math.sin(a) * d); c.root.rotation.y = a + Math.PI; c.d = d; return c; });
+    S.folkHearts = makeHeartField(S.folks.length, { color: 0xff3f7f, emissive: 0.6 }); scene.add(S.folkHearts);
     // cast crowd field (same hill, front slope)
     const names = ['dad', 'mum', 'kid', 'grandma', 'neighbourMan', 'neighbourWoman', 'neighbourTeen', 'neighbourGranny', 'postman', 'iceCreamMan', 'magician', 'judgeA', 'judgeB', 'judgeC', 'judgeD', 'host', 'scientistA', 'scientistB', 'chiefScientist', 'balloonist', 'skydiver', 'passenger', 'flightAttendant', 'windowWasher', 'plazaA'];
     S.cast = names.map((n, i) => { const c = makeCharacter(PRESETS[n]); scene.add(c.root); const row = Math.floor(i / 9), col = i % 9; const x = (col - 4) * 2.4 + (row % 2) * 1.1, z = 6 + row * 2.6; c.root.position.set(x, hillH(x, z) + 0.0, z); c.root.rotation.y = Math.PI + (x * 0.02); return c; });
     S.castHero = makeCharacter(PRESETS.hero); scene.add(S.castHero.root); S.castHero.root.position.set(0, hillH(0, 3.2), 3.2); S.castHero.root.rotation.y = Math.PI;
-    S.crowdFill = Array.from({ length: 50 }, (_, i) => { const c = randomPerson(r); scene.add(c.root); const row = 3 + Math.floor(i / 14), col = i % 14; const x = (col - 6.5) * 2.5 + (row % 2) * 1.2, z = 6 + row * 2.6; c.root.position.set(x, hillH(x, z), z); c.root.rotation.y = Math.PI; return c; });
+    S.crowdFill = Array.from({ length: 20 }, (_, i) => { const c = randomPerson(r); scene.add(c.root); const row = 3 + Math.floor(i / 14), col = i % 14; const x = (col - 6.5) * 2.5 + (row % 2) * 1.2, z = 6 + row * 2.6; c.root.position.set(x, hillH(x, z), z); c.root.rotation.y = Math.PI; return c; });
     S.ghostsC = ['ghostCaveman', 'ghostPharaoh', 'ghostKnight', 'ghostViking', 'ghostVictorian'].map((n, i) => { const g = ghostify(makeCharacter(PRESETS[n])); scene.add(g.root); g.root.position.set(-8 + i * 4, hillH(-8 + i * 4, 28) + 1.0, 28); g.root.rotation.y = Math.PI; return g; });
     S.castHearts = makeHeartField(130, { colors: [0xff3f7f, 0xff8fb8, 0xffd23f], emissive: 0.6 }); scene.add(S.castHearts);
     S.catHill = makeAnimal('cat', ANIMALS.gerald); scene.add(S.catHill.root); S.catHill.root.position.set(4.5, hillH(4.5, 7.5), 7.5); S.catHill.root.rotation.y = Math.PI + 0.3;
@@ -83,7 +83,8 @@ export default {
       { ...shot(88.8, 90.0, G([-0.6, 1.9, 5.2], [0.4, 1.7, 2.6], 30), G([-0.5, 1.9, 4.6], [0.4, 1.7, 2.6], 28)), g: 'garden' },            // FREEZE: title card
     ];
     // slower edit: ~2 s shots, each holding the camera of the gag / voiced line it covers
-    S.shots = regroup(S.shots, [[75.2, 77.6, 75.2], [77.6, 79.6, 78.4], [79.6, 81.2, 80.0], [81.2, 82.0, 81.6], [82.0, 82.8, 82.0], [82.8, 83.6, 83.2], [83.6, 85.6, 84.4], [85.6, 87.2, 86.6], [87.2, 88.8, 88.0], [88.8, 90.0, 88.8]]);
+    S.shots = regroup(S.shots, [[75.2, 77.6, 76.0], [77.6, 79.6, 78.4], [79.6, 81.2, 80.0], [81.2, 82.0, 81.6], [82.0, 82.8, 82.0], [82.8, 83.6, 83.2], [83.6, 85.6, 84.4], [85.6, 87.2, 86.6], [87.2, 88.8, 88.0], [88.8, 90.0, 88.8]]);
+    S.shots.forEach((s) => { if (s.g === 'earth' || s.g === 'cosmos') s.wide = true; }); S.shots[S.shots.length - 1].close = 1;   // space pull-backs keep their scale; title-card close-up as authored
     S.HC = HC; return S;
   },
   frame(t, S, ctx) {

@@ -78,6 +78,7 @@ place(sfx, scratch(0.55) * 0.9, 88.8); place(sfx, boom(1.8, 0.8), 88.8 + 0.05); 
 M = read(os.path.join(AUD, 'music_stretched.wav')); t0 = json.load(open(os.path.join(AUD, '../music_stretch.json')))['t0']
 mus = M[int(t0 * SR): int((t0 + 90) * SR)].copy(); mus = np.pad(mus, ((0, N - len(mus)), (0, 0)))
 mus = norm_lufs(mus, -17)
+fi = int(2.0 * SR); mus[:fi] *= (0.3 + 0.7 * np.sin(np.linspace(0, np.pi / 2, fi)) ** 2)[:, None]   # user: the first second was very loud -> music eases in
 # low-pass sweep 76.0 -> 77.6, digital silence 77.6 -> 80.0, slam at 80.0; hard cut 87.6 -> 88.8; one bar back at 88.8 with a tail
 a, b = int(76.0 * SR), int(77.6 * SR)
 for i in range(8):
@@ -104,6 +105,7 @@ def smooth_env(x, atk=0.02, rel=0.25):
     return out
 g_duck = 10 ** (-5 * smooth_env(duck_n[::48].repeat(48)[:N] if False else duck_n) / 20) * 10 ** (-2.5 * smooth_env(duck_v) / 20)
 sfx *= SFX_GAIN
+sfx[:int(2.4 * SR)] = 0.0   # user: no SFX at the very start of the film
 mix = mus * g_duck[:, None] + voice + narr + sfx
 mix[int(77.6 * SR):int(80.0 * SR)] = mus[int(77.6 * SR):int(80.0 * SR)] * 0 + (sfx[int(77.6 * SR):int(80.0 * SR)] + narr[int(77.6 * SR):int(80.0 * SR)])
 # ------------------------------------------------------------------ master: -14 LUFS, limiter ceiling ~ -3.2 dB, then verify true peak after AAC elsewhere

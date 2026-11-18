@@ -29,13 +29,13 @@ export default {
     S.postmanSack = mailSack(1); S.postman.hold(S.postmanSack, 'R', { pos: [0, 0, 0], rot: [0, 0, 0] });
     // Gerald sits on the white line
     S.cat = makeAnimal('cat', ANIMALS.gerald); scene.add(S.cat.root); S.cat.root.position.set(2.0, 0.07, ROAD_Z + 0.9); S.cat.root.rotation.y = 0.2;
-    // crowd: 44 low-detail people spawn from doors then fill the street
+    // crowd: 20 low-detail people spawn from doors then fill the street
     const r = rng(23), doors = st.anchors.doors; S.crowd = [];
     const rowsZ = [-1.0, -0.3, 0.4, 2.6, 3.1, -0.6, 3.5];
-    for (let i = 0; i < 44; i++) {
+    for (let i = 0; i < 20; i++) {
       const c = randomPerson(r); scene.add(c.root); const side = i % 2; const dpos = doors[(i * 3 + side) % doors.length].clone(); if (side) { dpos.z = 7.4 - 0.1; }
       let tx = lerp(-12, 12, ((i * 0.618) % 1)); const tz = rowsZ[i % rowsZ.length] + r.range(-0.15, 0.15); if (Math.abs(tx - 2.0) < 1.8 && tz > 0.2 && tz < 3.4) tx += tx < 2 ? -2.2 : 2.2;
-      S.crowd.push({ c, born: 9.8 + (i / 44) * 7.6, from: [dpos.x, 0, side ? 7.3 : -3.3], to: [tx, 0, tz], ph: r() * 6 });
+      S.crowd.push({ c, born: 9.8 + (i / 20) * 7.6, from: [dpos.x, 0, side ? 7.3 : -3.3], to: [tx, 0, tz], ph: r() * 6 });
     }
     // named neighbours near the camera lanes (presets)
     S.named = ['neighbourMan', 'neighbourWoman', 'neighbourTeen', 'neighbourGranny'].map((p, i) => ({ c: mkc(p), born: 10.0 + i * 0.3, to: [[-3.5, 0, -0.6], [-1.2, 0, 3.2], [5.0, 0, -0.8], [6.8, 0, 3.2]][i], ph: i }));
@@ -43,9 +43,9 @@ export default {
     // balloons rising from windows
     S.balloons = Array.from({ length: 12 }, (_, i) => { const b = heartBalloon([0xff3f7f, 0xff8fb8, 0xffd23f, 0x4aa0e0][i % 4], 1.0); scene.add(b); return { b, x: -11 + i * 2, z: -3.2 + (i % 2) * 10.4, t0: 11.0 + i * 0.5 }; });
     // chalk hearts on the road
-    const chalk = new THREE.InstancedMesh(heartGeo(0.06, 0.01), new THREE.MeshStandardMaterial({ roughness: 1, emissive: 0xffffff, emissiveIntensity: 0.2 }), 90); const d = new THREE.Object3D(), cc = new THREE.Color(), r2 = rng(3);
-    S.chalkPos = Array.from({ length: 90 }, (_, i) => ({ x: r2.range(-10, 10), z: r2.range(-0.8, 4.8), s: r2.range(0.35, 0.7), a: r2() * 6, t: 11 + (i / 90) * 6 })); S.chalk = chalk; S.chalkD = d; S.chalkC = cc;
-    chalk.instanceColor = null; for (let i = 0; i < 90; i++) { cc.set([0xff3f7f, 0xffffff, 0xffd23f, 0x7ad0ff][i % 4]); chalk.setColorAt(i, cc); } scene.add(chalk);
+    const chalk = new THREE.InstancedMesh(heartGeo(0.06, 0.01), new THREE.MeshStandardMaterial({ roughness: 1, emissive: 0xffffff, emissiveIntensity: 0.2 }), 40); const d = new THREE.Object3D(), cc = new THREE.Color(), r2 = rng(3);
+    S.chalkPos = Array.from({ length: 40 }, (_, i) => ({ x: r2.range(-10, 10), z: r2.range(-0.8, 4.8), s: r2.range(0.35, 0.7), a: r2() * 6, t: 11 + (i / 40) * 6 })); S.chalk = chalk; S.chalkD = d; S.chalkC = cc;
+    chalk.instanceColor = null; for (let i = 0; i < 40; i++) { cc.set([0xff3f7f, 0xffffff, 0xffd23f, 0x7ad0ff][i % 4]); chalk.setColorAt(i, cc); } scene.add(chalk);
     S.confetti = makeConfetti(220, { origin: [0, 1.0, 0], spread: [2.4, 5.5, 2.4], size: 0.16 }); scene.add(S.confetti);
     S.aura = makeLoveAura(1.5); scene.add(S.aura); S.hb = heartBalloon(0xff3f7f, 1.4); S.hb.scale.setScalar(1.6); scene.add(S.hb);
     const hp = heroPath;

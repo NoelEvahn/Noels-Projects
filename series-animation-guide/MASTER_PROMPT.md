@@ -164,3 +164,9 @@ Sound effects must never bury speech.
 - Loudness, true peak after AAC, line onsets within ±40 ms, digital silence in the scene-7 window, beat-grid fit, the pitch table, narration ASR.
 - Report honestly what is rough, what was not checked, and that nobody can listen to the audio.
 - Tell the user the files live in the session scratchpad and must be downloaded.
+
+
+## Series look and camera (user feedback, 2026-11-19)
+- Characters keep the episode 1-2 look: big round head, white ball eyes with plain black dot pupils (no iris colour, no catchlights), bulb nose, thick brows, ball hands. No anime eyes. The older detailed rig lives in `assets/library/archive/detailed-2026-11/`.
+- Frame people up front: medium and close shots on the main character, every shot eases and slowly pushes in (`common.js` `pick` applies CLOSE/PUSH). Wide shots only for maps, planets and space (`wide: true`).
+- Keep scenes simple: few people on screen, no crowded wides. Open the film on the hero, no SFX in the first seconds.

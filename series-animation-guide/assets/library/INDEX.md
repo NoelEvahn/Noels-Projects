@@ -94,3 +94,7 @@ Each set pairs with a `*_STAGE` lighting preset (or `plazaStage(city)`) for `mak
 * `makeLovers(scene)` in `episode-N/src/common.js` (heart tag above each lover's head, pops in at its birth time) is a good pattern to copy for "count of X" gags.
 * Instanced crowds: `props/stage.js audience()` (seated or standing, cheer animation, faces) and `randomPerson(rng)` low-detail characters.
 * Scenes that need many places in one page: put each place in its own `Group` far apart, toggle `.visible` per shot, swap `scene.background` per shot.
+
+
+## Series look (2026-11-19)
+Default faces are the episode 1-2 style: white ball eyes, black dot pupils, bulb nose, ball hands (`fingers: true` for fingered hands). Hero hair is `curly`. Gerald uses the same dot eyes. The detailed rig is archived in `archive/detailed-2026-11/`.

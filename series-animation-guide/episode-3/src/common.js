@@ -20,7 +20,16 @@ export function regroup(shots, cuts) {
   if (typeof location !== "undefined" && /[?&]orig(=|&|$)/.test(location.search)) return shots;   // ?orig shows the original fast cut (review tool)
   return cuts.map(([t0, t1, k]) => { let s = shots[0]; for (const x of shots) if (k >= x.t0 - 1e-6) s = x; return { ...s, t0, t1 }; });
 }
-export function pick(shots, t) { let s = shots[0], idx = 0; for (let i = 0; i < shots.length; i++) if (t >= shots[i].t0 - 1e-6) { s = shots[i]; idx = i; } const u = clamp((t - s.t0) / Math.max(1e-6, s.t1 - s.t0)); return { shot: s, idx, u, cam: mix(s.a, s.b, o_ease(u, s.ease)) }; }
+// Series framing (episodes 1-2 feel): every shot sits closer to its subject and slowly pushes in with eased motion.
+// CLOSE = distance factor (1 = as authored); shots with { wide: true } or very near/far cameras keep their distance.
+export const CLOSE = 0.74, PUSH = 0.1;
+function upfront(c, s, u) {
+  const d = Math.hypot(...c.pos.map((v, i) => v - c.target[i]));
+  if (s.wide || d < 1.6 || d > 18) return c;
+  const k = Math.max(1.4 / d, (s.close ?? CLOSE) * (1 - PUSH * smooth(u)));
+  return { ...c, pos: c.pos.map((v, i) => c.target[i] + (v - c.target[i]) * k) };
+}
+export function pick(shots, t) { let s = shots[0], idx = 0; for (let i = 0; i < shots.length; i++) if (t >= shots[i].t0 - 1e-6) { s = shots[i]; idx = i; } const u = clamp((t - s.t0) / Math.max(1e-6, s.t1 - s.t0)); return { shot: s, idx, u, cam: upfront(mix(s.a, s.b, o_ease(u, s.ease ?? 'smooth')), s, u) }; }
 const o_ease = (u, e) => (e === 'in' ? u * u : e === 'out' ? 1 - (1 - u) * (1 - u) : e === 'smooth' ? smooth(u) : u);
 export const fl = (n) => Math.floor(n);
 export const pops = (t, birth, dur = 0.35) => (t < birth ? 0 : easeOutBack(clamp((t - birth) / dur)));

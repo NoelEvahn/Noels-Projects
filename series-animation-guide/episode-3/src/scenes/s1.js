@@ -65,8 +65,9 @@ export default {
       shot(8.8, 9.6, orbit([2.0, 0.95, 2.7], -8, 2.2, 0.15, 34), orbit([2.0, 0.95, 2.7], -4, 1.5, 0.15, 32)),            // kid voice + tablet drops
     ];
     // slower edit: ~2 s shots, each holding the camera of the gag / voiced line it covers
-    S.shots = regroup(S.shots, [[0, 2.0, 1.2], [2.0, 4.0, 0.4], [4.0, 5.6, 4.8], [5.6, 7.2, 5.6], [7.2, 9.6, 8.0]]);
+    S.shots = regroup(S.shots, [[0, 2.0, 1.2], [2.0, 4.0, 2.0], [4.0, 5.6, 4.8], [5.6, 7.2, 5.6], [7.2, 8.4, 7.2], [8.4, 9.6, 8.8]]);
     S.shots[2] = { ...S.shots[2], a: cam([-5.0, 1.75, 1.7], [-7.5, 1.32, 1.6], 34), b: cam([-5.3, 1.72, 1.65], [-7.5, 1.34, 1.6], 32) };   // Gerald on the fence: camera just above the rail so he is clearly sitting on it
+    S.shots[1].close = S.shots[5].close = 1.2;   // the kid is small: keep a little more room around him
     return S;
   },
   frame(t, S, ctx) {
@@ -74,10 +75,10 @@ export default {
     const p = pick(S.shots, t), c = p.cam;
     const mo = ctx.mouth;
     // ---- hero: walks out of the back door with a tray of burgers, then freezes in awe
-    const wk = clamp(t / 2.2);
-    const hp = [lerp(0, 0.3, wk), 0, lerp(-4.6, 0.7, easeOutCubic(wk))];
+    const wk = clamp(t / 1.6);
+    const hp = [lerp(0, 0.3, wk), 0, lerp(-0.9, 0.7, easeOutCubic(wk))];
     place(hero, hp[0], hp[1], hp[2], 0.0);
-    const moving = t < 2.2;
+    const moving = t < 1.6;
     const shock = clamp((t - 2.4) / 5.0);
     hero.pose({ ...POSES.walk(t, 7), ...(moving ? {} : POSES.idle(t)), ...POSES.tray(), lean: 0.02, hx: shock * -0.08 });
     hero.pose(moving ? { ...POSES.walk(t, 6.5), aRf: 1.2, aRe: 1.9, aRs: 0.3, aLf: -0.2 * Math.sin(t * 6.5), hR: 'flat' } : { ...POSES.tray(), aLf: 0.3 + shock * 1.0, aLs: 0.2 + shock * 0.9, aLe: 0.5, bob: 0.01 + shock * 0.03, squash: 1 + shock * 0.03 });
