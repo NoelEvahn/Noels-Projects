@@ -19,6 +19,7 @@ import { createBusiness } from './business/core.js';
 import { createProperty } from './property.js';
 import { createConstruction } from './construction.js';
 import { createVehicles } from './vehiclesEcon.js';
+import { createTutorial } from './tutorial.js';
 import { ok, fail, clone, dayOf, hourOf, weekdayOf } from './util.js';
 
 const START_MINUTE = 480;
@@ -48,9 +49,10 @@ export function createSim({ bus = null, strict = false } = {}) {
   ctx.property = M.property = createProperty(ctx);
   ctx.cons = M.cons = createConstruction(ctx);
   ctx.veh = M.veh = createVehicles(ctx);
+  ctx.tutorial = M.tutorial = createTutorial(ctx);
 
   const cmds = {}, selects = {};
-  for (const m of [M.inv, M.market, M.shops, M.needs, M.bank, M.tax, M.notes, M.invest, M.jobs, M.biz, M.property, M.cons, M.veh, M.skills, M.reports]) {
+  for (const m of [M.inv, M.market, M.shops, M.needs, M.bank, M.tax, M.notes, M.invest, M.jobs, M.biz, M.property, M.cons, M.veh, M.skills, M.reports, M.tutorial]) {
     Object.assign(cmds, m.cmds || {}); Object.assign(selects, m.selects || {});
   }
   cmds['debug.grant'] = ({ cents }) => {
@@ -60,12 +62,11 @@ export function createSim({ bus = null, strict = false } = {}) {
   };
   cmds['debug.setTime'] = ({ hour }) => { ctx.state.meta.cheated = true; if (ctx.services.setTime) ctx.services.setTime(hour); return ok(); };
   cmds['settings.set'] = () => ok();
-  cmds['tutorial.set'] = ({ step }) => { ctx.state.flags.tutorial = step; return ok(); };
+  cmds['tutorial.set'] = ({ step }) => { if (!Number.isInteger(step) || step < 0) return fail(ERR.INVALID_ARG); ctx.tutorial.setStep(step); return ok(); };
 
   function weatherNow() { return ctx.services.weather ? ctx.services.weather() : { type: 'clear', intensity: 0 }; }
   selects['time.now'] = () => { const t = ctx.now(); return { day: dayOf(t), minute: t % 1440, total: t, hour: hourOf(t), weekday: WEEKDAYS[weekdayOf(t)] }; };
   selects['weather.now'] = weatherNow;
-  selects['tutorial.state'] = () => ({ step: ctx.state.flags.tutorial || 0 });
   selects.cash = () => ctx.ledger.balance(ACCOUNTS.CASH);
   selects['ledger.balance'] = ({ id }) => ctx.ledger.balance(id);
   selects['ledger.invariant'] = () => ctx.ledger.checkInvariant();
@@ -115,6 +116,7 @@ export function createSim({ bus = null, strict = false } = {}) {
     const minute = gt.minute;
     if (minute % 10 === 0) ctx.needs.tick10();
     ctx.jobs.tickMinute();
+    if (minute % 5 === 0) ctx.tutorial.evaluate();
     if (minute % 60 !== 0) return;
     const hour = minute / 60;
     ctx.market.hourly(hour);
@@ -138,7 +140,7 @@ export function createSim({ bus = null, strict = false } = {}) {
     const f = cmds[name];
     if (!f) return { ok: false, error: ERR.NOT_FOUND, detail: 'unknown command ' + name };
     if (!args || typeof args !== 'object') return fail(ERR.INVALID_ARG);
-    try { return f(args); } catch (e) { if (strict) throw e; return { ok: false, error: ERR.INVALID_ARG, detail: String(e && e.message || e) }; }
+    try { const r = f(args); if (r && r.ok) ctx.tutorial.evaluate(); return r; } catch (e) { if (strict) throw e; return { ok: false, error: ERR.INVALID_ARG, detail: String(e && e.message || e) }; }
   }
   function select(name, args) {
     const f = selects[name];

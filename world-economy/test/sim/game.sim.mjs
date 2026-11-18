@@ -75,3 +75,10 @@ test('veh.deliver brings an owned vehicle (existing or not yet spawned) next to 
   g.game.enterVehicle(g.game.economy.entityOf.get(v.data.vehId)); assert.equal(g.sim.cmd('veh.deliver', { vehId: v.data.vehId }).error, 'ERR.BUSY'); assert.equal(g.sim.cmd('veh.tow', { vehId: v.data.vehId }).error, 'ERR.BUSY');
   invariant(g.sim);
 });
+test('tutorial: walking and opening the jobs app in the live Game advance the sim tutorial', () => {
+  const g = boot(); g.game.update(1 / 60, 0); g.sim.ctx.tutorial.evaluate();
+  assert.equal(g.sim.select('tutorial.state').current.id, 'tut.move');
+  g.inp.setAxis('moveY', 1); for (let i = 0; i < 60 * 14; i++) { g.inp.setAxis('moveY', 1); frame(g); }
+  assert.equal(g.sim.select('tutorial.state').current.id, 'tut.jobs', 'twelve footsteps of walking completed the first step');
+  g.bus.emit('ui:open', { screen: 'scr.phone.jobs' }); assert.equal(g.sim.select('tutorial.state').current.id, 'tut.shift');
+});

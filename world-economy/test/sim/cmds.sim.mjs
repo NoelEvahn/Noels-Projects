@@ -242,7 +242,8 @@ test('invest, tax, notes, settings, debug, time selects', () => {
   sim.ctx.state.tax.arrears = 5000; ok(C(sim, 'tax.payArrears', { amount: 2000 })); assert.equal(Q(sim, 'tax.state').arrears, 3000);
   sim.ctx.note('x', 'hello'); const n = Q(sim, 'notes.list'); assert.ok(n.length >= 1);
   ok(C(sim, 'note.read', { id: n[0].id })); err(C(sim, 'note.read', { id: 9999 }), 'ERR.NOT_FOUND'); ok(C(sim, 'note.clear', { id: n[0].id })); err(C(sim, 'note.clear', { id: 9999 }), 'ERR.NOT_FOUND'); ok(C(sim, 'note.clear', {}));
-  ok(C(sim, 'settings.set', { path: 'a', value: 1 })); ok(C(sim, 'tutorial.set', { step: 2 })); assert.equal(Q(sim, 'tutorial.state').step, 2);
+  ok(C(sim, 'settings.set', { path: 'a', value: 1 })); ok(C(sim, 'tutorial.set', { step: 2 })); assert.equal(Q(sim, 'tutorial.state').step, 2); err(C(sim, 'tutorial.set', { step: -1 }), 'ERR.INVALID_ARG');
+  ok(C(sim, 'tutorial.signal', { name: 'moved' })); err(C(sim, 'tutorial.signal', {}), 'ERR.INVALID_ARG'); err(C(sim, 'tutorial.ack', { stepId: 'tut.nope' }), 'ERR.NOT_FOUND'); ok(C(sim, 'tutorial.ack', {})); ok(C(sim, 'tutorial.skip', {})); assert.equal(Q(sim, 'tutorial.state').done, true);
   assert.equal(Q(sim, 'cheated'), true); ok(C(sim, 'debug.setTime', { hour: 9 }));
   assert.equal(Q(sim, 'weather.now').type, 'clear'); assert.equal(Q(sim, 'time.now').weekday, 'mon');
   const s = Q(sim, 'player.summary'); assert.equal(s.hour, 8); assert.ok(Q(sim, 'ledger.balances').cash >= 0); assert.ok(Q(sim, 'ledger.transactions', { limit: 3 }).length === 3); assert.equal(Q(sim, 'ledger.invariant').ok, true); Q(sim, 'ledger.recent'); Q(sim, 'cash'); Q(sim, 'ledger.balance', { id: 'cash' });

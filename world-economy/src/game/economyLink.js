@@ -107,6 +107,10 @@ export function createEconomyLink({ sim, game, bus, clock }) {
   };
   bus.on('job:shiftEnd', () => { if (link.controller) { link.controller.active = false; link.controller = null; } bus.emit('save:autosaveDue', { reason: 'shift' }); });
   bus.on('time:hour', (p) => { if (p.hour === 6) bus.emit('save:autosaveDue', { reason: 'daily' }); });
+  // tutorial (Stage 4b): game/UI-side signals feed the sim's tutorial flow; sim-side events it listens to itself
+  let tutOver = false; bus.on('tutorial:done', () => { tutOver = true; });
+  bus.on('player:step', () => { if (!tutOver) sim.cmd('tutorial.signal', { name: 'moved' }); });
+  bus.on('ui:open', (p) => { if (!tutOver) sim.cmd('tutorial.signal', { name: 'ui:open', data: { screen: p && p.screen } }); });
   bus.on('needs:sleep', (p) => { bus.emit('time:sleepRequested', { minutes: p.minutes, scale: 120 }); });
 
   // ---- vehicles --------------------------------------------------------------------------------------------------------------
