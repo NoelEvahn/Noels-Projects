@@ -110,7 +110,7 @@ Episode 3 v1 cut every ~0.7 s and the user rejected it: confusing, text overlapp
 
 ### Narrator
 - Five short deadpan lines, in scenes 1, 2, 4, 5 and 6: the premise first, then dry understatements.
-- Kokoro TTS (`bm_george`, local neural voice), natural pace, mixed quietly inside the music.
+- Piper TTS (`en_US-ryan-high`, the episode 1-2 voice), natural pace via `--length-scale`, de-essed, mixed quietly inside the music.
 - Captions word by word in white, with key words in yellow. Check with ASR that the audio matches the captions.
 
 ### Music and edit
@@ -122,7 +122,7 @@ Episode 3 v1 cut every ~0.7 s and the user rejected it: confusing, text overlapp
 
 ### Mix (approved levels)
 - **SFX stay well under everything** (user: "SFX way too loud"). No whoosh on every cut; at most a barely audible air on a cut. The SFX bus sits about 8 dB below the old episode-3 mix.
-- **Narrator voice must sound natural** (user: the Piper voice sounded robotic). Use Kokoro (`bm_george`, local) or better; never Piper.
+- **Narrator voice = Piper `en_US-ryan-high`, as in episodes 1-2** (user: "perfect"). Natural speed; fit long lines with Piper's `--length-scale`, never time-stretch (that made episode 3 v1 sound robotic). De-ess the S sounds.
 
 | Item | Level |
 |---|---|
