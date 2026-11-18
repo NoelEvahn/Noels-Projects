@@ -241,6 +241,60 @@ export function createHour(ctx, B) {
     return 0;
   }
   function hourRental() { return 0; }
+  /** Expected visible customers per game hour for hour `hour` (pure: no rng, no mutation). Same terms as the hourly model: footfall x weekday x
+   *  weather x regional activity, appeal from quality and reputation, price response, staff/seat capacity, stock on hand. Used by the customer AI
+   *  (game/ai/customers.js) so what walks into a shop follows what the ledger will book; it never books anything itself. */
+  function expectedFlow(b, hour, t) {
+    const T = BIZ_BY_ID[b.typeId]; const out = { open: false, perHour: 0, points: [], model: T.model };
+    if (b.suspended || !isOpen(b, hour, t)) return out;
+    out.open = true;
+    const wx = weather();
+    if (T.model === 'retail') {
+      const site = SITE_BY_ID[b.siteId]; if (!site) return out;
+      const F = site.footfall[hour] * weekdayMult(site, t) * weatherMult(site, wx) * ctx.market.activity(site.region);
+      const hasAssist = b.assist && b.assist.hours > 0;
+      const q = quality(b, T, hasAssist ? 0.1 * b.assist.score : 0);
+      const appeal = 0.4 + 0.6 * (0.6 * q + 0.4 * b.reputation) + add(b, 'appeal');
+      const A = T.assortments ? ASSORTMENTS[b.assortment || 'convenience'] : null;
+      const eps = A ? A.eps : T.eps;
+      const capture = T.capture * mult(b, 'capture') * (1 + (b.tier - 1) * 0.1);
+      const active = b.products.filter((p) => p.active); let totalShare = 0; for (const p of active) totalShare += p.share || 1;
+      const wide = T.id === 'biz.supermarket' || T.id === 'biz.retail' ? active.length * 0.5 : 1;
+      let items = 0, itemsDemand = 0;
+      for (const p of active) {
+        let sm = A ? A.demandMult || 1 : 1;
+        if (A && site) { if (A.tag && site.tags.includes(A.tag)) sm = A.tagMult; if (A.district && site.district === A.district[0]) sm *= A.district[1]; }
+        const d = F * capture * ((p.share || 1) / (totalShare || 1)) * appeal * priceMult(b, p, eps, B.refOf(b, p)) * sm * wide;
+        itemsDemand += d; items += Math.min(d, B.maxServable(b, p));
+      }
+      const basket = T.basket || 1, capC = capacity(b, T, hasAssist, null), cap = capC === null ? Infinity : capC * basket;
+      const served = Math.min(items, cap * (itemsDemand > 0 ? 1 : 0));
+      out.perHour = served / basket; out.demand = itemsDemand / basket; out.points = [{ siteId: b.siteId, perHour: out.perHour }];
+    } else if (T.model === 'vending') {
+      for (const u of b.units) {
+        if (u.kind !== 'machine' || u.jammed || u.fullBox) continue;
+        const site = SITE_BY_ID[u.siteId]; if (!site) continue;
+        const F = site.footfall[hour] * weekdayMult(site, t) * weatherMult(site, wx) * ctx.market.activity(site.region);
+        const qv = clamp(0.5 + 0.1 * add(b, 'quality') + 0.2 * u.condition, 0, 1.2), appeal = 0.4 + 0.6 * (0.6 * qv + 0.4 * b.reputation);
+        const capture = T.capture * mult(b, 'capture') * (u.upg && u.upg.includes('vend.card_reader') ? 1.15 : 1);
+        const act = b.products.filter((p) => p.active && (!p.hot || (u.upg && u.upg.includes('vend.hotfood')))); let tot = 0; for (const p of act) tot += p.share;
+        let n = 0;
+        for (const p of act) {
+          const ref = B.refOf(b, p) + (p.id === 'beverage' && u.upg && u.upg.includes('vend.cooler') ? 30 : 0);
+          const stk = Math.min(...Object.entries(p.recipe).map(([it, k]) => Math.floor((u.stock[it] || 0) / k)));
+          n += Math.min(F * capture * (p.share / tot) * appeal * priceMult(b, p, T.eps, ref), stk);
+        }
+        if (n > 0) { out.points.push({ siteId: u.siteId, unitId: u.id, perHour: n }); out.perHour += n; }
+      }
+    } else if (T.model === 'boatrental') {
+      const site = SITE_BY_ID[b.siteId]; if (!site) return out;
+      const type = wx.type || 'clear'; const wf = type === 'clear' ? 1 : type === 'cloudy' || type === 'overcast' ? 0.7 : type === 'rain' ? 0.1 : 0;
+      const free = b.units.filter((u) => u.kind === 'boat' && !u.busy && u.condition > 0.1).length;
+      const r = site.footfall[hour] * weekdayMult(site, t) * wf * ctx.market.activity(site.region) * 0.035 * mult(b, 'capture') * (0.6 + 0.4 * b.reputation);
+      out.perHour = Math.min(r, free); out.points = [{ siteId: b.siteId, perHour: out.perHour }];
+    }
+    return out;
+  }
   const MODEL = { retail: hourRetail, vending: hourVending, boatrental: hourBoatRental, fishing: hourFishing, delivery: hourDelivery, logging: hourLogging, warehouse: hourWarehouse, rental: hourRental };
   /** returns revenue credited (retail-like models credit one sale.goods transfer per business per hour) */
   function simulateHour(b, hour, t) {
@@ -258,5 +312,5 @@ export function createHour(ctx, B) {
     if (b.assist && b.assist.hours <= 0) b.assist = null;
     void dayOf; void ROLE_THROUGHPUT; void ITEM_BY_ID;
   }
-  return { simulateHour, capacity, quality, isOpen, weekdayMult, weatherMult };
+  return { simulateHour, capacity, quality, isOpen, weekdayMult, weatherMult, expectedFlow };
 }

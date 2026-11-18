@@ -631,6 +631,8 @@ export function createBusiness(ctx) {
   const summary = (b) => ({ id: b.id, typeId: b.typeId, name: b.name, siteId: b.siteId, tier: b.tier, balance: ctx.ledger.balance(acct(b)), reputation: Math.round(b.reputation * 100) / 100, staff: b.staff.length, units: b.units.length, suspended: !!b.suspended, payables: b.finance.payables, today: { revenue: b.stats.today.revenue, customers: b.stats.today.customers } });
   const selects = {
     'biz.list': () => S().businesses.map(summary),
+    /** expected customers per game hour right now ({open, perHour, demand?, points:[{siteId, unitId?, perHour}]}); read by the customer AI, books nothing */
+    'biz.demand': ({ bizId }) => { const b = get(bizId); if (!b) return null; const t = ctx.now(); return H.expectedFlow(b, hourOf(t), t); },
     'biz.detail': ({ bizId }) => {
       const b = get(bizId); if (!b) return null;
       const T = typeOf(b), capOut = {}; H.capacity(b, T, false, capOut);

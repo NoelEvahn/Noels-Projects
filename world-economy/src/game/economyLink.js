@@ -4,6 +4,9 @@ import { World } from '../world/query.js';
 import { createController } from './jobs/index.js';
 import { JOB_BY_ID } from '../data/jobs.js';
 import { VEHICLE_ECON } from '../data/vehicles.js';
+import { SITE_BY_ID } from '../data/businesses.js';
+import { createCustomers } from './ai/customers.js';
+import { createAmbient } from './ai/ambient.js';
 
 const NEAR = { default: 45, fuel: 40, atm: 30, unit: 70 };
 
@@ -90,10 +93,17 @@ export function createEconomyLink({ sim, game, bus, clock }) {
   }
   bus.on('veh:changed', () => syncVehicles());
   link.syncVehicles = syncVehicles;
+  // ---- customers (Stage 4b): shoppers walk to owned businesses near the player; sales themselves are booked by the sim hourly model --------------------
+  link.customers = createCustomers({
+    sim, entities: game.entities, bus, clock, ambient: createAmbient({ seed: 0xc057 }),
+    door: (siteId) => { const s = SITE_BY_ID[siteId]; return s && s.near ? poiPos(s.near) : null; },
+    groundY: (x, z, dflt) => { try { return World.groundAt(x, dflt + 3, z).y; } catch (e) { return dflt; } },
+  });
   let accT = 0;
   link.poiPos = poiPos; link.snapRoad = snapRoad;
   link.update = function (dtReal) {
     sim.tickReal(dtReal);
+    link.customers.update(dtReal, here());
     if (link.controller) { link.controller.fixedUpdate(dtReal); if (!link.controller.active) { const c = link.controller; link.controller = null; if (sim.select('jobs.current')) c.stop(c.stopReason || 'ended'); } }
     accT += dtReal; if (accT < 0.5) return; accT = 0;
     // odometer: distance driven by the player in an owned vehicle -> fuel and wear

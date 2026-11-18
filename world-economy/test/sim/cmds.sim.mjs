@@ -138,6 +138,7 @@ test('business: framework commands', () => {
   err(C(sim, 'site.release', { siteId: 'site.city.food.01' }), 'ERR.BUSY');
   assert.ok(Q(sim, 'biz.list').length === 1); assert.ok(Q(sim, 'biz.types').length === 12); assert.ok(Q(sim, 'biz.sites', { typeId: 'biz.vending' }).length === 40);
   assert.ok(Q(sim, 'biz.upgrades', { bizId }).available.length > 3); Q(sim, 'biz.contracts', { bizId }); assert.ok(Object.keys(Q(sim, 'biz.suggestTargets', { bizId })).length > 3);
+  assert.equal(Q(sim, 'biz.demand', { bizId: 'b99' }), null); assert.ok(Array.isArray(Q(sim, 'biz.demand', { bizId }).points));
   advance(sim, 2 * 1440, { real: 0 });
   err(C(sim, 'biz.close', { bizId: 'b99' }), 'ERR.NOT_FOUND'); const cl = C(sim, 'biz.close', { bizId }); ok(cl); assert.equal(Q(sim, 'biz.list').length, 0);
   const b2 = C(sim, 'biz.create', { typeId: 'biz.retail', siteId: 'site.city.shop.01', options: { payFrom: 'card' } }); ok(b2); ok(C(sim, 'biz.sell', { bizId: b2.data.bizId })); err(C(sim, 'biz.sell', { bizId: b2.data.bizId }), 'ERR.NOT_FOUND');

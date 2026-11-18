@@ -325,6 +325,23 @@ export function createAmbient({ seed = 0x1ef3 } = {}) {
     stats() { let c = 0, p = 0; for (let i = 0; i < MAX_CARS; i++) c += cars.active[i]; for (let i = 0; i < MAX_PEDS; i++) p += peds.active[i]; return { cars: c, peds: p, gulls: birds.gulls.n, crows: birds.crows.n }; },
     /** helpers Stage 4 can reuse */
     pointAt, green,
+    /** Stage 4b (customers): a spot on the pedestrian network `dist` metres of walking from (x, z), on the sidewalk, with its edge index.
+     *  Customers spawn there and walk to the door; deterministic given the rng. Returns null until the road graph is ready or when no sidewalk is near. */
+    approachPoint(x, z, dist, rnd = R, out = { x: 0, y: 0, z: 0, edge: -1 }) {
+      if (!edges && !init()) return null;
+      let best = -1, bd = 1e9, bs = 0;
+      for (let k = 0; k < pedEdges.length; k++) {
+        const e = edges[pedEdges[k]], m = (e.n >> 1) * 3, dx = e.pts[m] - x, dz = e.pts[m + 2] - z, rr = 70 + e.len * 0.5;
+        if (dx * dx + dz * dz > rr * rr) continue;
+        for (let i = 0; i < e.n; i++) { const ddx = e.pts[i * 3] - x, ddz = e.pts[i * 3 + 2] - z, d = ddx * ddx + ddz * ddz; if (d < bd) { bd = d; best = pedEdges[k]; bs = e.s[i]; } }
+      }
+      if (best < 0) return null;
+      const e = edges[best], dir = rnd() < 0.5 ? 1 : -1;
+      let s = bs + dir * dist; if (s < 0 || s > e.len) s = bs - dir * dist; s = Math.max(0, Math.min(e.len, s));
+      pointAt(e, s); const side = rnd() < 0.5 ? 1 : -1, off = pedOffset(e, side);
+      out.x = P.x - P.dz * off; out.y = P.y + 0.12; out.z = P.z + P.dx * off; out.edge = best;
+      return out;
+    },
   };
   return api;
 }
