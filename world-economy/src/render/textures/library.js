@@ -128,11 +128,11 @@ def('tex.sand_lake', 0.008, 0.6, /* glsl */`
 def('tex.rock_granite', 0.2, 2.0, /* glsl */`
   float rg = ridged(uv, 3.0, 5), n = fbm(uv, 8.0, 5), sp = vnoise(uv * 400.0, vec2(400.0));
   vec3 wk = worley(uv, 9.0); float crack = 1.0 - smoothstep(0.0, 0.07, wk.y - wk.x); float blk = smoothstep(0.0, 0.4, wk.y - wk.x);
-  float sw = (uv.y + 0.18 * uv.x + 0.22 * n + 0.1 * rg) * 5.0; float strata = sin(sw * 6.2832) * 0.5 + 0.5; float ledge = fract(sw + 0.5 * n);
+  float sw = (uv.y + 0.18 * uv.x + 0.35 * n + 0.2 * rg) * 3.0; float strata = sin(sw * 6.2832) * 0.5 + 0.5;
   float lichen = smoothstep(0.62, 0.7, fbm(uv + 0.9, 10.0, 4));
   a = mix(C(8e8c84), C(6a6862), rg) * (0.8 + 0.3 * n) * (0.9 + 0.2 * sp); a *= 0.95 + 0.05 * strata; a *= 1.0 - 0.5 * crack;
   a = mix(a, C(a8a87a), lichen * 0.5); a = mix(a, C(5a6a3a), smoothstep(0.7, 0.78, fbm(uv + 0.3, 6.0, 4)) * 0.5);
-  h = rg * 0.45 + n * 0.2 + sp * 0.04 + blk * 0.3 + ledge * 0.08 - crack * 0.4; r = 0.9 - 0.12 * sp - 0.1 * blk; m = 0.0;`);
+  h = rg * 0.45 + n * 0.2 + sp * 0.04 + blk * 0.3 + strata * 0.06 - crack * 0.4; r = 0.9 - 0.12 * sp - 0.1 * blk; m = 0.0;`);
 def('tex.rock_dark', 0.06, 1.4, /* glsl */`
   float rg = ridged(uv, 4.0, 5), n = fbm(uv, 10.0, 4); vec3 w = worley(uv, 30.0); float pit = smoothstep(0.15, 0.05, w.x);
   a = mix(C(46423e), C(2a2826), rg) * (0.85 + 0.3 * n); h = rg * 0.8 + n * 0.2 - pit * 0.4; r = 0.7 - 0.25 * smoothstep(0.4, 0.8, n); m = 0.0;`);
