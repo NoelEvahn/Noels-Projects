@@ -36,12 +36,13 @@ sfx = np.zeros((N, 2))
 penta = [0, 2, 4, 7, 9]
 # doubling chimes (45) + soft bass hit; tier hits get bigger
 for k, tick in enumerate(np.arange(0, 90, 2.0)):
+    if 77.6 <= tick < 80.0: continue      # true silence window: the counter changes without a sound
     tier = TIERS.get(int(tick), 0); f = 659.3 * 2 ** ((penta[k % 5] + 12 * (k // 5 % 2)) / 12) * (1 + 0.0 * k)
     g = 0.5 + 0.2 * tier; place(sfx, chime(f, 0.32 + 0.2 * tier, g), tick); place(sfx, thump(85, 0.2, 0.45 + 0.15 * tier), tick)
     if tier >= 2: place(sfx, chime(f * 1.5, 0.8, 0.5), tick + 0.03); place(sfx, whoosh(0.5, False, 0.4), tick - 0.05)
 # whoosh at cuts (quieter in the montage where cuts are 0.2 s apart)
 for c in CUTS:
-    if 76.0 <= c < 80.0 or c in (0.0,) : continue
+    if 76.0 <= c <= 80.0 or c in (0.0,) : continue
     close = any(abs(c - o) < 0.3 and o != c for o in CUTS); place(sfx, whoosh(0.22 if close else 0.3, bool(int(c * 10) % 2), 0.11 if close else 0.2), c - 0.14)
 # story beats
 for t in (0.2, 2.0, 4.0, 4.0, 6.0, 6.08, 6.16, 6.24, 8.0, 8.04, 8.08, 8.12, 8.16, 8.2, 8.24, 8.28): place(sfx, pop(0.35), t)
