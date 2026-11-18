@@ -54,11 +54,12 @@ const ACC = {
     add(ch.head, tor(R * 1.0, R * 0.07, 8, 40), mat(0x2a2a33), [0, R * 0.12, 0], [Math.PI / 2, 0, 0]);
     for (const s of [-1, 1]) add(ch.head, sph(R * 0.28, 20, 12), mat(a, { rough: 0.2, opacity: 0.55 }), [s * R * 0.38, R * 0.1, R * 0.94], [0, 0, 0], [1, 1, 0.4]);
   },
-  beard(ch, a = 0x3b2a1e) { // chin + jaw beard that leaves the mouth clear
+  beard(ch, a = 0x4a3426) { // one continuous jaw/chin shell; the mouth is moved out so it sits on the beard
     const R = ch.R, m = mat(a, { rough: 0.9 });
-    add(ch.head, sph(R * 1.04, 40, 22, 0, Math.PI * 2, Math.PI * 0.7, Math.PI * 0.3), m, [0, -R * 0.02, R * 0.04]);
-    for (const s of [-1, 1]) { add(ch.head, sph(R * 0.2, 12, 10), m, [s * R * 0.7, -R * 0.42, R * 0.55], [0, 0, 0], [0.7, 1.3, 0.8]); add(ch.head, sph(R * 0.17, 12, 10), m, [s * R * 0.3, -R * 0.62, R * 0.8], [0, 0, 0], [1, 0.9, 0.7]); }
-    add(ch.head, sph(R * 0.2, 12, 10), m, [0, -R * 0.82, R * 0.62], [0, 0, 0], [1.2, 0.9, 0.8]);
+    add(ch.head, sph(R * 1.045, 48, 28, 0, Math.PI * 2, Math.PI * 0.6, Math.PI * 0.4), m, [0, -R * 0.02, R * 0.03], [0, 0, 0], [1.0, 1, 1.02]);
+    add(ch.head, sph(R * 0.42, 20, 14), m, [0, -R * 0.78, R * 0.66], [0, 0, 0], [1.25, 0.75, 0.8]);                   // chin tuft
+    ch.F.mouth.g.position.z = R * 1.075; ch.F.mouth.g.position.y = -R * 0.43;
+    ch.F.mouth.smile.material = new THREE.MeshStandardMaterial({ color: 0xe8848a, roughness: 0.5 });
   },
   stubble(ch) { ACC.beard(ch, 0x4a3a30); },
   mustache(ch, a = 0x2d2118) {
@@ -435,7 +436,7 @@ function applyFace(ch, f) {
 
 // ---------- poses ----------
 // joints: arms/legs "f" = forward swing, "s" = sideways raise, "e"/"k" = elbow/knee bend; hL/hR = hand preset name or [thumb,index,mid,ring,pinky]
-const J0 = { bob: 0, lean: 0, twist: 0, roll: 0, hx: 0, hy: 0, hz: 0, squash: 1, rotY: 0, aLf: 0, aLs: 0.1, aLe: 0.12, aRf: 0, aRs: 0.1, aRe: 0.12, lLf: 0, lLk: 0, lRf: 0, lRk: 0, lLs: 0.03, lRs: 0.03, hL: 'relaxed', hR: 'relaxed', plant: false };
+const J0 = { bob: 0, lean: 0, twist: 0, roll: 0, hx: 0, hy: 0, hz: 0, squash: 1, rotY: 0, aLf: 0, aLs: 0.1, aLe: 0.12, aRf: 0, aRs: 0.1, aRe: 0.12, lLf: 0, lLk: 0, lRf: 0, lRk: 0, lLs: 0.03, lRs: 0.03, hL: 'relaxed', hR: 'relaxed', plant: false, footFlat: 0 };
 function applyPose(ch, p) {
   const j = { ...J0, ...p };
   ch.hips.position.y = HIPS_Y + j.bob;
@@ -445,8 +446,8 @@ function applyPose(ch, p) {
   ch.body.position.y = 0; ch.hips.rotation.y = j.rotY;
   ch.aL.sh.rotation.set(-j.aLf, 0, j.aLs); ch.aL.el.rotation.x = -j.aLe;
   ch.aR.sh.rotation.set(-j.aRf, 0, -j.aRs); ch.aR.el.rotation.x = -j.aRe;
-  ch.lL.hip.rotation.set(-j.lLf, 0, -j.lLs); ch.lL.kn.rotation.x = j.lLk; ch.lL.foot.rotation.x = j.lLf * 0.3 - j.lLk * 0.25;
-  ch.lR.hip.rotation.set(-j.lRf, 0, j.lRs); ch.lR.kn.rotation.x = j.lRk; ch.lR.foot.rotation.x = j.lRf * 0.3 - j.lRk * 0.25;
+  ch.lL.hip.rotation.set(-j.lLf, 0, -j.lLs); ch.lL.kn.rotation.x = j.lLk; ch.lL.foot.rotation.x = (j.lLf * 0.3 - j.lLk * 0.25) * (1 - j.footFlat) + (j.lLf - j.lLk) * j.footFlat;
+  ch.lR.hip.rotation.set(-j.lRf, 0, j.lRs); ch.lR.kn.rotation.x = j.lRk; ch.lR.foot.rotation.x = (j.lRf * 0.3 - j.lRk * 0.25) * (1 - j.footFlat) + (j.lRf - j.lRk) * j.footFlat;
   if (!ch.heldL) setHand(ch.aL.hand, j.hL); if (!ch.heldR) setHand(ch.aR.hand, j.hR);
   if (j.plant) plant(ch);
 }
@@ -465,6 +466,13 @@ export const POSES = {
   hugLerp: (k = 0) => { const a = POSES.hugOpen(0, 1), b = POSES.hugClosed(0), o = { hL: 'open', hR: 'open' }; for (const key of Object.keys({ ...a, ...b })) { if (key === 'hL' || key === 'hR') continue; o[key] = (a[key] ?? J0[key] ?? 0) * (1 - k) + (b[key] ?? J0[key] ?? 0) * k; } return o; },
   // sitting: pass the seat height (hips rest on it); plant() afterwards puts the feet on the floor
   sit: (t = 0, seat = 0.45) => ({ bob: seat - HIPS_Y + 0.02, aLf: 0.55, aLe: 0.9, aRf: 0.55, aRe: 0.9, lLf: 1.4, lRf: 1.4, lLk: 1.4, lRk: 1.4, lean: 0.03 }),
+  // Seat-aware sitting: pelvis rests on a seat whose top is at height `seat` (cushion >= 0.14 thick hides the pelvis), thighs ~70deg forward,
+  // knee solved so the soles land exactly on y=0, feet flat. Natural seat heights for this rig: 0.30-0.38 (chairs, benches, stools).
+  sitOn: (t = 0, seat = 0.34, o = {}) => {
+    const hipJoint = seat + 0.06, a = o.thigh ?? 1.2, T = 0.255, S = 0.24, F = 0.08;
+    const need = (hipJoint - F - T * Math.cos(a)) / S, k = a - Math.acos(Math.max(-1, Math.min(1, need)));
+    return { bob: hipJoint + 0.03 - HIPS_Y, lLf: a, lRf: a, lLk: k, lRk: k, footFlat: 1, aLf: 0.55, aRf: 0.55, aLe: 0.9, aRe: 0.9, lean: 0.03, lLs: 0.06, lRs: 0.06, ...o.extra };
+  },
   clap: (t = 0) => { const a = (sin(t * 12) + 1) / 2; return { aLf: 1.2, aRf: 1.2, aLs: 0.08 + a * 0.4, aRs: 0.08 + a * 0.4, aLe: 1.25, aRe: 1.25, hx: -0.05, hL: 'open', hR: 'open' }; },
   cower: (t = 0) => ({ lean: 0.2, hx: 0.2, squash: 0.92, aLf: 1.1, aLs: 0.2, aLe: 1.8, aRf: 1.1, aRs: 0.2, aRe: 1.8, lLk: 0.5, lRk: 0.5, bob: -0.05, hL: 'fist', hR: 'fist' }),
   float: (t = 0) => ({ bob: 0.15 + sin(t * 2) * 0.05, aLf: 0.3, aRf: 0.3, aLs: 0.6, aRs: 0.6, aLe: 0.6, aRe: 0.6, lLk: 0.2, lRk: 0.2, lLf: 0.3, lRf: -0.1 }),
@@ -503,7 +511,7 @@ export const FACES = {
 export const PRESETS = {
   hero: { skin: SKIN.peach, seed: 3, hair: { style: 'messy', color: 0x4a2f1c }, outfit: { type: 'hoodie', color: 0xe53935 }, pants: { type: 'shorts', color: 0x2f6fd6 }, shoes: C.white, acc: ['headband:' + '0xffd23f'] },
   mum: { skin: SKIN.tan, lashes: true, seed: 5, hair: { style: 'bun', color: 0x2d1b14 }, outfit: { type: 'tee', color: 0x8a52c9 }, pants: { type: 'long', color: 0x3a3f66 }, shoes: 0xb84a6a, acc: [] },
-  dad: { skin: SKIN.peach, hair: { style: 'short', color: 0x22170f }, outfit: { type: 'hoodie', color: 0x2fa66a }, pants: { type: 'long', color: 0x4a4a52 }, shoes: 0x333333, width: 1.12, acc: ['beard:0x2a1d14'] },
+  dad: { skin: SKIN.peach, hair: { style: 'short', color: 0x22170f }, outfit: { type: 'hoodie', color: 0x2fa66a }, pants: { type: 'long', color: 0x4a4a52 }, shoes: 0x333333, width: 1.12, acc: ['beard:0x4a3426'] },
   kid: { skin: SKIN.peach, freckles: true, hair: { style: 'spiky', color: 0x7a4a22 }, outfit: { type: 'tee', color: 0xffb300 }, pants: { type: 'shorts', color: 0x4aa0e0 }, shoes: 0xee4444, height: 0.62, head: 1.18 },
   grandma: { skin: SKIN.pale, hair: { style: 'white-fluffy', color: 0xdcdcdc }, outfit: { type: 'cardigan', color: 0x6aa86a, color2: 0xf2e6c8 }, pants: { type: 'skirt', color: 0x7a5a8a }, shoes: 0x6a4a3a, height: 0.92, acc: ['glasses:0x6a4a3a'] },
   // ---- ep3 cast ----

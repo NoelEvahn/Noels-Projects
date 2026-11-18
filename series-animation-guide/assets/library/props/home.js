@@ -44,14 +44,16 @@ export function burger() {
 export function picnicTable() {
   const g = new THREE.Group(); const wood = mat(0xb9824a, { rough: 0.8 });
   add(g, rbox(2.0, 0.08, 0.9, 0.03), wood, [0, 0.78, 0]);
-  for (const s of [-1, 1]) { add(g, rbox(2.0, 0.07, 0.34, 0.03), wood, [0, 0.45, s * 0.7]); add(g, box(0.07, 0.8, 0.07), wood, [s * 0.78, 0.4, 0.3], [0.3 * s, 0, 0]); add(g, box(0.07, 0.8, 0.07), wood, [s * 0.78, 0.4, -0.3], [-0.3 * s, 0, 0]); }
+  for (const s of [-1, 1]) { add(g, rbox(2.0, 0.14, 0.34, 0.04), wood, [0, 0.27, s * 0.7]); add(g, box(0.07, 0.8, 0.07), wood, [s * 0.78, 0.4, 0.3], [0.3 * s, 0, 0]); add(g, box(0.07, 0.8, 0.07), wood, [s * 0.78, 0.4, -0.3], [-0.3 * s, 0, 0]); }
   add(g, box(1.9, 0.012, 0.8), mat(0xf6f0e0), [0, 0.825, 0]); // cloth
   return g;
 }
+// Lawn chair: seat top at 0.34 (matches POSES.sitOn(t, 0.34)), thick cushion, back rest. Faces +Z.
 export function lawnChair(color = 0x2bb7b0) {
   const g = new THREE.Group(); const fr = mat(0xd8d8e0, { metal: 0.6, rough: 0.3 });
-  add(g, rbox(0.55, 0.06, 0.5, 0.03), mat(color), [0, 0.42, 0]); add(g, rbox(0.55, 0.55, 0.06, 0.03), mat(color), [0, 0.74, -0.24], [-0.25, 0, 0]);
-  for (const x of [-1, 1]) for (const z of [-1, 1]) add(g, cyl(0.015, 0.015, 0.42, 6), fr, [x * 0.24, 0.21, z * 0.2], [0, 0, 0]);
+  add(g, rbox(0.62, 0.16, 0.56, 0.06), mat(color), [0, 0.26, 0]);                                   // cushion: top at 0.34
+  add(g, rbox(0.6, 0.56, 0.1, 0.05), mat(color), [0, 0.64, -0.26], [-0.18, 0, 0]);                   // back
+  for (const x of [-1, 1]) { for (const z of [-1, 1]) add(g, cyl(0.018, 0.018, 0.2, 6), fr, [x * 0.27, 0.1, z * 0.22]); add(g, rbox(0.05, 0.05, 0.5, 0.02), fr, [x * 0.3, 0.45, -0.02]); add(g, cyl(0.018, 0.018, 0.4, 6), fr, [x * 0.3, 0.3, -0.2], [0.3, 0, 0]); }
   return g;
 }
 export function pool(r = 0.9) {

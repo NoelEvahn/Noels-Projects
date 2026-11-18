@@ -60,7 +60,6 @@ export function buildHair(head, R, style, color, seed = 1) {
     case 'bald': break;
 
     case 'hatHair': { // hair visible under hats/helmets: fringe + nape only
-      for (let i = 0; i < 8; i++) { const ph = -0.8 + i * 0.23; strand(70 * d2r, ph, ph * 0.1, -0.1, 0.2, 0.12, 0.06, [0, 0.05, 0.05], { segs: 6 }); }
       for (const s of [-1, 1]) for (let k = 0; k < 3; k++) strand((84 + k * 4) * d2r, s * (1.3 + k * 0.12), s * 0.1, -0.25, -0.05, 0.12, 0.06, [0, 0, 0], { segs: 6 });
       for (let i = 0; i < 8; i++) strand((92 + r() * 6) * d2r, 3.14 + (i - 3.5) * 0.3, 0, -0.3, -0.12, 0.14, 0.06, [0, 0, -0.04], { segs: 6 });
       break; }
@@ -78,7 +77,7 @@ export function buildHair(head, R, style, color, seed = 1) {
       for (let i = 0; i < 9; i++) { const ph = -0.9 + i * 0.225; strand(46 * d2r, ph, ph * 0.28 + 0.1, -0.15, 0.32, 0.15, 0.06, [0.04, 0.2, 0.1], { segs: 8 }); }
       for (const s of [-1, 1]) for (let k = 0; k < 4; k++) strand((64 + k * 7) * d2r, s * (1.15 + k * 0.09), s * 0.28, -0.12 - k * 0.04, -0.12, 0.19, 0.07, [s * 0.1, 0.05, 0], { segs: 8 });
       for (let i = 0; i < 10; i++) flow((62 + r() * 12) * d2r, 3.14 + (i - 4.5) * 0.3, (30 + r() * 10) * d2r, 0, 0.23, 0.1, 0.06);
-      for (let i = 0; i < 3; i++) strand(18 * d2r, 1 + i * 2.1, Math.sin(1 + i * 2.1) * 0.3, 0.32, Math.cos(1 + i * 2.1) * 0.3, 0.17, 0.07, [0.0, 0.25, 0.0], { segs: 8 });
+      for (let i = 0; i < 3; i++) flow(10 * d2r, 1 + i * 2.1, 40 * d2r, 0.5, 0.2, 0.09, 0.14);
       break; }
     case 'parting': { // side part, swept
       cap(0.55, -0.5);
@@ -109,11 +108,12 @@ export function buildHair(head, R, style, color, seed = 1) {
       for (let i = 0; i < 12; i++) strand((72 + r() * 15) * d2r, 3.14 + (i - 5.5) * 0.28, 0, -1.25 - r() * 0.2, -0.2, 0.2, 0.07, [0, -0.2, -0.12], { segs: 12 });
       break;
     }
-    case 'spiky': {
-      cap(0.46, -0.45, 0.02);
-      for (let i = 0; i < 14; i++) { const th = (10 + (i % 3) * 22) * d2r, ph = (i / 14) * 6.28; strand(th, ph, Math.sin(ph) * 0.5, 0.55, Math.cos(ph) * 0.5, 0.2, 0.01, [0, 0, 0], { segs: 5, tip: 0.0 }); }
-      break;
-    }
+    case 'spiky': { // swept-back tapered spikes in two tiers + side tufts
+      cap(0.5, -0.45, 0.025);
+      for (let i = 0; i < 12; i++) { const ph = (i / 12) * 6.283, th = 24 * d2r; strand(th, ph, Math.sin(ph) * 0.34, 0.4, Math.cos(ph) * 0.34, 0.22, 0.015, [Math.sin(ph) * 0.06, 0.08, Math.cos(ph) * 0.06], { segs: 8, tip: 0.2 }); }
+      for (let i = 0; i < 9; i++) { const ph = (i / 9) * 6.283 + 0.3, th = 46 * d2r; strand(th, ph, Math.sin(ph) * 0.34, 0.26, Math.cos(ph) * 0.34, 0.2, 0.02, [0, 0.06, 0], { segs: 7, tip: 0.2 }); }
+      for (const s of [-1, 1]) for (let k = 0; k < 3; k++) strand((70 + k * 8) * d2r, s * (1.2 + k * 0.15), s * 0.3, 0.02, -0.05, 0.14, 0.02, [s * 0.05, 0.1, 0], { segs: 6, tip: 0.2 });
+      break; }
     case 'wispy': {
       cap(0.42, -0.4, 0.02);
       for (const s of [-1, 1]) for (let k = 0; k < 4; k++) strand((78 + k * 4) * d2r, s * (1.2 + k * 0.1), s * 0.25, -0.1, -0.05, 0.1, 0.03, [s * 0.1, 0.1, 0], { segs: 7 });
