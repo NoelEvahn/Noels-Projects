@@ -63,14 +63,14 @@ export default {
       { ...shot(38.0, 38.4, oc('map', [0, 10, 9], [0, 0, 0], 46)), g: 'map' },                                                                // map again, solid pink
       { ...shot(38.4, 39.2, oc('lab', [0, 3.2, 10], [0, 2.8, -4], 52), oc('lab', [0, 3.0, 8], [0, 2.8, -4], 52)), g: 'lab' },                   // lab wide: needle rising
       { ...shot(39.2, 39.6, oc('lab', [-0.6, 4.2, 4.0], [0, 3.6, -5.7], 34)), g: 'lab' },                                                     // Lovometer close
-      { ...shot(39.6, 40.0, oc('lab', [-2.2, 2.6, 4.6], [-1.6, 2.5, 1.2], 34)), g: 'lab' },                                                   // assistant face building up
-      { ...shot(40.0, 40.8, oc('lab', [-1.2, 2.4, 4.4], [-1.6, 2.4, 1.2], 30)), g: 'lab' },                                                   // snap! assistant BOMBOCLAT
+      { ...shot(39.6, 40.0, oc('lab', [-2.0, 2.2, 4.4], [-1.6, 2.1, 1.2], 34)), g: 'lab' },                                                   // assistant face building up
+      { ...shot(40.0, 40.8, oc('lab', [-1.9, 2.2, 4.4], [-1.6, 2.1, 1.2], 32)), g: 'lab' },                                                   // snap! assistant BOMBOCLAT
       { ...shot(40.8, 41.2, oc('lab', [0, 4.4, 3.0], [0, 4.3, -5.7], 36)), g: 'lab' },                                                        // needle flies off
       { ...shot(41.2, 42.0, oc('lab', [5.6, 2.2, 0.0], [5.4, 1.5, -4.4], 40), oc('lab', [5.0, 2.0, -0.4], [5.4, 1.5, -4.4], 40)), g: 'lab' },   // rat + cage (narration)
       { ...shot(42.0, 42.8, oc('lab', [-5.2, 3.0, 2.5], [-5.5, 3.9, -5.6], 44)), g: 'lab' },                                                 // monitor curve goes vertical
-      { ...shot(42.8, 43.6, oc('lab', [-1.4, 2.8, 5.8], [-1.2, 2.5, -3.0], 44)), g: 'lab' },                                                  // chief + sciB deadpan
+      { ...shot(42.8, 43.6, oc('lab', [-1.2, 2.3, 5.6], [-1.2, 2.0, 1.0], 40)), g: 'lab' },                                                  // chief + sciB deadpan
       { ...shot(43.6, 44.4, oc('lab', [3.4, 2.8, 9], [0, 2.6, -5], 50)), g: 'lab' },                                                          // wide: pink tank overflows
-      { ...shot(44.4, 44.8, oc('lab', [0.6, 2.6, 4.6], [1.0, 2.6, 1.0], 32)), g: 'lab' },                                                       // chief "Bombo."
+      { ...shot(44.4, 44.8, oc('lab', [0.6, 2.2, 4.6], [1.0, 2.1, 1.0], 32)), g: 'lab' },                                                       // chief "Bombo."
     ];
     return S;
   },

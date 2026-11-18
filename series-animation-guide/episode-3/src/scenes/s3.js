@@ -43,7 +43,7 @@ export default {
     // shots (28 units from 20.8)
     const J = th.anchors.judges.map((j) => j.root.position);
     S.shots = [
-      shot(20.8, 21.6, cam([0, 3.0, 4.0], [0, 2.6, -9], 46), cam([0, 2.8, 1.5], [0, 2.4, -9], 46)),                               // wide from the audience: magician's act
+      shot(20.8, 21.6, cam([0, 2.6, 4.0], [0, 1.8, -9], 40), cam([0, 2.4, 1.5], [0, 1.8, -9], 40)),                               // wide from the audience: magician's act
       shot(21.6, 22.0, orbit([-2.0, 1.9, -9.0], -10, 3.4, 0.0, 36)),                                                           // magician close
       shot(22.0, 22.4, cam([2.4, 1.9, -4.2], [1.6, 1.5, -9], 44), cam([1.6, 1.9, -4.2], [0.8, 1.5, -9], 44)),                 // hero wanders on
       shot(22.4, 23.2, cam([-1.4, 1.7, -3.2], [-0.8, 1.55, 1.1], 40), cam([1.4, 1.7, -3.2], [0.8, 1.55, 1.1], 40)),              // judges' faces from the stage
@@ -55,12 +55,12 @@ export default {
       shot(26.0, 26.8, cam([2.4, 1.8, -3.4], [-1.2, 1.5, 1.1], 46), cam([1.6, 1.8, -3.4], [-0.4, 1.5, 1.1], 46)),               // judges applauding
       shot(26.8, 27.2, cam([0, 11.5, -2], [0, 0, -7], 56)),                                                                    // top-down spotlights
       shot(27.2, 27.6, cam([5, 3.6, -1.0], [-0.5, 1.6, -9.5], 48), cam([3, 3.4, -1.0], [-0.5, 1.6, -9.5], 48)),                      // wide: magician faints, hero bows
-      shot(27.6, 28.0, orbit([2.0, 1.25, 0.6], -55, 2.4, 0.4, 36)),                                                              // judgeD over the golden buzzer
+      shot(27.6, 28.0, cam([2.0, 2.0, -2.2], [2.0, 1.0, 0.7], 36)),                                                              // judgeD over the golden buzzer
       shot(28.0, 28.8, cam([0, 4.6, -1.0], [0, 3.0, -8.5], 56), cam([0, 4.2, -2.5], [0, 3.2, -8.5], 56)),                              // BUZZER + confetti wide
-      shot(28.8, 29.2, cam([-2.4, 1.8, -2.6], [-2.4, 2.1, 1.15], 36), cam([-2.4, 1.7, -1.5], [-2.4, 2.0, 1.15], 28), { ease: 'in' }), // punch-zoom judgeA
-      shot(29.2, 29.6, cam([-2.4, 1.6, -1.0], [-2.4, 1.9, 1.15], 26)),                                                         // judge voice close
+      shot(28.8, 29.2, cam([-2.4, 2.0, -3.8], [-2.4, 2.0, 1.15], 36), cam([-2.4, 2.0, -3.0], [-2.4, 2.0, 1.15], 30), { ease: 'in' }), // punch-zoom judgeA
+      shot(29.2, 29.6, cam([-2.4, 2.0, -3.0], [-2.4, 2.0, 1.15], 30)),                                                         // judge voice close
       shot(29.6, 30.0, cam([0, 1.9, -6.2], [0, 2.6, 6], 56)),                                                                  // audience on its feet
-      shot(30.0, 30.8, cam([0, 3.6, 3.0], [0, 3.1, -8.4], 52)),                                                                // result board (head-on, >=0.6 s)
+      shot(30.0, 30.8, cam([0, 3.6, 3.0], [0, 2.7, -8.4], 48)),                                                                // result board (head-on, >=0.6 s)
       shot(30.8, 31.2, cam([0, 1.6, -5.8], [0, 2.8, 5], 52)),                                                                  // crowd voice from stage
       shot(31.2, 31.6, cam([0, 6.5, 12], [0, 2.8, -4], 52), cam([0, 6.0, 10], [0, 2.8, -4], 52)),                              // standing ovation wide
       shot(31.6, 32.0, orbit([0.3, 1.5, -9], 10, 3.4, 0.2, 40)),                                                                // hero bows in confetti
