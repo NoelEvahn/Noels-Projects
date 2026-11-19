@@ -46,7 +46,7 @@ export default {
     const fb = burger(); fb.scale.setScalar(2.2); scene.add(fb); S.fb = fb;
     // HOOK (first seconds): snap zoom onto the hero, heart confetti bursts on 0.1 and on the first doubling (2.0), hearts rising around him, sparkles
     S.hookConf = [0.1, 2.0].map((t0, i) => { const c = makeConfetti(170, { colors: [0xff3f7f, 0xff8fb8, 0xffd23f, 0xffffff, 0xff5c9a], origin: [0, 1.4, 0], spread: [2.6, 5.5, 2.6], size: 0.14, seed: 21 + i }); scene.add(c); return { c, t0 }; });
-    S.hookHearts = makeHeartField(26, { colors: [0xff3f7f, 0xff8fb8, 0xff5c9a], emissive: 0.55 }); scene.add(S.hookHearts); const hr = rng(41); S.hookH = Array.from({ length: 26 }, () => ({ a: hr() * 6.283, r: hr.range(0.7, 1.5), t0: hr.range(0.0, 2.6), sp: hr.range(0.5, 0.9), s: hr.range(0.12, 0.22) }));
+    S.hookHearts = makeHeartField(26, { colors: [0xff3f7f, 0xff8fb8, 0xff5c9a], emissive: 0.55 }); scene.add(S.hookHearts); const hr = rng(41); S.hookH = Array.from({ length: 26 }, () => ({ a: Math.PI + 0.15 + hr() * (Math.PI - 0.3), r: hr.range(0.7, 1.5), t0: hr.range(0.0, 2.6), sp: hr.range(0.5, 0.9), s: hr.range(0.12, 0.22) }));
     S.hookSpark = makeSparkles(70, { area: [1.6, 2.4, 1.6], color: 0xfff0b0, size: 0.1, seed: 9 }); scene.add(S.hookSpark);
     // shots (camera plan, 24 units of 0.4 s)
     const H = [0, 1.3, 0.8], GR = [-4.1, 1.0, 1.0], KID = [2.0, 0.8, 2.7], DAD = [-2.3, 1.45, -2.4], MUM = [3.0, 1.0, -0.4];
