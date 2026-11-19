@@ -19,7 +19,7 @@ tail flick, yawn, turning his back, sitting on the one thing everybody is lookin
 
 ## Episode log
 ### Ep3 — "What if every 2 seconds, twice as many people loved you?"
-Gerald's stat: `LOVES YOU: NO`. Final gag: he is the only one without a heart above his head; the hero says "Bombo." and Gerald looks away.
+Gerald's stat: `LOVES YOU: NOT YET`, flips to `YES ♥` at 89.2. Final gag: he is the holdout through the whole film; after "Bombo." his eyes turn to hearts, his clap clip (user's green-screen video, `episode-3/media/gerald_clap.mov`) plays on the lawn, he fist-bumps the hero and they walk off paw in hand. The title card says "FINALLY COUNTED: 1 CAT".
 | Scene | Gerald is… (as built) | Roast (narrator, ≤2 s) |
 |---|---|---|
 | 1 Garden BBQ | loafing on the left fence, one half-open eye; looks away at 5.0 | "Gerald remained unconvinced." |
@@ -28,6 +28,8 @@ Gerald's stat: `LOVES YOU: NO`. Final gag: he is the only one without a heart ab
 | 4 State / bakery / lab | **loafing on the bakery cash register** (roast); later sitting on the rat's cage in the lab | "Gerald did not register." |
 | 5 Cloud Nine | loafing in the grass below while the hero is lifted away by balloons | "Gerald was not up for it." |
 | 6 Billboard tour | sitting on top of the Rio billboard, back turned to the hero's face | "Gerald had no comment." |
-| 7 Finale | on the fence of the wrecked garden, no heart over him; turns away at 88.4; icon on the title card next to "NOT COUNTED: 1 CAT" | "Still no." |
+| 7 Finale | on the fence of the wrecked garden, still no; turns to the hero at 88.8, heart eyes at 89.2; clap clip 90.0–96.8; walks off with the hero | "Still no." |
 
 Reusable ideas not yet used: Gerald on the pitch / stage / roof, Gerald asleep through the climax, Gerald pushing something off a table, Gerald as the only needle that does not move.
+
+**After episode 3:** Gerald converted at the end of ep3. Default for new episodes: he starts as the holdout again (chip `NOT YET`); decide per episode whether he converts at the payoff or stays the holdout, and log it here.

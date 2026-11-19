@@ -37,7 +37,8 @@ use them unless new files are attached.
 
 ### Format
 - Vertical 9:16, 1080×1920, 30 fps, H.264 High + AAC-LC stereo 48 kHz.
-- Exactly 90.0 s (2700 frames), finished MP4.
+- The story runs about 90 s; the ending payoff and the **share outro** may take it to about 100 s (episode 3 is 100.0 s). Set the length in `timeline.js` (`DUR`, `FRAMES`) and in `.videohub/project.json` (`render.env.DUR`, `live.dur`).
+- Deliver two files: the 1080p render from VideoHub and a 720p copy (under 30 MB, so it can be sent to the user's phone).
 
 ### Story shape — keep the escalation, VARY THE CONTENT EVERY EPISODE
 The seven-step scale is fixed. What happens inside each step must be new for every topic.
@@ -48,11 +49,21 @@ The seven-step scale is fixed. What happens inside each step must be new for eve
 4. **City or state scale, and the authorities react** (32–44.8 s). The "who reacts" must change every episode. Used so far: TV reporter plus government room (ep1), reporter plus bank room (ep2). Other options: firefighters, scientists in a lab, a weather presenter, the army, an influencer livestream, a sports commentator, a museum curator, a police chase.
 5. **A natural extreme** (44.8–57.6 s): ocean was used in ep1 and ep2. Next time pick another: desert, volcano, jungle, arctic, sky and clouds, underground caves.
 6. **Planet scale** (57.6–75.2 s): space and Earth, plus a world montage. Change the montage device each time. Used so far: news-anchor grid. Other options: phone video calls, billboards, a global group chat, a stadium jumbotron, social-media feed tiles.
-7. **Silence, then the ENDING slot, then a cosmic pull-back** (75.2–90 s): everyone reacts, he comes home, delivers the catchphrase deadpan, then a freeze-frame title card with the final value.
+7. **Silence, then the ENDING slot, then a cosmic pull-back** (75.2–90 s): everyone reacts, he comes home, delivers the catchphrase deadpan.
+8. **Payoff and title** (about 88–97 s): the last holdout turns (ep3: Gerald finally loves him), then the title card with the final value.
+9. **Share outro (EVERY new episode, last 3–4 s):** the narrator says **"Share this with someone who ____"**, with the blank tied to this episode's topic (e.g. money: "…someone who spends it all in two seconds"; love: "…someone who needs twice as many people to love them"). Same Piper narrator and caption style (blank words in yellow), over the title card or a final shot of the hero looking into the camera. Music stays under it; no SFX. Put it on the speech timeline table like any other line.
 
 Rules:
 - Max **2 recurring tropes** per episode (reporter, government/bank room, fisherman, astronaut, house exterior, a crowd field of the cast; Gerald does not count). Any trope that does return must look and play differently: a new angle, a new gag, a new set.
 - Every location must be recognisable within 0.3 s and must suit the TOPIC. The topic's props drive the gags; episode 2 went pennies → avalanche → bills → briefcases → SOLD tags.
+
+### The hook (first 2–3 s decide if people keep watching)
+- Open on the hero, already close: a short white flash, a snap zoom onto him (ease-out), a topic-matched burst (ep3: heart confetti at 0.1 s and again on the first doubling) and small rising decorations behind him (never in front of his face). The counter and the premise line are on screen from frame 1.
+- No SFX in the first 2.4 s; the music eases in over 2 s. The first sound the viewer hears is the narrator's premise.
+
+### Show the effect on people (user feedback on episode 3: "it looks like nothing's happening")
+- Every doubling must be visible on people: they change the moment they see him (ep3: their eyes become hearts, `face({ hearts })`), then they **go to him**: follow him, chase him, rush him when his act ends. Bystanders who just stand and cheer read as "nothing happening".
+- Followers walk in slots behind the hero (rows and lanes); nobody stands on his path, and nobody walks through him, a prop or each other. Move props and named characters off the hero's path.
 
 ### Keep the premise on screen (user feedback on episode 3: "it drifts off, no meaning, too crowded")
 - **Every shot must show the hero, or something that is clearly about him** (his face on a billboard, a meter measuring him, a crowd turned toward him). The viewer must always see *why the number doubled*.
@@ -77,10 +88,10 @@ Episode 3 v1 cut every ~0.7 s and the user rejected it: confusing, text overlapp
 ### Detail level — keep episode-2 quality (the user said the detail was really good)
 - **Never add textures** (user rule). Detail comes from modelled geometry, shapes, colour and light, not image, bump or normal maps or surface patterns. Canvas only for readable text on signs, boards and screens.
 - Fully dressed sets: no plain boxes or walls. Use the library's sets and characters; held items sit in the palm (`hold()`), seated characters sit on a seat (`POSES.sitOn`), nothing clips.
-- Characters with big eyes, brows, mouths and exaggerated reactions.
+- Characters in the episode 1-2 look (see "Series look" below) with big brows, mouths and exaggerated reactions.
 - Instanced props in large numbers (coins, bills, debris, crowds).
 - Per-location palettes, soft shadows, a warm key light and ACES tone mapping.
-- The hero is identical everywhere: red hoodie, blue shorts, white sneakers, messy brown hair, yellow headband.
+- The hero is identical everywhere: red hoodie, blue shorts, white sneakers, short curly brown hair, yellow headband.
 - The look matches the attached reference.
 
 ### The counter
@@ -105,8 +116,8 @@ Episode 3 v1 cut every ~0.7 s and the user rejected it: confusing, text overlapp
 ### Gerald — the recurring cat (cast, not a trope)
 - Gerald (`ANIMALS.gerald`, orange tabby, half-lidded eyes) appears in **every scene** of every episode, shown in a wide/establishing shot first, doing something unbothered that suits the location. He is never counted, never impressed, never speaks or meows (no audio from him).
 - **Narrator roasts:** 4–7 extra deadpan lines of 2 s or less ("Gerald remained unconvinced."), one per appearance, mixed like the narration, captions in pink-orange with the key word yellow. Never repeat a roast from an earlier episode; log every line and gag in `cat/CAT_BIBLE.md`. If they will not fit the speech timeline, cut roasts (to 4–5), never the story lines. Keep roasts out of the scene-7 silence window.
-- **HUD chip:** a small chip near the counter shows Gerald's own stat for the topic (ep3: `GERALD · LOVES YOU: NO`); it never changes. It stays inside the 60 px side margins and out of the top 110 px / bottom 300 px.
-- **Final callback:** Gerald is in the closing room and in the title card; he is the holdout. Build callbacks to earlier episodes. Family-safe: he is never harmed, he is always the calm one.
+- **HUD chip:** a small chip near the counter shows Gerald's own stat for the topic (ep3: `GERALD · LOVES YOU: NOT YET`). It holds while the counter explodes and may flip once, at the payoff (ep3: `YES ♥`). It stays inside the 60 px side margins and out of the top 110 px / bottom 300 px.
+- **Final callback:** Gerald is in the closing room and in the title card; he is the holdout until the payoff (ep3: he finally loves the hero, claps, fist-bumps him and they walk off paw in hand). Build callbacks to earlier episodes. Family-safe: he is never harmed, he is always the calm one.
 
 ### Narrator
 - Five short deadpan lines, in scenes 1, 2, 4, 5 and 6: the premise first, then dry understatements.
@@ -118,7 +129,8 @@ Episode 3 v1 cut every ~0.7 s and the user rejected it: confusing, text overlapp
 - Time-stretch the track, pitch kept, so every counter change lands on a beat. Charlie's Inferno: 146.0 → 150 BPM, ×1.0274.
 - If the downbeat is ambiguous, say what was chosen.
 - Every cut, caption, line and impact sits on the grid.
-- Scene 7: the music filters down, about 2 s of true silence (the music stem at digital zero), then slams back on the big moment. Record scratch at the freeze-frame.
+- Scene 7: the music filters down, about 2 s of true silence (the music stem at digital zero), then slams back on the big moment. A soft chord on the title card (the record scratch was dropped in ep3).
+- **User-supplied clips** (e.g. a green-screen meme): store the source in `episode-N/media/`, key it with ffmpeg `chromakey` + `despill` into 30 fps PNG frames (`audio/make_clip.py`), and play it on a camera-facing card in the 3D set, one frame per video frame (deterministic). While it plays: only the clip's own sound and the music (ducked about 9 dB while the clip has sound), no narration, no SFX.
 
 ### Mix (approved levels)
 - **SFX stay well under everything** (user: "SFX way too loud"). No whoosh on every cut; at most a barely audible air on a cut. The SFX bus sits about 8 dB below the old episode-3 mix.
@@ -163,10 +175,15 @@ Sound effects must never bury speech.
 - Contact sheets of the whole video (one frame per 0.4 s) and full-res stills of every key gag, all looked at, with the checklist applied.
 - Loudness, true peak after AAC, line onsets within ±40 ms, digital silence in the scene-7 window, beat-grid fit, the pitch table, narration ASR.
 - Report honestly what is rough, what was not checked, and that nobody can listen to the audio.
-- Tell the user the files live in the session scratchpad and must be downloaded.
+- Render through VideoHub (`hub_render`, full). If headless Edge fails, set `render.env.CHROME` to the Chrome path. Then make the 720p copy and send it to the user.
 
 
 ## Series look and camera (user feedback, 2026-11-19)
 - Characters keep the episode 1-2 look: big round head, white ball eyes with plain black dot pupils (no iris colour, no catchlights), bulb nose, thick brows, ball hands. No anime eyes. The older detailed rig lives in `assets/library/archive/detailed-2026-11/`.
 - Frame people up front: medium and close shots on the main character, every shot eases and slowly pushes in (`common.js` `pick` applies CLOSE/PUSH). Wide shots only for maps, planets and space (`wide: true`).
 - Keep scenes simple: few people on screen, no crowded wides. Open the film on the hero, no SFX in the first seconds.
+
+- **Vertical frame is narrow:** at 3 m a head fills about two thirds of the width. Faces: 3–4 m away or a medium shot; never a single face from 1–2 m.
+- **Moving hero:** use tracking shots locked to his position (`follow(t, hp)` in `episode-3/src/scenes/s2.js`) so he never runs out of frame; a linear camera move cannot keep up with an accelerating hero.
+- **Hide anything within about 1.1 m of the lens** (crowd members walking past the camera fill the frame or turn it black).
+- Check a full contact sheet after every camera change; the global CLOSE factor can push a camera into a person (black frame) or crop a short character (the kid).

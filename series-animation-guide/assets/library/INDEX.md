@@ -98,3 +98,4 @@ Each set pairs with a `*_STAGE` lighting preset (or `plazaStage(city)`) for `mak
 
 ## Series look (2026-11-19)
 Default faces are the episode 1-2 style: white ball eyes, black dot pupils, bulb nose, ball hands (`fingers: true` for fingered hands). Hero hair is `curly`. Gerald uses the same dot eyes. The detailed rig is archived in `archive/detailed-2026-11/`.
+Heart eyes: people `face({ hearts: 0..1 })` (or `FACES.love` / `FACES.lovestruck`), Gerald `face({ hearts: 0..1 })` / `AFACES.love`. Modelled hearts that pop in and throb; pop them in with `easeOutBack`. Screenshot: `detail_love_eyes`.
