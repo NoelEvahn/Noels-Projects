@@ -12,6 +12,8 @@ SLOTS (fill these in)
                  e.g. "he presses BUY: EVERYONE"
 4. CATCHPHRASE:  the only word(s) characters may say (attach the sample)
                  + PITCH (default: two registers, 1.10x and 1.15x the sample)
+                 Library samples: "bomboclat" / "bombo" (assets/bomboclat.mp3) or "la peace" (assets/la_peace.mp3).
+                 Not every episode is bomboclat: use the one the user names.
 5. MUSIC:        attached track name
 6. CAT GAG:     Gerald's bit for this episode (new location + new unbothered action in every scene,
                  his own stat for the HUD chip, and the final callback). See "Gerald" below.
@@ -19,7 +21,7 @@ SLOTS (fill these in)
 
 ATTACHED: (a) catchphrase sound effect, (b) music track, (c) optional look reference image
           (a contact sheet of a previous episode).
-The audio and look reference live in `series-animation-guide/assets/` (bomboclat.mp3, charlies_inferno.mp3, look_reference.jpg);
+The audio and look reference live in `series-animation-guide/assets/` (bomboclat.mp3, la_peace.mp3, charlies_inferno.mp3, look_reference.jpg);
 use them unless new files are attached.
 ```
 
@@ -112,6 +114,7 @@ Episode 3 v1 cut every ~0.7 s and the user rejected it: confusing, text overlapp
 - Give each speaker a different delivery: excited, disbelief, confused, deadpan, broadcast or radio, small group, big crowd, whole-world crowd.
 - **About 14 voiced lines.** Every other reaction is silent open-mouth shock with no caption.
 - Each voiced line gets a punch-zoom, mouth movement synced to the audio, and a big yellow caption.
+- **"La peace" episodes:** every character who says it does the OK hand sign beside the face and a mewing face (chin up, lips closed tight, low lids, sharp brows): `ch.pose(POSES.laPeace(t))` + `ch.face(FACES.mew)`. Keep the mouth closed except a small open on the syllables. Captions read "LA PEACE" / "LA PEACE!". The sample is 1.1 s (the first "la peace" of the source).
 
 ### Gerald — the recurring cat (cast, not a trope)
 - Gerald (`ANIMALS.gerald`, orange tabby, half-lidded eyes) appears in **every scene** of every episode, shown in a wide/establishing shot first, doing something unbothered that suits the location. He is never counted, never impressed, never speaks or meows (no audio from him).
@@ -130,6 +133,7 @@ Episode 3 v1 cut every ~0.7 s and the user rejected it: confusing, text overlapp
 - If the downbeat is ambiguous, say what was chosen.
 - Every cut, caption, line and impact sits on the grid.
 - Scene 7: the music filters down, about 2 s of true silence (the music stem at digital zero), then slams back on the big moment. A soft chord on the title card (the record scratch was dropped in ep3).
+- **Library clips:** `assets/library/clips/` (e.g. `clap_cat.webm`, the keyed clapping black cat from episode 3, with its sound). Extract with `tools/clip_frames.py` and place with `fx/clip.js` `clipCard()`.
 - **User-supplied clips** (e.g. a green-screen meme): store the source in `episode-N/media/`, key it with ffmpeg `chromakey` + `despill` into 30 fps PNG frames (`audio/make_clip.py`), and play it on a camera-facing card in the 3D set, one frame per video frame (deterministic). While it plays: only the clip's own sound and the music (ducked about 9 dB while the clip has sound), no narration, no SFX.
 
 ### Mix (approved levels)

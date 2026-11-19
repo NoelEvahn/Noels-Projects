@@ -99,3 +99,9 @@ Each set pairs with a `*_STAGE` lighting preset (or `plazaStage(city)`) for `mak
 ## Series look (2026-11-19)
 Default faces are the episode 1-2 style: white ball eyes, black dot pupils, bulb nose, ball hands (`fingers: true` for fingered hands). Hero hair is `curly`. Gerald uses the same dot eyes. The detailed rig is archived in `archive/detailed-2026-11/`.
 Heart eyes: people `face({ hearts: 0..1 })` (or `FACES.love` / `FACES.lovestruck`), Gerald `face({ hearts: 0..1 })` / `AFACES.love`. Modelled hearts that pop in and throb; pop them in with `easeOutBack`. Screenshot: `detail_love_eyes`.
+
+## Gestures, clips, catchphrase SFX (2026-11-19)
+- Hands are balls (series look) but swap to fingers for finger gestures: `hR: 'ok' | 'point' | 'peace'` (gesture hands grow 1.6x so the sign reads). `'ok'` is a modelled OK sign (thumb-index ring + three fingers). Wrist twist: pose keys `wL` / `wR`.
+- **La peace:** `POSES.laPeace(t)` (OK hand up beside the face, chin up) + `FACES.mew` (mewing: tight closed lips, low lids, sharp brows). Screenshot: `detail_la_peace`.
+- Catchphrase samples live one level up in `assets/`: `bomboclat.mp3`, `la_peace.mp3` (1.1 s, first phrase only).
+- **Clips:** `clips/clap_cat.webm` (clapping black cat, green screen removed, VP9 with alpha + sound; poster `clips/clap_cat_poster.png`; it holds a paw out at about 6.0 s). `python tools/clip_frames.py clips/clap_cat.webm <episode>/build/clip <episode>/build/audio/clip.wav` makes the frames, then `await clipCard(dirURL, { height: 1.65, feet: 0.184 })` from `fx/clip.js` and call `card.show(t - t0, camera.position)` every frame. The script's header shows how to key a new green-screen clip.

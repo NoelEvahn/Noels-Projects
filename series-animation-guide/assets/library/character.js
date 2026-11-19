@@ -157,31 +157,43 @@ function R_(ch) { return ch.R; }
 export const HANDS = {
   relaxed: [0.25, 0.3, 0.35, 0.4, 0.45], open: [0.0, 0, 0, 0, 0], flat: [0.0, 0, 0, 0, 0], fist: [0.8, 1, 1, 1, 1],
   point: [0.7, 0, 1, 1, 1], grip: [0.6, 0.7, 0.75, 0.75, 0.75], loose: [0.35, 0.5, 0.55, 0.55, 0.55], pinch: [0.45, 0.5, 0.15, 0.2, 0.25],
-  peace: [0.8, 0, 0, 1, 1], spread: [0.0, -0.1, -0.05, -0.05, -0.1], cup: [0.2, 0.45, 0.45, 0.45, 0.45],
+  peace: [0.8, 0, 0, 1, 1], ok: [0.62, 0.9, 0.0, 0.05, 0.1], spread: [0.0, -0.1, -0.05, -0.05, -0.1], cup: [0.2, 0.45, 0.45, 0.45, 0.45],
 };
 function makeHand(ch, s, skinM, detail) {
   const hand = new THREE.Group();
   const H = { root: hand, fingers: [], thumb: null, s };
-  add(hand, sph(0.062, 18, 14), skinM, [0, -0.068, 0], [0, 0, 0], [0.82, 1.05, 0.95]);   // palm
-  if (detail === 'low' || !ch.opts.fingers) { add(hand, sph(0.078, 16, 12), skinM, [0, -0.1, 0.0], [0, 0, 0], [0.95, 1, 1]); H.fingers = []; return H; }
+  if (detail === 'low') { add(hand, sph(0.078, 16, 12), skinM, [0, -0.1, 0.0], [0, 0, 0], [0.95, 1, 1]); H.fingers = []; return H; }
+  // series look = ball hands; the fingered hand is built too and swaps in for finger gestures (ok / point / peace), or always with opts.fingers
+  const palm = add(hand, sph(0.062, 18, 14), skinM, [0, -0.068, 0], [0, 0, 0], [0.82, 1.05, 0.95]);
+  if (!ch.opts.fingers) { H.ball = add(hand, sph(0.078, 16, 12), skinM, [0, -0.1, 0.0], [0, 0, 0], [0.95, 1, 1]); H.parts = [palm]; }
   const L = [0.05, 0.06, 0.054, 0.042], Z = [0.034, 0.012, -0.011, -0.031], R = 0.0185;
   for (let i = 0; i < 4; i++) {
     const k1 = new THREE.Group(); k1.position.set(0, -0.112, Z[i]); hand.add(k1);
     add(k1, cap(R, L[i] * 0.55, 3, 8), skinM, [0, -L[i] * 0.3 - 0.0, 0]);
     const k2 = new THREE.Group(); k2.position.y = -L[i] * 0.62; k1.add(k2);
     add(k2, cap(R * 0.95, L[i] * 0.45, 3, 8), skinM, [0, -L[i] * 0.25, 0]);
-    H.fingers.push([k1, k2]);
+    H.fingers.push([k1, k2]); H.parts?.push(k1);
   }
   const t1 = new THREE.Group(); t1.position.set(0, -0.06, 0.05); hand.add(t1);
   add(t1, cap(0.0215, 0.026, 3, 8), skinM, [0, -0.025, 0]);
   const t2 = new THREE.Group(); t2.position.y = -0.04; t1.add(t2);
   add(t2, cap(0.02, 0.022, 3, 8), skinM, [0, -0.02, 0]);
-  H.thumb = [t1, t2];
+  // modelled OK sign (thumb + index ring, three fingers up): the rig's curled fingers don't read as a circle at this scale
+  const okG = new THREE.Group(); okG.visible = false; hand.add(okG); H.ok = okG;
+  add(okG, sph(0.062, 16, 12), skinM, [0, -0.068, 0], [0, 0, 0], [0.82, 1.05, 0.95]);
+  add(okG, tor(0.04, 0.017, 10, 22), skinM, [0, -0.13, 0.042], [0, Math.PI / 2, 0]);
+  [[0.012, 0.0], [-0.012, -0.12], [-0.034, -0.24]].forEach(([z, a]) => add(okG, cap(0.018, 0.075, 3, 8), skinM, [0, -0.15, z], [a, 0, 0]));
+  H.thumb = [t1, t2]; H.parts?.push(t1); if (H.ball) H.parts.forEach((m) => (m.visible = false));
   return H;
 }
+const FINGER_GESTURES = new Set(['ok', 'point', 'peace']);
 function setHand(H, g) {
   const a = typeof g === 'string' ? HANDS[g] : g, s = H.s;
   if (!H.thumb) return;
+  const fg = typeof g === 'string' && FINGER_GESTURES.has(g);
+  const isOk = g === 'ok'; if (H.ok) H.ok.visible = isOk;
+  if (H.ball) { H.ball.visible = !fg; H.parts.forEach((m) => (m.visible = fg && !isOk)); } else if (H.ok) { [...H.fingers.map((f) => f[0]), H.thumb[0]].forEach((m) => (m.visible = !isOk)); }
+  H.root.scale.setScalar(fg ? 1.6 : 1);   // cartoon: gesture hands grow so the sign reads next to the big head
   const th = a[0];
   H.thumb[0].rotation.set(0.5 - th * 0.35, -s * (0.45 - th * 0.55), -s * (0.35 + th * 0.55)); H.thumb[1].rotation.z = -s * th * 0.9;
   for (let i = 0; i < 4; i++) { const c = a[i + 1]; H.fingers[i][0].rotation.z = -s * c * 1.45; H.fingers[i][1].rotation.z = -s * c * 1.35; H.fingers[i][0].rotation.x = (i - 1.5) * -(a[i + 1] < 0 ? a[i + 1] : 0) * 0.3; }
@@ -445,7 +457,7 @@ function applyFace(ch, f) {
 
 // ---------- poses ----------
 // joints: arms/legs "f" = forward swing, "s" = sideways raise, "e"/"k" = elbow/knee bend; hL/hR = hand preset name or [thumb,index,mid,ring,pinky]
-const J0 = { bob: 0, lean: 0, twist: 0, roll: 0, hx: 0, hy: 0, hz: 0, squash: 1, rotY: 0, aLf: 0, aLs: 0.1, aLe: 0.12, aRf: 0, aRs: 0.1, aRe: 0.12, lLf: 0, lLk: 0, lRf: 0, lRk: 0, lLs: 0.03, lRs: 0.03, hL: 'relaxed', hR: 'relaxed', plant: false, footFlat: 0 };
+const J0 = { bob: 0, lean: 0, twist: 0, roll: 0, hx: 0, hy: 0, hz: 0, squash: 1, rotY: 0, aLf: 0, aLs: 0.1, aLe: 0.12, aRf: 0, aRs: 0.1, aRe: 0.12, lLf: 0, lLk: 0, lRf: 0, lRk: 0, lLs: 0.03, lRs: 0.03, hL: 'relaxed', hR: 'relaxed', wL: 0, wR: 0, plant: false, footFlat: 0 };   // wL/wR: wrist twist (palm toward camera for gestures)
 function applyPose(ch, p) {
   const j = { ...J0, ...p };
   ch.hips.position.y = HIPS_Y + j.bob;
@@ -458,6 +470,7 @@ function applyPose(ch, p) {
   ch.aR.sh.rotation.set(-j.aRf, 0, -j.aRs); ch.aR.el.rotation.x = -j.aRe;
   ch.lL.hip.rotation.set(-j.lLf, 0, -j.lLs); ch.lL.kn.rotation.x = j.lLk; ch.lL.foot.rotation.x = (j.lLf * 0.3 - j.lLk * 0.25) * (1 - j.footFlat) + (j.lLf - j.lLk) * j.footFlat;
   ch.lR.hip.rotation.set(-j.lRf, 0, j.lRs); ch.lR.kn.rotation.x = j.lRk; ch.lR.foot.rotation.x = (j.lRf * 0.3 - j.lRk * 0.25) * (1 - j.footFlat) + (j.lRf - j.lRk) * j.footFlat;
+  ch.aL.hand.root.rotation.y = j.wL; ch.aR.hand.root.rotation.y = j.wR;
   if (!ch.heldL) setHand(ch.aL.hand, j.hL); if (!ch.heldR) setHand(ch.aR.hand, j.hR);
   if (j.plant) plant(ch);
 }
@@ -497,6 +510,8 @@ export const POSES = {
   flex: (t = 0) => ({ aLs: 1.5, aLe: 2.0, aRs: 1.5, aRe: 2.0, lean: -0.05, hL: 'fist', hR: 'fist' }),
   arms_crossed: (t = 0) => ({ aLf: 0.9, aRf: 0.9, aLe: 2.0, aRe: 2.0, aLs: -0.25, aRs: -0.25, hL: 'loose', hR: 'loose' }),
   stretchUp: (t = 0) => ({ aLs: 2.9, aRs: 2.9, aLe: 0.1, aRe: 0.1, hL: 'open', hR: 'open', lean: -0.08, hx: -0.15 }),
+  // "la peace" catchphrase: OK hand up beside the face, chin up (pair with FACES.mew)
+  laPeace: (t = 0) => ({ aRf: 0.7, aRs: 1.2, aRe: 2.1, wR: 1.5, hR: 'ok', hx: -0.14, hz: 0.06, lean: -0.03, aLs: 0.1, bob: Math.sin(t * 3) * 0.004 }),
   dust: (t = 0) => ({ aRf: 1.0, aRe: 2.1, aRs: 0.5, hR: 'flat', hz: 0.12, lean: 0.04 }),   // brushing the shoulder off
 };
 
@@ -516,6 +531,7 @@ export const FACES = {
   lovestruck: { open: 0.45, brow: 0.7, eye: 1.15, wide: 1.2, hearts: 1, lid: 0 },
   excited: { open: 0.65, brow: 0.8, eye: 1.2, teeth: true, wide: 1.2 },
   sleepy: { smile: 0.1, lid: 0.7 },
+  mew: { smile: 0.04, open: 0, lid: 0.38, brow: -0.3, browTilt: -0.4, pupil: [0, 0.08], wide: 0.75 },   // "la peace": mewing, closed tight lips, low lids, sharp brows
 };
 
 // ---------- presets (all complete; no implicit merge with hero) ----------

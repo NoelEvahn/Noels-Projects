@@ -1,6 +1,6 @@
 // Catalogue of every library item. Each item: {id, cat, title, note, stage?, cam?, build(ctx) -> Object3D | {obj, cam, update}}
 import * as THREE from 'three';
-import { makeCharacter, PRESETS, POSES, FACES, ghostify } from './character.js';
+import { makeCharacter, PRESETS, POSES, FACES, ghostify, HANDS } from './character.js';
 import { buildGarden } from './sets/garden.js';
 import { buildStreet, postbox, mailSack } from './sets/street.js';
 import { buildTheatre } from './sets/theatre.js';
@@ -144,3 +144,5 @@ reg({ id: 'prop_grass_close', cat: 'props', title: 'Grass close-up', note: 'grou
   build: () => { const g = NAT.groundCover({ area: [-3, -3, 3, 2], density: 14, flowerK: 0.12, pebbleK: 0.06, seed: 9 }); NAT.updateNature(0.4); return { obj: g, cam: { pos: [0, 0.7, 2.4], target: [0, 0.15, 0], fov: 45 } }; } });
 reg({ id: 'detail_love_eyes', cat: 'characters', title: 'Heart eyes: face({hearts:1}) / FACES.love / AFACES.love', note: 'hero, mum, Gerald',
   build: () => { const g = new THREE.Group(); [['hero', -0.6], ['mum', 0.6]].forEach(([n, x]) => { const c = makeCharacter(PRESETS[n]); c.pose(POSES.idle(0.2)); c.face(FACES.love); c.root.position.x = x; g.add(c.root); }); const cat = makeAnimal('cat', ANIMALS.gerald); cat.pose(APOSES.sit(0.4)); cat.face(AFACES.love); cat.root.position.set(0, 0, 0.6); g.add(cat.root); return { obj: g, cam: { pos: [0, 1.3, 3.4], target: [0, 0.95, 0], fov: 36 } }; } });
+reg({ id: 'detail_la_peace', cat: 'characters', title: 'La peace: POSES.laPeace + FACES.mew (OK hand, mewing face)', note: 'hero, mum, dad',
+  build: () => { const g = new THREE.Group(); [['hero', -0.9], ['mum', 0.0], ['dad', 0.95]].forEach(([n, x], i) => { const c = makeCharacter(PRESETS[n]); c.pose(POSES.laPeace(i)); c.face(FACES.mew); c.root.position.x = x; c.root.rotation.y = 0.1; g.add(c.root); }); return { obj: g, cam: { pos: [0, 1.5, 3.9], target: [0, 1.3, 0], fov: 38 } }; } });
