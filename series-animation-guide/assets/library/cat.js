@@ -53,20 +53,17 @@ export function buildCat(o) {
   for (const s of [-1, 1]) for (let k = 0; k < 3; k++) add(head, cyl(0.0022, 0.0012, R * 1.1, 4), mat(0xfffaf0), [s * R * 0.62, -R * 0.36 + (k - 1) * R * 0.07, R * 0.86], [0, s * 0.35, Math.PI / 2 + s * (k - 1) * 0.12]);
   for (let i = -1; i <= 1; i++) add(head, cap(R * 0.035, R * 0.22, 4, 8), stripe, [i * R * 0.17, R * 0.62, R * 0.62], [0.95, 0, i * 0.25]);
   for (const s of [-1, 1]) for (let k = 0; k < 2; k++) add(head, cap(R * 0.03, R * 0.2, 4, 8), stripe, [s * R * 1.0, R * 0.05 - k * R * 0.17, R * 0.25], [0, s * 0.5, Math.PI / 2]);
-  // MEWING Gerald (the mewing-cat meme): fat jowls, a huge chin and double chin, deep creases from the nose down, pink lips pushed out.
-  // Hidden unless face({ mew: 0..1 }) / AFACES.mew.
+  // MEWING Gerald (the mewing-cat meme, kept clean): firmer, slightly fuller cheeks, a defined jaw and chin, soft smile-line
+  // creases from the nose, small pink lips pressed out. Hidden unless face({ mew: 0..1 }) / AFACES.mew.
   const mew = new THREE.Group(); mew.visible = false; head.add(mew);
-  const creaseM = mat(0xa24a16, { rough: 0.9 }), lipM = mat(0xe58a8f, { rough: 0.4 });
-  const mseg = (a, b, r) => { const A = new THREE.Vector3(...a).multiplyScalar(R), B = new THREE.Vector3(...b).multiplyScalar(R), d = B.clone().sub(A); const m = add(mew, cap(R * r, Math.max(0.001, d.length() - R * r), 3, 8), creaseM, A.clone().add(B).multiplyScalar(0.5).toArray()); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()); m.castShadow = false; };
+  const creaseM = mat(0xc56a2a, { rough: 0.9 }), lipM = mat(0xe58a8f, { rough: 0.4 });
+  const mseg = (a, b, r, m = creaseM) => { const A = new THREE.Vector3(...a).multiplyScalar(R), B = new THREE.Vector3(...b).multiplyScalar(R), d = B.clone().sub(A); const q = add(mew, cap(R * r, Math.max(0.001, d.length() - R * r), 4, 10), m, A.clone().add(B).multiplyScalar(0.5).toArray()); q.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()); q.castShadow = false; };
   for (const s of [-1, 1]) {
-    add(mew, sph(R * 0.52, 20, 14), fur, [s * R * 0.62, -R * 0.62, R * 0.42], [0, 0, 0], [1.0, 1.15, 0.9]);              // jowls
-    mseg([s * 0.22, -0.3, 1.0], [s * 0.36, -0.62, 0.95], 0.038); mseg([s * 0.36, -0.62, 0.95], [s * 0.4, -0.98, 0.8], 0.038);   // nose-to-chin crease
-    mseg([s * 0.95, -0.5, 0.5], [s * 0.9, -0.95, 0.35], 0.03);                                                                // outer jowl fold
+    add(mew, sph(R * 0.36, 20, 14), fur, [s * R * 0.62, -R * 0.5, R * 0.48], [0, 0, 0], [0.95, 1.05, 0.85]);              // firm cheeks
+    mseg([s * 0.2, -0.3, 0.97], [s * 0.34, -0.6, 0.9], 0.024);                                                              // soft smile-line crease
   }
-  add(mew, sph(R * 0.46, 22, 16), cream, [0, -R * 0.86, R * 0.6], [0, 0, 0], [1.35, 0.85, 0.95]);                          // big chin
-  add(mew, sph(R * 0.5, 22, 16), fur, [0, -R * 1.18, R * 0.38], [0, 0, 0], [1.45, 0.6, 0.95]);                            // double chin
-  mseg([-0.45, -1.05, 0.72], [0.45, -1.05, 0.72], 0.03);                                                                     // chin fold
-  add(mew, sph(R * 0.13, 14, 10), lipM, [0, -R * 0.52, R * 0.98], [0, 0, 0], [1.3, 0.55, 0.8]);                           // pursed lips
+  add(mew, sph(R * 0.24, 18, 14), cream, [0, -R * 0.66, R * 0.74], [0.3, 0, 0], [1.2, 0.8, 0.9]);                          // firm chin
+  add(mew, sph(R * 0.1, 14, 10), lipM, [0, -R * 0.5, R * 0.97], [0, 0, 0], [1.3, 0.5, 0.75]);                              // pursed lips
   // eyes: series look (episodes 1-2): white ball, round black pupil, no iris colour or catchlight; heavy upper lid is his signature
   const eyes = [];
   for (const s of [-1, 1]) {

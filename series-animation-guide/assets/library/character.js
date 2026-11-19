@@ -181,11 +181,15 @@ function makeHand(ch, s, skinM, detail) {
   // modelled OK sign (thumb + index ring, three fingers up): the rig's curled fingers don't read as a circle at this scale
   const okG = new THREE.Group(); okG.visible = false; hand.add(okG); H.ok = okG;
   const okSeg = (a, b, r) => { const A = new THREE.Vector3(...a), B = new THREE.Vector3(...b), d = B.clone().sub(A); const m = add(okG, cap(r, Math.max(0.001, d.length() - r), 4, 10), skinM, A.clone().add(B).multiplyScalar(0.5).toArray()); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()); return m; };
-  add(okG, sph(0.064, 18, 14), skinM, [0, -0.075, -0.008], [0, 0, 0], [0.62, 1.05, 1.0]);                                  // flat palm (normal = x)
-  add(okG, tor(0.034, 0.0165, 10, 26), skinM, [0, -0.16, 0.05], [0, Math.PI / 2, 0]);                                       // thumb + index ring (hole faces the palm side)
-  okSeg([0, -0.11, 0.045], [0, -0.132, 0.05], 0.018);                                                                      // index root into the ring
-  okSeg([0, -0.06, 0.055], [0, -0.13, 0.072], 0.019);                                                                      // thumb root into the ring
-  [[0.012, 0.0], [-0.013, -0.16], [-0.038, -0.32]].forEach(([z, a]) => { const L = 0.1 - Math.abs(a) * 0.05; okSeg([0, -0.12, z], [0, -0.12 - Math.cos(a) * L, z + Math.sin(a) * L], 0.0175); });   // three fingers up, fanned
+  // OK sign like the reference photo (back of the hand to camera): middle, ring and pinky long and fanned up; the index curls over
+  // and meets the thumb tip in a round circle beside the palm. Hand-local: fingers point -y, finger row along z (index +z), palm normal x.
+  const okChain = (pts, r) => { const c = new THREE.CatmullRomCurve3(pts.map((q) => new THREE.Vector3(...q))); add(okG, new THREE.TubeGeometry(c, 24, r, 10), skinM, [0, 0, 0]); add(okG, sph(r, 12, 10), skinM, pts[0]); add(okG, sph(r, 12, 10), skinM, pts[pts.length - 1]); };   // smooth finger
+  add(okG, sph(0.064, 18, 14), skinM, [0, -0.07, 0.0], [0, 0, 0], [0.55, 1.05, 1.0]);                                        // back of the hand
+  const cy = -0.135, cz = 0.078, cr = 0.04, P = (deg) => { const a = deg * Math.PI / 180; return [0, cy - cr * Math.sin(a), cz + cr * Math.cos(a)]; };
+  okChain([[0, -0.11, 0.032], P(200), P(160), P(120), P(85), P(50), P(22)], 0.0165);                                      // index: curls over the top of the circle
+  okChain([[0, -0.035, 0.035], [0, -0.07, 0.068], P(-90), P(-50), P(-12), P(14)], 0.019);                                   // thumb: from the wrist side up the bottom of the circle to the index tip
+  [[0.012, 0.06, 0.15], [-0.012, -0.08, 0.142], [-0.034, -0.25, 0.115]].forEach(([z, a, L]) => okChain([[0, -0.115, z], [0, -0.115 - Math.cos(a) * L * 0.5, z + Math.sin(a) * L * 0.5], [0, -0.115 - Math.cos(a * 1.25) * L, z + Math.sin(a * 1.25) * L]], 0.0168));   // middle, ring, pinky: long, fanned
+  okG.traverse((m) => { if (m.isMesh) { m.castShadow = false; m.receiveShadow = false; } });   // small tubes self-shadow into jagged acne
   H.thumb = [t1, t2]; H.parts?.push(t1); if (H.ball) H.parts.forEach((m) => (m.visible = false));
   return H;
 }
@@ -421,21 +425,18 @@ function buildFace(ch, o) {
   const teeth = new THREE.Mesh(box(1, 1, 1), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 })); mouth.add(teeth);
   const smile = new THREE.Mesh(tor(1, 0.1, 8, 24, Math.PI), darkM); smile.position.z = R * 0.04; mouth.add(smile);
   F.mouth = { g: mouth, mm, tongue, teeth, smile };
-  // MEWING (the "la peace" face, exaggerated like the mewing-cat meme): a huge square jaw and chin below the round head,
-  // hard jaw ridges, deep smile-line creases from the nose to the chin, and lips pushed forward. Hidden unless face({ mew }).
+  // MEWING (the "la peace" face): a clean, chiselled look, not a fat one. A sharp V jawline, a firm chin pushed forward,
+  // lips pressed together (they part when the character talks). Hidden unless face({ mew }).
   const mew = new THREE.Group(); mew.visible = false; h.add(mew); F.mew = mew;
-  const jawM = ch.skin, creaseM = mat(shade(o.skin, 0.62), { rough: 0.85 }), lipM = mat(new THREE.Color(o.skin).lerp(new THREE.Color(0xd9707a), 0.55).getHex(), { rough: 0.45 });
-  add(mew, sph(R * 0.62, 28, 20), jawM, [0, -R * 0.62, R * 0.36], [0, 0, 0], [1.32, 0.78, 1.0]);                       // jaw block
-  add(mew, sph(R * 0.36, 22, 16), jawM, [0, -R * 0.9, R * 0.62], [0, 0, 0], [1.35, 0.78, 0.95]);                        // square chin
-  const seg = (a, b, r) => { const A = new THREE.Vector3(...a).multiplyScalar(R), B = new THREE.Vector3(...b).multiplyScalar(R), d = B.clone().sub(A), m = add(mew, cap(R * r, d.length(), 3, 8), creaseM, A.clone().add(B).multiplyScalar(0.5).toArray()); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()); m.castShadow = false; };
+  const shadeM = mat(shade(o.skin, 0.84), { rough: 0.7 }), lipM = mat(new THREE.Color(o.skin).lerp(new THREE.Color(0xc96a72), 0.45).getHex(), { rough: 0.45 });
+  const seg = (a, b, r, m) => { const A = new THREE.Vector3(...a).multiplyScalar(R), B = new THREE.Vector3(...b).multiplyScalar(R), d = B.clone().sub(A), q = add(mew, cap(R * r, d.length(), 4, 10), m, A.clone().add(B).multiplyScalar(0.5).toArray()); q.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()); q.castShadow = false; return q; };
+  add(mew, sph(R * 0.2, 18, 14), ch.skin, [0, -R * 0.8, R * 0.7], [0.3, 0, 0], [1.2, 0.85, 0.9]);                       // firm chin, pushed forward
   for (const s of [-1, 1]) {
-    add(mew, cap(R * 0.13, R * 0.55, 5, 12), jawM, [s * R * 0.6, -R * 0.68, R * 0.32], [0.35, s * 0.45, s * 1.05]);      // jaw ridge, ear to chin
-    seg([s * 0.2, -0.2, 0.99], [s * 0.36, -0.5, 0.92], 0.028); seg([s * 0.36, -0.5, 0.92], [s * 0.42, -0.84, 0.81], 0.028);   // smile-line crease, nose to chin
-    seg([s * 0.62, -0.5, 0.62], [s * 0.7, -0.86, 0.4], 0.024);                                                             // jowl fold
+    seg([s * 0.9, -0.28, 0.2], [s * 0.5, -0.72, 0.6], 0.06, ch.skin); seg([s * 0.5, -0.72, 0.6], [s * 0.16, -0.86, 0.72], 0.06, ch.skin);   // sharp jawline ridge, ear to chin
+    seg([s * 0.86, -0.36, 0.18], [s * 0.48, -0.8, 0.56], 0.02, shadeM);                                                  // shadow under the jawline
   }
-  seg([-0.3, -1.08, 0.68], [0.3, -1.08, 0.68], 0.024);                                                                     // under-chin fold
-  add(mew, sph(R * 0.13, 16, 10), lipM, [0, -R * 0.4, R * 0.98], [0, 0, 0], [1.25, 0.42, 0.75]);                         // upper lip, pushed out
-  add(mew, sph(R * 0.12, 16, 10), lipM, [0, -R * 0.5, R * 0.97], [0, 0, 0], [1.15, 0.5, 0.8]);                           // lower lip
+  F.lipU = add(mew, sph(R * 0.1, 16, 10), lipM, [0, -R * 0.42, R * 0.95], [0, 0, 0], [1.3, 0.32, 0.6]);                  // lips, pressed together
+  F.lipL = add(mew, sph(R * 0.095, 16, 10), lipM, [0, -R * 0.48, R * 0.94], [0, 0, 0], [1.2, 0.36, 0.6]);
   ch.F = F;
 }
 // Film clock for automatic secondary motion (blinks, breathing). The page sets CLOCK.t once per frame before drawing,
@@ -457,11 +458,12 @@ function applyFace(ch, f) {
     b.g.position.y = b.baseY + o.brow * R * 0.18 + (o.eye - 1) * R * 0.12;
     b.g.rotation.z = s * o.browTilt * 0.7;
   }
-  const mk = o.mew ?? 0; F.mew.visible = mk > 0.01; F.mew.scale.setScalar(0.6 + 0.4 * mk);
-  const m = F.mouth, open = mk > 0.5 ? 0 : o.open; if (mk > 0.5) o.smile = 0;
+  const mk = o.mew ?? 0; F.mew.visible = mk > 0.01; F.mew.scale.setScalar(0.85 + 0.15 * mk);
+  const m = F.mouth, open = o.open, mewing = mk > 0.5; if (mewing) o.smile = 0;
+  if (F.lipU) { F.lipU.position.y = -R * 0.42 + R * 0.07 * open; F.lipL.position.y = -R * 0.48 - R * 0.13 * open; }   // the lips part when they talk (la peace / any line)
   if (open > 0.04) {
     m.mm.visible = true; m.smile.visible = false;
-    m.mm.scale.set(R * (0.12 + 0.1 * Math.min(1, open) + 0.06 * o.wide), R * (0.02 + 0.2 * open), R * 0.08);
+    m.mm.scale.set(R * (0.12 + 0.1 * Math.min(1, open) + 0.06 * o.wide) * (mewing ? 0.7 : 1), R * (0.02 + 0.2 * open) * (mewing ? 0.75 : 1), R * 0.08);
     m.tongue.visible = open > 0.35; m.tongue.position.set(0, -R * 0.1 * open, R * 0.02); m.tongue.scale.set(R * 0.12, R * 0.045 * open, R * 0.05);
     m.teeth.visible = !!o.teeth || open > 0.6; m.teeth.scale.set(R * 0.2, R * 0.04, R * 0.04); m.teeth.position.set(0, R * 0.16 * open, R * 0.05);
   } else {
@@ -550,7 +552,7 @@ export const FACES = {
   lovestruck: { open: 0.45, brow: 0.7, eye: 1.15, wide: 1.2, hearts: 1, lid: 0 },
   excited: { open: 0.65, brow: 0.8, eye: 1.2, teeth: true, wide: 1.2 },
   sleepy: { smile: 0.1, lid: 0.7 },
-  mew: { mew: 1, smile: 0, open: 0, lid: 0.5, brow: -0.45, browTilt: -0.5, pupil: [0, -0.05], blink: false },   // "la peace": mewing, closed tight lips, low lids, sharp brows
+  mew: { mew: 1, smile: 0, open: 0, lid: 0.42, brow: -0.3, browTilt: -0.35, pupil: [0, 0], blink: false },   // add open: mo(...) for la peace lines   // "la peace": mewing, closed tight lips, low lids, sharp brows
 };
 
 // ---------- presets (all complete; no implicit merge with hero) ----------
