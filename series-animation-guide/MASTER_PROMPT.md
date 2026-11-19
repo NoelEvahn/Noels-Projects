@@ -1,4 +1,4 @@
-# VIDEO SERIES MASTER PROMPT v3 — "What if every X, Y doubled?"
+# VIDEO SERIES MASTER PROMPT v4 — "What if every X, Y doubled?"
 
 Fill in the slots, attach the files, and send.
 
@@ -31,10 +31,10 @@ use them unless new files are attached.
 1. **Check the asset library first.** Read `series-animation-guide/assets/library/INDEX.md` (characters, animals, props, sets, FX, hand/hold/sit APIs, screenshots) and `assets/library/cat/CAT_BIBLE.md` (Gerald the recurring cat and his episode log). Import what exists instead of rebuilding it. Anything new you build (character, prop, set, FX) goes into the library with code **and** a screenshot (add it to `registry.js`, regenerate screenshots, update `INDEX.md`). The hero and family never change.
 2. Read this prompt and any attached files. Check the toolchain in the session scratchpad (node deps and Python venv live outside the repo). The repo may only receive content for `series-animation-guide/` (the library, episode folders, this prompt, the README); work directly on `main`, per the repository's `CLAUDE.md`. Never add anything else, and never name anything after the repository.
 3. Plan the episode yourself, then write a detailed brief (`episode-N/BRIEF.md`): beat grid, exact counter maths, a shot list of about 30–45 shots (2–3 s each, see Pacing), the voice table, the narration, the Gerald plan, a defect checklist, and the report format. Put every spoken event (story narration, Gerald roasts, catchphrase moments) on one timeline table on the 0.4 s grid first and check that nothing overlaps.
-4. A **Sonnet 5.5 high-effort executor** subagent builds the whole thing (when the user says "just two people", the orchestrator builds it itself and the Opus advisor only reviews). It must provide partial re-render tools (frame ranges, preview scale) so fixes stay cheap.
-5. When it finishes, check the format, the counter and the contact sheets yourself.
-6. Then run an **Opus 5.5 medium-effort advisor** subagent. It only reviews and advises and never writes code.
-7. Send the user v1 and the review straight away. Then do one fix round with the executor, check it again and send v2. Keep v1 as a backup.
+4. **The model running this session builds the whole episode itself.** Do not spawn subagents or advisors, and do not hand work to another model. Build the scene code, the audio and the render yourself. Provide partial re-render tools (frame ranges, preview scale) so fixes stay cheap.
+5. When the build finishes, check the format, the counter and the contact sheets yourself.
+6. Then review your own work in a separate pass: go through the shot list and the Defect checklist item by item, and fix what fails. No second model reviews it.
+7. Send the user v1 and your review notes straight away. Then do one fix round yourself, check it again and send v2. Keep v1 as a backup.
 8. Start immediately. Ask questions only if a slot is missing.
 
 ### Format
@@ -150,7 +150,7 @@ Episode 3 v1 cut every ~0.7 s and the user rejected it: confusing, text overlapp
 
 Sound effects must never bury speech.
 
-### Defect checklist (from episodes 1–2 — the executor AND the advisor check every item)
+### Defect checklist (from episodes 1–2 — check every item yourself, before and after each fix round)
 - **Camera and framing:**
   - Cameras inside walls or characters.
   - Heads, faces or eyes under the counter or tag line.

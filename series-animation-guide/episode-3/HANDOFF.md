@@ -29,7 +29,7 @@ Everything is on `main` of the GitHub repository. Work directly on `main` (repo 
 `npm i three@0.170.0 @fontsource/anton` in a workspace dir → `LIB_DEPS=<that dir>`; global Playwright Chromium; Python venv with `numpy scipy soundfile librosa pyloudnorm piper-tts faster-whisper pillow`; `EP_BUILD=<build dir>`; `NODE_PATH=$(npm root -g)`. Render: `node tools/render.mjs --from 0 --to 2699 --scale 0.5 --workers 4 --out $EP_BUILD/f05` (≈12 min at 0.5 scale, ≈22 min at full res on 4 cores), contact sheets with `tools/sheet.py`, encode with `tools/encode.sh`, QA with `tools/qa.py`.
 
 ## Roles in this session
-The user asked for "two people only": the orchestrator built everything and an Opus 5.5 advisor reviewed (no subagents). The master prompt still describes a Sonnet executor + Opus advisor subagent for a normal run.
+The user asked for "two people only": the orchestrator built everything and an Opus 5.5 advisor reviewed (no subagents). The master prompt (v4) now says the single model running the session does the whole episode itself, with no subagents or advisors.
 
 ## Open questions / unverified
 Tag figures (≈8.3B population, ≈117B people ever lived) were not web-checked. Nobody could listen to the audio. The bakery, office facade, marching band and `makeLovers` were built inside the scene files, not in the library.
