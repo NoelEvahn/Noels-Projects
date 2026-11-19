@@ -1,6 +1,6 @@
 # Series Animation Guide
 
-"What if every X, Y doubled?" — 90 s vertical 3D comedy shorts.
+"What if every X, Y doubled?" â€” 90 s vertical 3D comedy shorts.
 
 | Path | What |
 |---|---|
@@ -11,6 +11,7 @@
 
 | Episode | Topic | Status |
 |---|---|---|
-| 1 | What if you hussed 2× faster every 2 seconds? | Complete (v2 cut) |
+| 1 | What if you hussed 2Ã— faster every 2 seconds? | Complete (v2 cut) |
 | 2 | What if your money doubled every 2 seconds? | Complete (v2 cut) |
 | 3 | What if every 2 seconds, twice as many people loved you? | Complete (v5 final cut, 100 s) |
+| 4 | Mama I'm a criminal (REEL, 17 s) | v4 retention cut |

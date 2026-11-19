@@ -295,7 +295,7 @@ export function makeCharacter(opts = {}) {
   add(head, sph(R, 48, 32), skin, [0, 0, 0], [0, 0, 0], [1, 0.98, 1]);
   for (const s of [-1, 1]) { add(head, sph(R * 0.2, 14, 10), skin, [s * R * 0.97, -R * 0.02, -R * 0.05], [0, 0, 0], [0.5, 1, 0.8]); add(head, sph(R * 0.11, 10, 8), mat(shade(o.skin, 0.82)), [s * R * 1.01, -R * 0.02, -R * 0.02], [0, 0, 0], [0.4, 1, 0.7]); }
 
-  const ch = { root, body, hips, torso: t, torsoMesh, head, neck, R, skin, opts: o, headScale: o.head };
+  const ch = { root, body, hips, torso: t, torsoG: torso, torsoMesh, head, neck, R, skin, opts: o, headScale: o.head };   // torsoG = the whole upper body (lean/twist/roll pivot)
 
   buildOutfit(ch, o.outfit, skin);
   // ---- arms ----
@@ -482,7 +482,7 @@ const J0 = { bob: 0, lean: 0, twist: 0, roll: 0, hx: 0, hy: 0, hz: 0, squash: 1,
 function applyPose(ch, p) {
   const j = { ...J0, ...p };
   ch.hips.position.y = HIPS_Y + j.bob;
-  ch.torso.rotation.set(j.lean, j.twist, j.roll);
+  ch.torsoG.rotation.set(j.lean, j.twist, j.roll);   // whole upper body (was the outfit-detail anchor only: hood/pocket tilted off the neck)
   ch.head.rotation.set(j.hx, j.hy, j.hz);
   const breath = 1 + Math.sin(CLOCK.t * 2.2 + (ch.opts.seed ?? 1)) * 0.008;   // gentle breathing on everyone
   ch.body.scale.set(1 / Math.sqrt(j.squash), j.squash * breath, 1 / Math.sqrt(j.squash));

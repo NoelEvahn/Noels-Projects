@@ -1,4 +1,4 @@
-// Catalogue of every library item. Each item: {id, cat, title, note, stage?, cam?, build(ctx) -> Object3D | {obj, cam, update}}
+﻿// Catalogue of every library item. Each item: {id, cat, title, note, stage?, cam?, build(ctx) -> Object3D | {obj, cam, update}}
 import * as THREE from 'three';
 import { makeCharacter, PRESETS, POSES, FACES, ghostify, HANDS } from './character.js';
 import { buildGarden } from './sets/garden.js';
@@ -19,6 +19,9 @@ import * as HEARTS from './fx/hearts.js';
 import * as NAT from './props/nature.js';
 import { rng } from './util.js';
 import { makeAnimal, APOSES, AFACES, ANIMALS } from './animal.js';
+import { makeBaby, BABY_POSES } from './baby.js';
+import { buildSandPark, SANDPARK_STAGE } from './sets/sandpark.js';
+import * as BEACH from './props/beach.js';
 
 export const ITEMS = [];
 const reg = (i) => ITEMS.push(i);
@@ -91,7 +94,7 @@ const rowOf = (objs, gap = 1.2, y = 0) => { const g = new THREE.Group(); objs.fo
 const PSTAGE = { sky: ['#cfe9ff', '#fff3d6'], ground: 0xd9c9a8 };
 reg({ id: 'prop_holdables', cat: 'props', title: 'Holdables (authored upright, grip at origin)', note: 'spatula, ice cream, envelope, mic, megaphone, flag, sign, beaker, test tube, clipboard, tray, bouquet, foam hand', stage: PSTAGE,
   build: () => { const its = [HOLD.spatula(), HOLD.iceCream(), HOLD.envelope(), HOLD.microphone(), HOLD.megaphone(), HOLD.flagOnStick(), HOLD.beaker(), HOLD.testTube(), HOLD.bouquet(), HOLD.foamHand(), HOLD.tray(), HOLD.clipboard()]; its.forEach((o) => { if (o.userData.grip?.upright === false) o.rotation.x = -0.3; o.position.y += 0.3; }); const g = rowOf(its, 0.55, 0.3); const sign = HOLD.signBoard(); sign.position.set(0, 0.0, 0); const b = new THREE.Group(); b.add(HOLD.heartBalloon(0xff3f7f, 0.7)); b.position.set(-1.8, 0, 0.0); return { obj: g, cam: { pos: [0, 1.2, 8.5], target: [0, 0.8, 0], fov: 34 } }; } });
-reg({ id: 'prop_holding_demo', cat: 'props', title: 'Holding demo: spatula, ice cream, envelope, mic, balloons', note: 'ch.hold(item, side) — items sit in the palm; poses holdR/holdL/holdBoth/carry', stage: PSTAGE,
+reg({ id: 'prop_holding_demo', cat: 'props', title: 'Holding demo: spatula, ice cream, envelope, mic, balloons', note: 'ch.hold(item, side) â€” items sit in the palm; poses holdR/holdL/holdBoth/carry', stage: PSTAGE,
   build: () => { const g = new THREE.Group(); const mk = (preset, pose, item, side, x, ry = 0.5) => { const c = makeCharacter(PRESETS[preset]); c.pose({ ...POSES.idle(0), ...pose }); c.hold(item, side); c.face(FACES.happy); c.root.position.x = x; c.root.rotation.y = ry; g.add(c.root); return c; }; mk('hero', POSES.holdR(), HOLD.spatula(), 'R', -2.4); mk('iceCreamMan', POSES.holdL(), HOLD.iceCream(3), 'L', -0.8, -0.4); mk('postman', { ...POSES.holdR(), hR: 'pinch' }, HOLD.envelope(), 'R', 0.8); mk('host', POSES.holdR(), HOLD.microphone(), 'R', 2.4, -0.5); { const kd = makeCharacter(PRESETS.kid); kd.pose({ ...POSES.holdR(), aRf: 0.5, aRe: 0.3, aRs: 0.4 }); kd.face(FACES.happy); kd.root.position.x = 3.8; kd.root.rotation.y = 0.2; g.add(kd.root); kd.holdUpright(HOLD.balloonBunch(6, 0.9), 'R'); kd.pose({ ...POSES.holdR(), aRf: 0.5, aRe: 0.3, aRs: 0.4 }); } const car = makeCharacter(PRESETS.mum); car.pose(POSES.carry()); const bx = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.3, 0.3), new THREE.MeshStandardMaterial({ color: 0xc89a5a })); car.carry(bx); car.face(FACES.happy); car.root.position.x = -4.2; car.root.rotation.y = 0.4; g.add(car.root); return { obj: g, cam: { pos: [-0.2, 1.7, 9.6], target: [-0.2, 1.2, 0], fov: 38 } }; } });
 reg({ id: 'prop_home', cat: 'props', title: 'Home / garden props', note: 'tree, bush, flowers, grill, burger, picnic table, chair, pool, gazebo, trash can, lamp post, tablet, phone', stage: PSTAGE,
   build: () => { const r = rng(2); const g = new THREE.Group(); const put = (o, x, z, s = 1) => { o.position.set(x, 0, z); o.scale.setScalar(s); g.add(o); return o; }; put(HOME.tree(r, { h: 3 }), -4.5, 0, 0.9); put(HOME.bush(), -3.2, 0.5, 1.2); put(HOME.flowerPatch(rng(3), 14, 0.8), -2.3, 0.4); put(HOME.grill(), -1.2, 0); put(HOME.burger(), -0.2, 0.2, 2.5); put(HOME.picnicTable(), 1.4, 0, 0.7); put(HOME.lawnChair(), 2.9, 0.2); put(HOME.pool(0.7), 4.1, 0.1); put(HOME.gazebo(2, 2), 6.2, -0.5, 0.8); put(HOME.trashCan(), -5.6, 1); put(HOME.lamppost(2.6), -6.5, 0); const t = HOME.tablet(); t.position.set(-0.5, 0.2, 1.0); g.add(t); const p = HOME.phone(); p.position.set(0.1, 0.2, 1.0); g.add(p); const f = HOME.fence(3); f.position.set(5, 0, 1.3); g.add(f); return { obj: g, cam: { pos: [0.5, 2.8, 11.5], target: [0.5, 0.9, 0], fov: 44 } }; } });
@@ -152,3 +155,13 @@ reg({ id: 'detail_ok_hand', cat: 'characters', title: 'OK hand close-up (hR: ok)
   build: () => { const c = makeCharacter(PRESETS.mum); c.pose(POSES.laPeace(0)); c.face(FACES.mew); const p = new THREE.Vector3(); c.root.updateMatrixWorld(true); c.aR.hand.root.getWorldPosition(p); return { obj: c.root, cam: { pos: [p.x + 0.1, p.y + 0.15, p.z + 1.2], target: [p.x, p.y + 0.12, p.z], fov: 30 } }; } });
 reg({ id: 'detail_gerald_mew', cat: 'animals', title: 'Mewing Gerald: AFACES.mew (firm cheeks, chin, pursed lips)', note: 'front / 3-4',
   build: () => { const g = new THREE.Group(); [[-0.36, 0.0], [0.4, 0.55]].forEach(([x, ry]) => { const c = makeAnimal('cat', ANIMALS.gerald); c.pose({ ...APOSES.sit(0.3), hx: -0.12 }); c.face(AFACES.mew); c.root.position.x = x; c.root.rotation.y = ry; g.add(c.root); }); return { obj: g, cam: { pos: [0, 0.6, 2.1], target: [0, 0.45, 0], fov: 34 } }; } });
+
+// --- episode 4: baby, sand pit, sand toys ---
+reg({ id: 'char_baby', cat: 'characters', title: 'Baby: makeBaby() (bald, striped tee, bare feet) sitting, tipping, crying', note: 'BABY_POSES.sit / tip / cry, baby.cry(k, t) adds modelled tears',
+  stage: { sky: ['#cfe9ff', '#fff3d6'], ground: 0xdcb57c },
+  build: () => { const g = new THREE.Group(); [[BABY_POSES.sit(0.3), 0], [BABY_POSES.tip(0, 0.8), 1], [BABY_POSES.cry(0.2), 2]].forEach(([p, k], i) => { const b = makeBaby(); b.pose(p); if (k === 2) b.cry(1, 0.3); else b.face(k ? { open: 0.9, eye: 1.4, brow: 1, smile: 0 } : { smile: 0.4 }); b.root.position.set((i - 1) * 0.75, 0.07, 0); g.add(b.root); }); return { obj: g, cam: { pos: [0, 0.9, 2.6], target: [0, 0.3, 0], fov: 40 } }; } });
+reg({ id: 'prop_beach', cat: 'props', title: 'Sand toys: toyShovel (holdable), sandBucket', note: 'shovel authored upright, grip at origin',
+  stage: { sky: ['#cfe9ff', '#fff3d6'], ground: 0xdcb57c },
+  build: () => { const g = new THREE.Group(); const s = BEACH.toyShovel(); s.position.set(-0.25, 0.2, 0); s.scale.setScalar(1.5); g.add(s); const b = BEACH.sandBucket(); b.position.set(0.25, 0, 0); g.add(b); const b2 = BEACH.sandBucket(0xff7ab0); b2.position.set(0.6, 0, -0.2); g.add(b2); return { obj: g, cam: { pos: [0, 0.6, 1.6], target: [0.15, 0.2, 0], fov: 40 } }; } });
+reg({ id: 'set_sandpark', cat: 'sets', title: 'Park sand pit (ep4): diggable hole, kerb, lawn, trees, bench, toys', note: 'sp.dig(k) grows the hole under whoever sits at the origin; heightAt(x,z)', stage: SANDPARK_STAGE,
+  build: () => { const s = buildSandPark(); s.dig(0.4); const b = makeBaby(); b.pose(BABY_POSES.sit(0)); b.root.position.set(0, 0.07, 0.06); s.group.add(b.root); return { obj: s.group, cam: { pos: [3, 2.6, 4.4], target: [0, 0.2, -0.4], fov: 45 } }; } });

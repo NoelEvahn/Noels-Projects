@@ -4,13 +4,19 @@ Fill in the slots, attach the files, and send.
 
 ```
 SLOTS (fill these in)
-1. TOPIC:        What if every [INTERVAL], [THING] doubled / you [ACTION] 2x [MORE]?
+0. FORMAT:       DOUBLING (default, ~90 s) / REEL (funny short, 10–20 s) / WORLD (in this world…, ~2 min).
+                 See "Episode formats" below. If not named, pick the format that fits the topic and say which.
+1. TOPIC:        DOUBLING: What if every [INTERVAL], [THING] doubled / you [ACTION] 2x [MORE]?
                  e.g. "What if every 2 seconds, your money doubled?"
-2. COUNTER:      what the on-screen number measures + START VALUE + unit + INTERVAL
+                 REEL / WORLD: the premise in one line,
+                 e.g. "Somebody digs a hole under someone and he falls through." /
+                 "What if in this world, everyone has a bodyguard?"
+2. COUNTER:      DOUBLING only: what the on-screen number measures + START VALUE + unit + INTERVAL
                  e.g. "bank balance, starts at $0.01, doubles every 2 s, always show cents"
-3. ENDING:       the one big final act in scene 7
+                 REEL / WORLD: no counter unless the user asks; use the format's own on-screen device.
+3. ENDING:       the one big final act in scene 7 (DOUBLING), or the punchline beat (REEL), or the twist (WORLD)
                  e.g. "he presses BUY: EVERYONE"
-4. CATCHPHRASE:  the only word(s) characters may say (attach the sample)
+4. CATCHPHRASE:  DOUBLING only (skip for REEL and WORLD unless the user names one). The only word(s) characters may say (attach the sample)
                  + PITCH (default: two registers, 1.10x and 1.15x the sample)
                  Library samples: "bomboclat" / "bombo" (assets/bomboclat.mp3) or "la peace" (assets/la_peace.mp3).
                  Not every episode is bomboclat: use the one the user names.
@@ -23,6 +29,8 @@ ATTACHED: (a) catchphrase sound effect, (b) music track, (c) optional look refer
           (a contact sheet of a previous episode).
 The audio and look reference live in `series-animation-guide/assets/` (bomboclat.mp3, la_peace.mp3, charlies_inferno.mp3, look_reference.jpg);
 use them unless new files are attached.
+SFX library: `series-animation-guide/assets/sfx/` (popup, reveal, suspense, transition, zoom; 20 files from the "Viewcci Sound Effects" Drive folder, see `assets/sfx/INDEX.md`).
+Every format uses this library for its sound effects.
 ```
 
 ## Instructions to Claude
@@ -37,13 +45,30 @@ use them unless new files are attached.
 7. Send the user v1 and your review notes straight away. Then do one fix round yourself, check it again and send v2. Keep v1 as a backup.
 8. Start immediately. Ask questions only if a slot is missing.
 
+### Episode formats
+Not every episode is a doubling. The format sets the length, the structure and the on-screen device. The **characters, the hero, Gerald, the fonts (Anton for the big text, the caption style), the narrator and the SFX library stay the same in every format.** Only the video format changes.
+
+| Format | Length | Structure | On-screen device |
+|---|---|---|---|
+| **DOUBLING** (default) | ~90 s (up to 100 s with payoff and outro) | The seven-step escalation + payoff + share outro (below) | Counter with ×2 badges (HUD rules below) |
+| **REEL** (funny short) | 15–17 s, one gag | Flash-forward hook (the payoff in the first second) + rewind, setup, one escalating gag, the punchline, then the **voiced** share line over the last shot (no end card). No seven-step scale. No Gerald. See "Retention and hooks". | Caption or sign only; no counter |
+| **WORLD** ("in this world…") | ~120 s (2 min) | A world premise (e.g. everyone has a bodyguard): 3–4 chapters, each a different angle of the same world, the hero in every chapter, then a closing twist and share outro. Use the 0.4 s grid, the same caption rules, and no counter. No Gerald. | Chapter title card (Anton, yellow) per chapter, optional chyron |
+
+Rules for every format:
+- Same hero, same family, same narrator voice and caption style.
+- **Catchphrases (bomboclat, la peace) are DOUBLING only,** unless the user names one for a REEL or WORLD episode. REEL and WORLD have no catchphrase lines, no OK-hand or mewing gag.
+- **Gerald is DOUBLING only.** REEL and WORLD episodes have no Gerald, no Gerald roasts, no HUD chip and no Gerald callback.
+- Same SFX library (`assets/sfx/`). Pick by category, not by habit.
+- Keep the mix, defect checklist and quality checks. The shot-length rule (2–3 s per shot) applies to DOUBLING and WORLD. A REEL can have shorter shots (min 1 s), but each shot still shows one clear thing.
+- Set the length in `timeline.js` (`DUR`, `FRAMES`) and in `.videohub/project.json` (`render.env.DUR`, `live.dur`) for each episode. Put the chosen format at the top of `episode-N/BRIEF.md`.
+
 ### Format
 - Vertical 9:16, 1080×1920, 30 fps, H.264 High + AAC-LC stereo 48 kHz.
-- The story runs about 90 s; the ending payoff and the **share outro** may take it to about 100 s (episode 3 is 100.0 s). Set the length in `timeline.js` (`DUR`, `FRAMES`) and in `.videohub/project.json` (`render.env.DUR`, `live.dur`).
+- Length follows the episode format above. DOUBLING: about 90 s; the ending payoff and the **share outro** may take it to about 100 s (episode 3 is 100.0 s). REEL: 15–17 s. WORLD: about 120 s.
 - Deliver two files: the 1080p render from VideoHub and a 720p copy (under 30 MB, so it can be sent to the user's phone).
 
-### Story shape — keep the escalation, VARY THE CONTENT EVERY EPISODE
-The seven-step scale is fixed. What happens inside each step must be new for every topic.
+### Story shape — DOUBLING format: keep the escalation, VARY THE CONTENT EVERY EPISODE
+The seven-step scale is fixed for DOUBLING episodes only. REEL and WORLD episodes use the structure in "Episode formats". What happens inside each step must be new for every topic.
 
 1. **Home** (0–9.6 s): the premise discovered in front of the family. The family may stay, but find a new room or situation each time (kitchen dinner, bathroom, garage, garden BBQ, car ride, bedroom…).
 2. **The home or street can't contain it** (9.6–20.8 s): he leaves.
@@ -53,7 +78,7 @@ The seven-step scale is fixed. What happens inside each step must be new for eve
 6. **Planet scale** (57.6–75.2 s): space and Earth, plus a world montage. Change the montage device each time. Used so far: news-anchor grid. Other options: phone video calls, billboards, a global group chat, a stadium jumbotron, social-media feed tiles.
 7. **Silence, then the ENDING slot, then a cosmic pull-back** (75.2–90 s): everyone reacts, he comes home, delivers the catchphrase deadpan.
 8. **Payoff and title** (about 88–97 s): the last holdout turns (ep3: Gerald finally loves him), then the title card with the final value.
-9. **Share outro (EVERY new episode, last 3–4 s):** the narrator says **"Share this with someone who ____"**, with the blank tied to this episode's topic (e.g. money: "…someone who spends it all in two seconds"; love: "…someone who needs twice as many people to love them"). Same Piper narrator and caption style (blank words in yellow), over the title card or a final shot of the hero looking into the camera. Music stays under it; no SFX. Put it on the speech timeline table like any other line.
+9. **Share outro (EVERY new episode, EVERY format, last 2–4 s): it MUST be spoken by the narrator voice, never text only.** A silent "send this" end card is not allowed (ep4 v1 had one; the user asked for it to be voiced). The narrator says **"Share this with someone who ____"**, with the blank tied to this episode's topic (e.g. money: "…someone who spends it all in two seconds"; love: "…someone who needs twice as many people to love them"). Same Piper narrator and caption style (blank words in yellow), over the title card or a final shot of the hero looking into the camera. Music stays under it; no SFX. Put it on the speech timeline table like any other line.
 
 Rules:
 - Max **2 recurring tropes** per episode (reporter, government/bank room, fisherman, astronaut, house exterior, a crowd field of the cast; Gerald does not count). Any trope that does return must look and play differently: a new angle, a new gag, a new set.
@@ -61,7 +86,28 @@ Rules:
 
 ### The hook (first 2–3 s decide if people keep watching)
 - Open on the hero, already close: a short white flash, a snap zoom onto him (ease-out), a topic-matched burst (ep3: heart confetti at 0.1 s and again on the first doubling) and small rising decorations behind him (never in front of his face). The counter and the premise line are on screen from frame 1.
-- No SFX in the first 2.4 s; the music eases in over 2 s. The first sound the viewer hears is the narrator's premise.
+- No SFX in the first 2.4 s; the music eases in over 2 s. The first sound the viewer hears is the narrator's premise. (DOUBLING only. REEL: see "Retention and hooks": the music starts at full volume on frame 1.)
+
+### Retention and hooks (learned from real TikTok analytics, episode 4)
+Episode 4 v3 ("Mama I'm a criminal", 24.5 s REEL) posted with: **average watched 30%, most viewers left at 0:01 (80% left after 1 s), about half gone by 6 s.** The gag itself was fine; the opening lost them. What killed it, and the rule that replaces it:
+
+| What died | Why | Do this instead |
+|---|---|---|
+| Calm wide establishing shot at 0:00, small faces, nothing moving | The feed decides in under 1 s; a still-looking frame reads as "boring" | **Frame 1 already has action and a face close to the lens.** Best: a **flash-forward** of the payoff (ep4 v4: the baby dropping into the hole with sand exploding, 0–1.3 s), then a quick **rewind** (0.4 s, story runs backwards, scanlines + ◀◀ badge, reversed whoosh) into the start of the story |
+| Music faded in over 1.5 s | The first second was nearly silent; silence = swipe | **Music at full volume from frame 1**, starting on a loud, recognisable part of the track and on a beat (ep4: song from 10.43 s). Only a 30 ms de-click fade |
+| Title caption faded in late, small, against the trees | Viewers read the premise in frame 1 or never | **Caption on screen from frame 1, no fade-in**, big (≈86 px bold, thick black outline), in the top band, never over a face; move the camera target so faces sit below it |
+| The payoff came at 15 s of 24.5 s | Too long to wait for one gag | **REEL length 15–17 s; the payoff by ~60% of the runtime;** cut every middle beat to 1.8 s (4 beats) |
+| A 2 s silent "send this" end card | People swipe the moment a card appears, and it breaks the loop | **No end card.** The share line is **spoken** (Piper narrator) over the final action shot, captions word by word |
+| The ending did not lead anywhere | No loop = no rewatches | **End on a moment that loops** into the hook (ep4: the cat copying the hands-up, then the video restarts on the fall) |
+
+Checklist before render (REEL, and the first 3 s of every format):
+1. Pause on frame 0: is something happening, is a face big, is the caption readable? If not, fix it.
+2. Is the music loud at 0:00? (measure the first second: it must not be quieter than the rest)
+3. Can a viewer tell what the video is about in 1 s without sound? (caption + action)
+4. Does the payoff arrive before ~60% of the runtime, and is it teased in the first second?
+5. Is every shot under ~2 s in a REEL, and does each one change something?
+6. Is the share line voiced, with no end card, and does the last frame loop into the first?
+7. Build the edit as an **edit decision list** (film time → story time, see `episode-4/src/main.js` `EDL`): the story stays a pure function of story time, so re-ordering, flash-forwards and rewinds are one-line changes.
 
 ### Show the effect on people (user feedback on episode 3: "it looks like nothing's happening")
 - Every doubling must be visible on people: they change the moment they see him (ep3: their eyes become hearts, `face({ hearts })`), then they **go to him**: follow him, chase him, rush him when his act ends. Bystanders who just stand and cheer read as "nothing happening".
@@ -75,7 +121,7 @@ Rules:
 
 ### Pacing — READ THIS FIRST (user feedback on episode 3: "way too fast, confusing")
 Episode 3 v1 cut every ~0.7 s and the user rejected it: confusing, text overlapping, glitchy backgrounds, unreadable sets. **Episodes 1 and 2 held each shot about 2–3 seconds, and that is the target.**
-- **Average shot length 2.0–3.0 s; about 30–45 shots in 90 s.** Every cut on the 0.4 s grid. **No shot shorter than 1.6 s**, except at most one 3–4 shot montage per episode (min 0.8 s each). No more than 3 shots per scene beat unless the shots are long.
+- **Average shot length 2.0–3.0 s; about 30–45 shots in 90 s (DOUBLING).** WORLD: about 50–60 shots in 2 min. REEL: 5–12 shots in 10–20 s, min 1 s each. Every cut on the 0.4 s grid. **No shot shorter than 1.6 s** in DOUBLING and WORLD, except at most one 3–4 shot montage per episode (min 0.8 s each). No more than 3 shots per scene beat unless the shots are long.
 - **One idea per shot.** A shot shows one gag landing clearly: establish (wide, ≥ 2 s), then one medium or close-up, then the reaction. Let each gag play out before cutting. A reader must be able to say what happened in each shot.
 - An insert that must be read (board, sign, result) stays on screen at least 1.5 s. Key props first appear in a wide shot.
 - Cameras move slowly (push-ins, slow pans), never whip around. No fast zooms except the single punch-zoom before a voiced line.
@@ -96,7 +142,7 @@ Episode 3 v1 cut every ~0.7 s and the user rejected it: confusing, text overlapp
 - The hero is identical everywhere: red hoodie, blue shorts, white sneakers, short curly brown hair, yellow headband.
 - The look matches the attached reference.
 
-### The counter
+### The counter (DOUBLING format only)
 - `value(t) = START × 2^floor(t / INTERVAL)`, exact (BigInt), with thousands separators and the right decimals or units.
 - It changes on schedule for the full 90 s and never goes down.
 - **HUD:**
@@ -137,7 +183,7 @@ Episode 3 v1 cut every ~0.7 s and the user rejected it: confusing, text overlapp
 - **User-supplied clips** (e.g. a green-screen meme): store the source in `episode-N/media/`, key it with ffmpeg `chromakey` + `despill` into 30 fps PNG frames (`audio/make_clip.py`), and play it on a camera-facing card in the 3D set, one frame per video frame (deterministic). While it plays: only the clip's own sound and the music (ducked about 9 dB while the clip has sound), no narration, no SFX.
 
 ### Mix (approved levels)
-- **SFX stay well under everything** (user: "SFX way too loud"). No whoosh on every cut; at most a barely audible air on a cut. The SFX bus sits about 8 dB below the old episode-3 mix.
+- **SFX stay well under everything** (user: "SFX way too loud"). Pick from `assets/sfx/`: `popup/` for pops and captions, `reveal/` for hits and reveals, `suspense/` for risers before a big moment, `transition/` for cuts and camera flashes, `zoom/` for whooshes on snap zooms. No whoosh on every cut; at most a barely audible air on a cut. The SFX bus sits about 8 dB below the old episode-3 mix.
 - **Narrator voice = Piper `en_US-ryan-high`, as in episodes 1-2** (user: "perfect"). Natural speed; fit long lines with Piper's `--length-scale`, never time-stretch (that made episode 3 v1 sound robotic). De-ess the S sounds.
 
 | Item | Level |
