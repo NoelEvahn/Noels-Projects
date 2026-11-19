@@ -6,7 +6,7 @@ import { makeAnimal, APOSES, AFACES, ANIMALS } from '../../../assets/library/ani
 import * as HOLD from '../../../assets/library/props/holdables.js';
 import { lawnChair } from '../../../assets/library/props/home.js';
 import { burger } from '../../../assets/library/props/home.js';
-import { makeSparkles } from '../../../assets/library/fx/hearts.js';
+import { makeSparkles, makeConfetti, makeHeartField } from '../../../assets/library/fx/hearts.js';
 
 const STAGE = { sky: ['#7fd0ff', '#fff6dc'], ground: null, fog: ['#dff2ff', 30, 80], shadow: { extent: 12 }, keyPos: [5, 9, 7] };
 
@@ -44,7 +44,10 @@ export default {
     const aura = makeLoveAura(1.2); scene.add(aura); S.aura = aura;
     // flying burger (dad's voiced moment)
     const fb = burger(); fb.scale.setScalar(2.2); scene.add(fb); S.fb = fb;
-    // sparkles near hero
+    // HOOK (first seconds): snap zoom onto the hero, heart confetti bursts on 0.1 and on the first doubling (2.0), hearts rising around him, sparkles
+    S.hookConf = [0.1, 2.0].map((t0, i) => { const c = makeConfetti(170, { colors: [0xff3f7f, 0xff8fb8, 0xffd23f, 0xffffff, 0xff5c9a], origin: [0, 1.4, 0], spread: [2.6, 5.5, 2.6], size: 0.14, seed: 21 + i }); scene.add(c); return { c, t0 }; });
+    S.hookHearts = makeHeartField(26, { colors: [0xff3f7f, 0xff8fb8, 0xff5c9a], emissive: 0.55 }); scene.add(S.hookHearts); const hr = rng(41); S.hookH = Array.from({ length: 26 }, () => ({ a: hr() * 6.283, r: hr.range(0.7, 1.5), t0: hr.range(0.0, 2.6), sp: hr.range(0.5, 0.9), s: hr.range(0.12, 0.22) }));
+    S.hookSpark = makeSparkles(70, { area: [1.6, 2.4, 1.6], color: 0xfff0b0, size: 0.1, seed: 9 }); scene.add(S.hookSpark);
     // shots (camera plan, 24 units of 0.4 s)
     const H = [0, 1.3, 0.8], GR = [-4.1, 1.0, 1.0], KID = [2.0, 0.8, 2.7], DAD = [-2.3, 1.45, -2.4], MUM = [3.0, 1.0, -0.4];
     S.shots = [
@@ -67,6 +70,7 @@ export default {
     // slower edit: ~2 s shots, each holding the camera of the gag / voiced line it covers
     S.shots = regroup(S.shots, [[0, 2.0, 1.2], [2.0, 4.0, 2.0], [4.0, 5.6, 4.8], [5.6, 7.2, 5.6], [7.2, 8.4, 7.2], [8.4, 9.6, 8.8]]);
     S.shots[2] = { ...S.shots[2], a: cam([-5.0, 1.75, 1.7], [-7.5, 1.32, 1.6], 34), b: cam([-5.3, 1.72, 1.65], [-7.5, 1.34, 1.6], 32) };   // Gerald on the fence: camera just above the rail so he is clearly sitting on it
+    S.shots[0] = { ...S.shots[0], a: orbit([0.3, 1.35, 0.7], 12, 5.4, 0.7, 42), b: orbit([0.3, 1.45, 0.7], 16, 3.3, 0.3, 36), ease: 'out', close: 1 };   // hook: snap zoom onto him
     S.shots[1].close = S.shots[5].close = 1.2;   // the kid is small: keep a little more room around him
     return S;
   },
@@ -107,7 +111,11 @@ export default {
     lovers.update(t, c.pos, c);
     const n = Math.max(1, lovers.count(t)); S.aura.position.set(hp[0], 0.02, hp[2]); S.aura.setR(0.9 + 0.35 * Math.log2(n), 0.9);
     S.gd.update(t);
-    // seed grandma's heart at t=0
-    return { cam: c, keyFocus: c.target };
+    // hook FX follow the hero
+    for (const h of S.hookConf) { h.c.position.set(hp[0], 0, hp[2]); h.c.update(t - h.t0); h.c.visible = t >= h.t0 && t < h.t0 + 2.6; }
+    S.hookHearts.visible = t < 4.4; S.hookHearts.update((i) => { const h = S.hookH[i], a = t - h.t0; if (a < 0 || a > 1.8) return null; const k = easeOutBack(clamp(a / 0.3)) * (1 - clamp((a - 1.4) / 0.4)); return { x: hp[0] + Math.cos(h.a) * h.r, y: 0.5 + a * h.sp * 1.4, z: hp[2] + Math.sin(h.a) * h.r, s: h.s * k, ry: Math.atan2(c.pos[0] - hp[0], c.pos[2] - hp[2]) + Math.sin(t * 3 + i) * 0.3 }; });
+    S.hookSpark.position.set(hp[0], 0.2, hp[2]); S.hookSpark.visible = t < 4.4; S.hookSpark.update?.(t);
+    const r0 = { cam: c, keyFocus: c.target }; if (t < 0.18) r0.flash = 0.7 * (1 - t / 0.18); else if (t >= 2.0 && t < 2.15) r0.flash = 0.35 * (1 - (t - 2.0) / 0.15);
+    return r0;
   },
 };

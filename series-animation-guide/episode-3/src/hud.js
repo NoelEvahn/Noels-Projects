@@ -49,7 +49,7 @@ export function drawGeraldChip(g, y = 470, t = 0) {
   // little cat head icon
   const cx = x + 40, cy = y + h / 2 + 2; g.fillStyle = '#f08a2e'; g.beginPath(); g.arc(cx, cy, 17, 0, 7); g.fill(); g.beginPath(); g.moveTo(cx - 16, cy - 6); g.lineTo(cx - 12, cy - 24); g.lineTo(cx - 3, cy - 14); g.fill(); g.beginPath(); g.moveTo(cx + 16, cy - 6); g.lineTo(cx + 12, cy - 24); g.lineTo(cx + 3, cy - 14); g.fill();
   g.fillStyle = '#c4e05a'; for (const s of [-1, 1]) { g.beginPath(); g.ellipse(cx + s * 7, cy - 1, 4.5, 4, 0, 0, 7); g.fill(); } g.fillStyle = '#f08a2e'; g.fillRect(cx - 12, cy - 6, 24, 3.5);   // half-lids
-  g.textAlign = 'left'; g.textBaseline = 'middle'; g.font = '800 24px Inter, sans-serif'; g.fillStyle = '#fff'; g.fillText('GERALD', x + 72, y + h / 2 + 1); g.fillStyle = '#ffb870'; g.fillText('· LOVES YOU:', x + 200, y + h / 2 + 1); if (yes) { g.save(); g.translate(x + 470, y + h / 2 + 1); g.scale(pop, pop); g.fillStyle = '#ff5c9a'; g.textAlign = 'center'; g.fillText('YES ♥', 0, 0); g.restore(); } else { g.fillStyle = '#ff5a5a'; g.fillText('NO', x + 440, y + h / 2 + 1); }
+  g.textAlign = 'left'; g.textBaseline = 'middle'; g.font = '800 24px Inter, sans-serif'; g.fillStyle = '#fff'; g.fillText('GERALD', x + 72, y + h / 2 + 1); g.fillStyle = '#ffb870'; g.fillText('· LOVES YOU:', x + 200, y + h / 2 + 1); if (yes) { g.save(); g.translate(x + 470, y + h / 2 + 1); g.scale(pop, pop); g.fillStyle = '#ff5c9a'; g.textAlign = 'center'; g.fillText('YES ♥', 0, 0); g.restore(); } else { g.fillStyle = '#ff5a5a'; g.fillText('NOT YET', x + 410, y + h / 2 + 1); }
   g.restore();
 }
 
