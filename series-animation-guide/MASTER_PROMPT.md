@@ -114,7 +114,7 @@ Episode 3 v1 cut every ~0.7 s and the user rejected it: confusing, text overlapp
 - Give each speaker a different delivery: excited, disbelief, confused, deadpan, broadcast or radio, small group, big crowd, whole-world crowd.
 - **About 14 voiced lines.** Every other reaction is silent open-mouth shock with no caption.
 - Each voiced line gets a punch-zoom, mouth movement synced to the audio, and a big yellow caption.
-- **"La peace" episodes:** every character who says it does the OK hand sign beside the face and a mewing face (chin up, lips closed tight, low lids, sharp brows): `ch.pose(POSES.laPeace(t))` + `ch.face(FACES.mew)`. Keep the mouth closed except a small open on the syllables. Captions read "LA PEACE" / "LA PEACE!". The sample is 1.1 s (the first "la peace" of the source).
+- **"La peace" episodes:** every character who says it does the OK hand sign beside the face and a **very exaggerated mewing face** like the mewing-cat meme (huge square jaw and chin, deep creases from nose to chin, lips pushed out, chin up, half-lidded smug eyes): `ch.pose(POSES.laPeace(t))` + `ch.face(FACES.mew)`. Gerald mews too when the episode calls for it: `gerald.face(AFACES.mew)` (fat jowls, big double chin, creases, pursed pink lips). Keep the mouth closed except a small open on the syllables. Captions read "LA PEACE" / "LA PEACE!". The sample is 1.1 s (the first "la peace" of the source).
 
 ### Gerald — the recurring cat (cast, not a trope)
 - Gerald (`ANIMALS.gerald`, orange tabby, half-lidded eyes) appears in **every scene** of every episode, shown in a wide/establishing shot first, doing something unbothered that suits the location. He is never counted, never impressed, never speaks or meows (no audio from him).

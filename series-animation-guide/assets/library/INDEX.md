@@ -102,6 +102,6 @@ Heart eyes: people `face({ hearts: 0..1 })` (or `FACES.love` / `FACES.lovestruck
 
 ## Gestures, clips, catchphrase SFX (2026-11-19)
 - Hands are balls (series look) but swap to fingers for finger gestures: `hR: 'ok' | 'point' | 'peace'` (gesture hands grow 1.6x so the sign reads). `'ok'` is a modelled OK sign (thumb-index ring + three fingers). Wrist twist: pose keys `wL` / `wR`.
-- **La peace:** `POSES.laPeace(t)` (OK hand up beside the face, chin up) + `FACES.mew` (mewing: tight closed lips, low lids, sharp brows). Screenshot: `detail_la_peace`.
+- **La peace:** `POSES.laPeace(t)` (OK hand up beside the face, chin up) + `FACES.mew` (exaggerated mewing: huge square jaw and chin, nose-to-chin creases, lips pushed out, half lids; `face({ mew: 0..1 })` blends it in). Gerald: `AFACES.mew` / `face({ mew })` (jowls, double chin, creases, pursed lips). Screenshots: `detail_la_peace`, `detail_mew_close`, `detail_ok_hand`, `detail_gerald_mew`.
 - Catchphrase samples live one level up in `assets/`: `bomboclat.mp3`, `la_peace.mp3` (1.1 s, first phrase only).
 - **Clips:** `clips/clap_cat.webm` (clapping black cat, green screen removed, VP9 with alpha + sound; poster `clips/clap_cat_poster.png`; it holds a paw out at about 6.0 s). `python tools/clip_frames.py clips/clap_cat.webm <episode>/build/clip <episode>/build/audio/clip.wav` makes the frames, then `await clipCard(dirURL, { height: 1.65, feet: 0.184 })` from `fx/clip.js` and call `card.show(t - t0, camera.position)` every frame. The script's header shows how to key a new green-screen clip.
