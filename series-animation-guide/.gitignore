@@ -1,2 +1,4 @@
 render/
 .videohub/
+# draft renders and phone copies at the series root (the final cut lives in episode-N/episode-N.mp4)
+/episode-*_v*.mp4

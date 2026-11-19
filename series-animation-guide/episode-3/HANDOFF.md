@@ -2,7 +2,12 @@
 
 Everything is on `main` of the GitHub repository. Work directly on `main` (repo `CLAUDE.md`): only content for `series-animation-guide/` may be added; never name anything after the repository.
 
-## State
+## FINAL (2026-11-19): episode 3 is DONE
+* **`episode-3.mp4` is the final cut (v5)**: 100.0 s, 1080x1920, re-encoded to 83 MB to fit GitHub. The user approved it ("perfect"). Older notes below are history.
+* Rebuild: `python audio/make_clip.py` (keyed clip frames), `python audio/make_audio.py` (mix), then VideoHub `hub_render` full with `DUR=100` (project root = `series-animation-guide`, `render.env.CHROME` set to Chrome).
+* Next episode: start from `../MASTER_PROMPT.md` (share outro, hook, catchphrase can be bomboclat or la peace, la peace = OK hand + mewing face, episode 1-2 look, 1080p + 720p delivery) and the library `INDEX.md`.
+
+## State (history)
 * **Asset library** done and committed: `../assets/library/` (read `INDEX.md` first, then `cat/CAT_BIBLE.md`). Characters with fingered hands, 3D hair, Gerald the cat, props, sets, FX, screenshots in `screenshots/` (contact sheets in `screenshots/sheets/`).
 * **Master prompt v3** updated (library-first step, Gerald rules, CAT GAG slot, and a new **Pacing** section after the user rejected v1).
 * **Episode 3 v1** (`episode-3.mp4`) was delivered and **rejected by the user**: "way too fast, confusing, text overlapped, glitching backgrounds, the theatre seats had no proper seating". Cause: I followed the old "110+ shots, 0.75 s average" rule. The target is **2–3 s per shot, ~30–45 shots** (episodes 1–2 pace).
