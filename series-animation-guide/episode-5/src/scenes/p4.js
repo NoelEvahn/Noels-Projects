@@ -3,6 +3,7 @@
 import { THREE, makeHero, makePerson, makeGerald, antennae, P, F, POSES, FACES, APOSES, AFACES, clamp, smooth, lerp, cam, mixCam, seg, rng, mat, glow, add, sph, laPeace, speedLines, starBackground, glowPoints, hash } from '../common.js';
 import { makeStage } from '../../../assets/library/stage.js';
 import { voyager1, icyRock, comet, telescope, tinyPlanet } from '../../../assets/library/props/space.js';
+import { fireShell, shatterPlanet } from '../../../assets/library/fx/flight.js';
 
 export default {
   async build(ctx) {
@@ -26,12 +27,18 @@ export default {
     const alien = makePerson(scene, 'alien'); antennae(alien); planet.add(alien.root);
     const scope = telescope(); planet.add(scope);
     const lines = speedLines(scene, { n: 120, len: 3.0, R: 3.4 });
-    return { stage, scene, stars, hero, cat, s17, s18, s19, s20, s21, voy, voySmall, rocks, com, sunStar, ring, prox, planet, alien, scope, lines };
+    // v3 spike: a red rocky planet he smashes through in shot 22
+    const s22 = G();   // v4 (user): a chain of planets he smashes through, one after another
+    const CHAIN = [[0xb8442a, 0x8a3020, 0xd8683a, 0x6a2418], [0x5a7ad8, 0x3a52a8, 0x8aa8f0, 0x2a3a78], [0x8ac04a, 0x5a8a2a, 0xc0e07a, 0x3a5a1a], [0xd85ab0, 0x9a3a80, 0xf0a0d8, 0x6a2a5a], [0xe0a040, 0xa86a20, 0xf8d080, 0x7a4a10]]
+      .map((bands, i) => { const p = shatterPlanet(6.5, { bands, lon: 10, lat: 7, seed: 33 + i, core: 0xff7020, hit: [0, 1, 0] }); p.position.set(Math.sin(i * 2.1) * 1.2, 12 + i * 20, Math.cos(i * 1.7) * 1.2); s22.add(p); return p; });
+    const rock = CHAIN[0];
+    const fire = fireShell(); scene.add(fire);
+    return { s22, rock, CHAIN, fire, stage, scene, stars, hero, cat, s17, s18, s19, s20, s21, voy, voySmall, rocks, com, sunStar, ring, prox, planet, alien, scope, lines };
   },
   frame(t, S, ctx) {
     const { hero, cat } = S, out = { voiceY: {}, roastY: 1580 };
     const sh = t < 41.2 ? 17 : t < 43.6 ? 18 : t < 45.6 ? 19 : t < 48.0 ? 20 : t < 50.4 ? 21 : 22;
-    for (const k of [17, 18, 19, 20, 21]) S['s' + k].visible = sh === k;
+    for (const k of [17, 18, 19, 20, 21, 22]) S['s' + k].visible = sh === k;
     cat.root.visible = false; hero.root.scale.setScalar(1); hero.root.rotation.set(0, 0.4, 0);
     let c, hp, pose = P.rise(t), face = F.fly, lineK = 0.18, lineSp = 1.2;
     if (sh === 17) {
@@ -40,12 +47,14 @@ export default {
       S.voy.updateMatrixWorld(true); const rim = S.voy.userData.dish.localToWorld(new THREE.Vector3(-1.5, 0.45, -0.6));
       cat.root.visible = true; cat.root.position.copy(rim); cat.root.rotation.set(0, 0.5, 0); cat.root.scale.setScalar(1.25); cat.pose(APOSES.sit(t)); cat.face(AFACES.judging);
       hp = [1.2, lerp(0.2, 3.0, u), -1.4];
-      c = mixCam(cam([1.6, 1.6, 8.6], [0.2, 0.3, 0], 46), cam([1.5, 1.7, 8.0], [0.3, 0.6, 0], 46), smooth(u));
+      { const az = lerp(-25, 25, smooth(u)) * Math.PI / 180; c = cam([0.3 + Math.sin(az) * 7.6, -2.8 + 1.2 * u, Math.cos(az) * 7.6], [0.4, 1.0, -0.4], 48); }   // v3 (note #15): low angle, arcing
     } else if (sh === 18) {
       // face close, Voyager small below (n3 starts 41.6)
       const u = seg(t, 41.2, 43.6); S.voySmall.position.set(-0.6, lerp(-7, -10, u), -3); S.voySmall.rotation.set(-1.0, t * 0.3, 0); S.voySmall.look(t, [0, 1]);
       hp = [0, 0, 0]; pose = P.streak(t); face = { ...F.fly, smile: 0.7, lid: 0.2 };
-      c = mixCam(cam([1.0, 3.2, 1.9], [0, -2.4, -1.8], 50), cam([0.9, 3.0, 1.7], [0, -2.6, -1.8], 50), smooth(u)); lineK = 0.4;
+      // v3: drone fly-under: from his face, the camera swings down past his feet to look back up at him with Voyager tiny below
+      const az = lerp(25, 160, smooth(u)) * Math.PI / 180, el = lerp(1.9, -2.6, smooth(u)), d = lerp(2.2, 3.4, u);
+      c = cam([Math.sin(az) * d, 1.0 + el, Math.cos(az) * d], [0, lerp(1.5, 0.6, u), 0], lerp(48, 60, u)); lineK = 0.4;
     } else if (sh === 19) {
       // Oort cloud: rocks bounce off him (deterministic: each hits once at its own time), Gerald loafs on a comet
       const u = seg(t, 43.6, 45.6); hp = [0, lerp(-0.6, 0.6, u), 0];
@@ -53,12 +62,12 @@ export default {
       S.com.position.set(-2.2, lerp(2.5, -1.0, u), -5.0); S.com.rotation.set(0, 0.5, -0.5);
       cat.root.visible = true; S.com.updateMatrixWorld(true); const top = S.com.localToWorld(new THREE.Vector3(0, 0.7, 0)); cat.root.position.copy(top); cat.root.rotation.set(0, 0.4, 0); cat.root.scale.setScalar(1.3); cat.pose(APOSES.loaf(t)); cat.face(AFACES.sleepy);
       pose = { ...P.rise(t), hx: -0.1 + Math.sin(t * 9) * 0.05 }; face = { ...F.fly, open: 0.2 };
-      c = mixCam(cam([1.6, 2.2, 7.0], [-0.7, 0.9, -1.5], 46), cam([1.4, 2.0, 6.4], [-0.7, 0.9, -1.5], 46), smooth(u));
+      c = mixCam(cam([-2.2, -2.6, -3.4], [0.0, 2.2, 0.4], 58), cam([-1.0, -1.8, -4.2], [0.0, 2.4, 0.4], 56), smooth(u));   // v3 (note #15): chase from below-behind
     } else if (sh === 20) {
       // the Sun is now one star among many (marked)
       const u = seg(t, 45.6, 48.0); hp = [-0.3, lerp(-0.6, 0.2, u), 0.6]; S.ring.lookAt(0, 0, 10); S.ring.scale.setScalar(1 + Math.sin(t * 5) * 0.08);
       pose = { ...P.rise(t), hy: -0.8, twist: -0.3 }; face = { ...FACES.question, open: 0.3 };
-      c = cam([0.9, 2.4, 4.8], [-0.6, -1.2, -6], 50);
+      c = mixCam(cam([0.6, 1.7, 3.4], [-0.3, 1.4, 0.6], 46), cam([1.4, 3.0, 6.0], [-0.6, -1.2, -6], 50), smooth(seg(t, 45.6, 46.8)));   // v3: starts on his face, pulls back to the reveal
       out.label = { text: 'THE SUN', pos: S.sunStar.position.clone().add(new THREE.Vector3(0, -2.2, 0)) };
     } else if (sh === 21) {
       // Proxima b-ish tiny planet: alien at a telescope, la peace 48.4
@@ -67,12 +76,22 @@ export default {
       if (t >= 48.1 && t < 49.6) laPeace(S.alien, t, 'alien', ctx, { hx: -0.35 }); else { S.alien.pose({ ...POSES.point(t), aRf: 2.2, hx: -0.35 }); S.alien.face({ ...FACES.shock, open: 0.6, eye: 1.3 }); }
       S.scope.position.set(-0.7, 2.38, 0.1); S.scope.rotation.set(0, 0.6, 0);
       hp = [1.3, lerp(-0.2, 3.4, u), -1.8];
-      c = mixCam(cam([1.2, 1.4, 5.4], [0.2, 0.9, -1], 44), cam([1.1, 1.5, 5.0], [0.2, 1.0, -1], 44), smooth(u)); out.voiceY.alien = 1560;
+      c = mixCam(cam([3.6, 4.2, 4.0], [0.4, 1.0, -0.8], 44), cam([2.6, 3.4, 4.8], [0.4, 1.4, -0.8], 44), smooth(u)); out.voiceY.alien = 1560;   // v3 (note #15): high 3/4, drifting
     } else {
       // star streaks, face close
-      hp = [0, 0, 0]; pose = P.streak(t); face = { ...F.fly, smile: 0.8, wide: 1.2, brow: 0.6 };
-      c = mixCam(cam([0.9, 1.6, 3.9], [0, 1.55, 0], 44), cam([0.8, 1.55, 3.5], [0, 1.55, 0], 44), smooth(seg(t, 50.4, 53.2))); lineK = 0.85; lineSp = 3.5;
+      // v3 spike: POV warp (star streaks rushing at the lens), then he smashes through a red planet at 51.8 and the camera whips out to watch it burst
+      // POV warp 50.4-51.0, then he punches through 5 planets in a line (one every ~0.33 s), then the camera pulls far back over the debris field
+      const v = 60, y0 = -6, yAt = (tt) => y0 + Math.max(0, tt - 50.4) * v * (tt < 51.0 ? 0.35 : 1) - (tt >= 51.0 ? 0.6 * 0.65 * v : 0);
+      hp = [0, yAt(t), 0]; pose = P.rise(t); face = { ...F.fly, smile: 0.8, wide: 1.2, brow: 0.6 };
+      let flash = 0;
+      S.CHAIN.forEach((pl) => { const R = pl.userData.R, hitY = pl.position.y - R - 1.75; let th = 50.4; while (yAt(th) < hitY && th < 60) th += 1 / 120; const a = t - th; pl.set(a); pl.rotation.y = t * 0.2; if (a >= 0 && a < 0.25) flash = Math.max(flash, 0.6 * (1 - a / 0.25)); });
+      if (flash) { out.flash = flash; out.flashColor = '255,170,110'; }
+      if (t < 51.0) { const sh = Math.sin(t * 53) * 0.015; c = cam([hp[0] + 0.15 + sh, hp[1] + 1.35, hp[2] - 0.75], [0, hp[1] + 30, 5], 84, sh * 2); lineK = 1.0; lineSp = 6; }
+      else if (t < 52.4) { const u = seg(t, 51.0, 52.4); hero.root.scale.setScalar(1.8); c = cam([12 + 4 * u, hp[1] - 10, 22], [0, hp[1] + 4, 0], 60); lineK = 0.5; lineSp = 4; }
+      else { const u = smooth(seg(t, 52.4, 53.2)); hero.root.scale.setScalar(1.8); c = cam([lerp(16, 70, u), lerp(hp[1] - 10, 60, u), lerp(22, 150, u)], [0, lerp(hp[1] + 4, 55, u), 0], 60); out.far = 4000; lineK = 0.2; }   // the mess he made
+      S.fire.set(0.8, t, hp, 1.75); S.fire.scale.setScalar(hero.root.scale.y);
     }
+    if (sh !== 22) S.fire.set(0, t, [0, 0, 0]);
     hero.root.position.set(...hp); hero.pose(pose); hero.face(face);
     S.lines.set(t, hp, lineSp, 'y', lineK);
     out.cam = c; out.keyFocus = hp; out.keyDist = 14;

@@ -57,10 +57,11 @@ Every format uses this library for its sound effects.
 3. Plan the episode yourself, then write a detailed brief (`episode-N/BRIEF.md`): the chosen hook format (HOOKS_AND_FORMATS), beat grid, exact counter maths, a shot list of about 30–45 shots (2–3 s each, see Pacing in LOOK_AND_VIDEO), the voice table, the narration, the Gerald plan, a defect checklist, and the report format. Put every spoken event (story narration, Gerald roasts, catchphrase moments) on one timeline table on the 0.4 s grid first and check that nothing overlaps.
 4. **The model running this session builds the whole episode itself.** Do not spawn subagents or advisors, and do not hand work to another model. Build the scene code, the audio and the render yourself. Provide partial re-render tools (frame ranges, preview scale) so fixes stay cheap.
 5. **Create the episode's analytics page** (`docs/ANALYTICS.md`): copy `assets/analytics/template.data.js` to `episode-N/analytics.data.js`, fill in title, format and length, and copy `assets/analytics/episode.template.html` to `episode-N/analytics.html`. Add the episode to `analytics/index.html`'s list (one script tag). Do this for every new episode, in every format.
-6. When the build finishes, check the format, the counter and the contact sheets yourself.
-7. Then review your own work in a separate pass: go through the shot list and the Defect checklist item by item, and fix what fails. No second model reviews it.
-8. Send the user v1 and your review notes straight away. Then do one fix round yourself, check it again and send v2. Keep v1 as a backup.
-9. Start immediately. Ask questions only if a slot is missing.
+6. **Plan the dopamine spikes and the set dressing** (`docs/LOOK_AND_VIDEO.md` → "Engagement and set craft"): a spike every 4–6 s (POV with wind, the hero changing state, smashing through things, drone orbits/swoops, one-take camera moves, slow-motion close-ups with trails), furnished sets, real holes with thickness, no clipping, the hero staying where he was across angle changes.
+7. When the build finishes, check the format, the counter and the contact sheets yourself.
+8. Then review your own work in a separate pass: go through the shot list and the Defect checklist item by item, and fix what fails. No second model reviews it.
+9. Send the user v1 and your review notes straight away. Then do one fix round yourself, check it again and send v2. Keep v1 as a backup.
+10. Start immediately. Ask questions only if a slot is missing.
 
 ### Episode formats
 Not every episode is a doubling. The format sets the length, the structure and the on-screen device. The **characters, the hero, Gerald, the fonts (Anton for the big text, the caption style), the narrator and the SFX library stay the same in every format.** Only the video format changes.

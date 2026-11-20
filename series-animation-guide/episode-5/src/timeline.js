@@ -84,7 +84,7 @@ export const ROASTS = [
   { id: 'r4', t: 27.6, text: 'Gerald stayed on the Moon.', key: ['STAYED'] },
   { id: 'r5', t: 36.8, text: 'Gerald had been to Saturn.', key: ['SATURN'] },
   { id: 'r6', t: 58.4, text: 'Gerald had dressed for the occasion.', key: ['DRESSED'] },
-  { id: 'r7', t: 89.6, text: 'Gerald pushed the universe off the table.', key: ['UNIVERSE'] },
+  // r7 (Gerald pushes the universe off the table) removed: user note #18, 2026-11-20
 ];
 // ---- the 14 "la peace" lines
 export const VOICES = [

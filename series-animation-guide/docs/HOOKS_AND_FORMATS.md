@@ -28,6 +28,9 @@ Checklist before render (REEL, and the first 3 s of every format):
 7. Build the edit as an **edit decision list** (film time → story time, see `episode-4/src/main.js` `EDL`): the story stays a pure function of story time, so re-ordering, flash-forwards and rewinds are one-line changes.
 
 
+## Keep them past the hook: spikes every few seconds (user feedback on episode 5)
+Ep5's hook worked, but the middle was the same rising shot over and over ("no feel for the viewer to continue"). After the hook, plan a **spike every 4–6 s**: a POV shot with wind sound, the hero changing state (fireball through the atmosphere), smashing through planets, a fast drone orbit or swoop, a slow-motion close-up with a fire trail. Vary angle and speed, not just the background, and prefer one continuous drone-style camera move over a string of static cuts. Details in `LOOK_AND_VIDEO.md` → "Engagement and set craft".
+
 ## Evidence: what the first three Instagram posts showed
 Source: the user's Instagram insights (see `episode-N/analytics.html`; numbers filled in by hand on 2026-11-20, later by the sync script).
 

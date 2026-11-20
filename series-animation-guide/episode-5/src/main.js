@@ -40,6 +40,7 @@ function draw(i) {
   // tick shake (small), on the counter beats only while the counter lives
   const age = TL.tickAge(t), tier = TL.TIERS[TL.lastTick(t)] ?? 0, amp = t < TL.BREAK && age < 0.25 && t > 0.1 ? (1 - age / 0.25) * (0.008 + tier * 0.008) * (r.shakeK ?? 1) : 0;
   const n = Math.floor(t * 30), sx = (noise(n * 1.3) - 0.5) * amp * 2, sy = (noise(n * 2.9) - 0.5) * amp * 2;
+  camera.far = r.far ?? 2000; camera.near = r.near ?? 0.05;   // per frame, so frames stay a pure function of t
   lookFrom(camera, [c.pos[0] + sx, c.pos[1] + sy, c.pos[2]], c.target, c.fov ?? 40, c.roll ?? 0);
   camera.updateMatrixWorld(true);
   if (r.keyFocus !== false && B.s.stage) aimKey(B.s.stage, new THREE.Vector3(...(r.keyFocus ?? c.target)), r.keyDist ?? 9);

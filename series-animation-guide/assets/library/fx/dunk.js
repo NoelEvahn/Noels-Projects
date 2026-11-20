@@ -84,7 +84,7 @@ export function hoop({ h = 3.05, seed = 5 } = {}) {
     const star = new THREE.Mesh(new THREE.OctahedronGeometry(0.06, 0), starM); star.visible = false; s.add(star);
     const trail = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.6, 6, 1, true), new THREE.MeshBasicMaterial({ color: 0xffd9a0, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false })); trail.visible = false; g.add(trail);
     const d = new THREE.Vector3(cx * 1.6 + r.range(-0.4, 0.4), cy * 1.4 + r.range(0.2, 1.4), r.range(0.8, 2.2)).normalize();
-    shards.push({ s, m, e, star, trail, home: new THREE.Vector3(cx, cy, 0), dir: d, sp: r.range(5, 11), spin: new THREE.Vector3(r.range(-9, 9), r.range(-9, 9), r.range(-9, 9)), delay: Math.hypot(cx, cy + 0.3) * 0.06 });
+    shards.push({ stay: j === rows - 1 && (i === 0 || i === cols - 1), s, m, e, star, trail, home: new THREE.Vector3(cx, cy, 0), dir: d, sp: r.range(5, 11), spin: new THREE.Vector3(r.range(-9, 9), r.range(-9, 9), r.range(-9, 9)), delay: Math.hypot(cx, cy + 0.3) * 0.06 });
   }
   // backboard frame (white-gold) + the square
   const frameM = new THREE.MeshBasicMaterial({ color: 0xfff0c8, toneMapped: false });
@@ -116,7 +116,7 @@ export function hoop({ h = 3.05, seed = 5 } = {}) {
     const wp = new THREE.Vector3();
     for (const s of shards) {
       const b = a - s.delay;
-      if (b <= 0) { s.s.position.copy(s.home); s.s.rotation.set(0, 0, 0); s.m.visible = s.e.visible = true; s.star.visible = false; s.trail.visible = false; continue; }
+      if (b <= 0 || s.stay) { s.s.position.copy(s.home); s.s.rotation.set(0, 0, 0); s.m.visible = s.e.visible = true; s.star.visible = false; s.trail.visible = false; continue; }
       const d = s.sp * (1 - Math.exp(-b * 1.2)) / 1.2;
       s.s.position.copy(s.home).addScaledVector(s.dir, d); s.s.position.y -= 0.6 * b * b;
       s.s.rotation.set(s.spin.x * b, s.spin.y * b, s.spin.z * b);
@@ -125,7 +125,7 @@ export function hoop({ h = 3.05, seed = 5 } = {}) {
       s.star.getWorldPosition(wp); s.trail.visible = b < 1.5; s.trail.position.copy(g.worldToLocal(wp.clone())).addScaledVector(s.dir, -0.3);
       s.trail.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), s.dir.clone().negate()); s.trail.material.opacity = 0.6 * (1 - clamp(b / 1.5));
     }
-    frame.visible = a < 0.03;
+    frame.visible = true;   // v3 (note #7): the frame survives the shatter, with jagged glass left in its top corners
   };
   g.update(-1);
   return g;

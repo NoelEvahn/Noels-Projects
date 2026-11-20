@@ -43,7 +43,7 @@ for k, tk in enumerate(range(2, 61, 2)):
     put(chime(f, 0.3 + 0.15 * tier, 0.45 + 0.15 * tier), st(tk)); put(thump(80, 0.2, 0.4 + 0.15 * tier), st(tk))
 # ---- home
 put(thump(60, 0.3, 0.5), st(1.15))                                       # hop landing
-put(crash(0.8, 0.7), st(2.25)); put(thump(55, 0.4, 0.7), st(2.25))         # head through the ceiling
+put(crash(0.8, 0.7), st(2.3)); put(thump(55, 0.4, 0.7), st(2.3))         # head through the ceiling
 put(crash(1.0, 0.8), st(4.15)); put(thump(50, 0.4, 0.6), st(4.15))         # through the roof, tiles
 for i in range(6): put(thump(220 + i * 40, 0.08, 0.15), st(4.6 + i * 0.13))
 put(whoosh(0.5, True, 0.3), st(12.0)); put(whoosh(0.8, True, 0.25), st(13.6))
@@ -63,6 +63,8 @@ put(thump(55, 0.5, 0.6), st(80.95)); put(thump(95, 0.25, 0.4), st(81.6)); put(wh
 # ---- home again
 put(crash(0.6, 0.5), st(82.9)); put(thump(55, 0.5, 0.7), st(83.3)); put(thump(100, 0.25, 0.35), st(83.7)); put(thump(110, 0.2, 0.25), st(84.0)); put(thump(130, 0.15, 0.2), st(84.6))
 put(thump(90, 0.25, 0.35), st(90.95)); put(chime(392, 1.6, 0.4) + chime(587, 1.6, 0.35) + chime(784, 1.6, 0.3), st(91.6))
+# ---- v3 layer: wind in the POV, fireball, planet smashes, drone swooshes, the burning ball
+from v3_sfx import add_v3; add_v3(sfx, st)
 # ---- rewind: reversed whoosh
 put(whoosh(0.4, True, 0.5)[::-1], 1.2)
 sfx *= 10 ** (-8 / 20)   # SFX bus well under speech and music

@@ -28,7 +28,7 @@ export const P = {
   rise: (t = 0) => ({ aRs: 2.9, aRf: 0.2, aRe: 0.05, aLs: 0.5, aLf: -0.5, aLe: 0.4, lLf: -0.1 + Math.sin(t * 4) * 0.05, lRf: 0.25 + Math.sin(t * 4 + 1) * 0.05, lLk: 0.15, lRk: 0.55, lean: -0.05, hx: -0.12, hR: 'fist', hL: 'open', bob: 0 }),
   // face-close travel: both arms tucked, looking up into the wind
   streak: (t = 0) => ({ aRs: 0.25, aLs: 0.25, aRf: -0.4, aLf: -0.4, aRe: 0.3, aLe: 0.3, lLf: -0.05, lRf: 0.2, lLk: 0.2, lRk: 0.45, hx: -0.18 + Math.sin(t * 3) * 0.03, hR: 'fist', hL: 'fist' }),
-  hop: (u) => { const air = Math.sin(Math.PI * clamp(u)); return { ...P.launch(air), lLk: 0.4 * air, lRk: 0.4 * air, lLf: 0.3 * air, lRf: 0.3 * air }; },
+  hop: (u) => { const air = Math.sin(Math.PI * clamp(u)); return { ...P.launch(air), aLs: 1.5 * air + 0.2, aRs: 1.5 * air + 0.2, lLk: 0.4 * air, lRk: 0.4 * air, lLf: 0.3 * air, lRf: 0.3 * air }; },
   laPeace: (t, extra = {}) => ({ ...POSES.laPeace(t), ...extra }),
 };
 // hero face while flying: determined, little smile

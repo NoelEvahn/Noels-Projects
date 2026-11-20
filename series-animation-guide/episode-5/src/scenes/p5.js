@@ -18,7 +18,8 @@ export default {
     const G = () => { const g = new THREE.Group(); scene.add(g); return g; };
     const s23 = G(); const neb = nebulaCloud(1400, 4, 26); s23.add(neb); const neb2 = nebulaCloud(600, 8, 12); neb2.position.set(4, 2, -6); s23.add(neb2);
     const s24 = G(); const pillar = nebulaPillar(14, 3); pillar.position.set(0, -14.5, 0); s24.add(pillar); const nb3 = nebulaCloud(900, 11, 30); nb3.position.set(0, 0, -20); s24.add(nb3);
-    const blanket = picnicBlanket(); blanket.position.set(0, pillar.userData.top - 14.5, 0); s24.add(blanket);
+    const blanket = picnicBlanket(); blanket.position.set(0, pillar.userData.top - 14.5 + 0.03, 0); s24.add(blanket);
+    { const ty = pillar.userData.top - 14.5, hc = ty - (14 + 0.5 - 14.5) + 0.2; const m = new THREE.Mesh(new THREE.CylinderGeometry(1.55, 2.0, hc, 20), new THREE.MeshStandardMaterial({ color: 0x6a3a5a, roughness: 1, emissive: 0x401020, emissiveIntensity: 0.3 })); m.position.set(0, ty - hc / 2 + 0.01, 0); s24.add(m); }   // flat ledge under the blanket
     const fam = ['alien', 'alienB', 'alienKid'].map((p) => { const a = makePerson(scene, p); antennae(a, p === 'alienB' ? 0xff7ad0 : 0xffd23f); s24.add(a.root); return a; });
     const s25 = G(); const gal = makeGalaxy(3, 9000, 60, 12); gal.position.set(0, -40, -30); gal.rotation.x = 0.35; s25.add(gal);
     const suit = geraldSuit(cat); suit.visible = false; const bc = briefcase(); scene.add(bc);
@@ -34,12 +35,12 @@ export default {
     if (sh === 23) {
       const u = seg(t, 53.2, 55.6); S.neb.rotation.y = t * 0.05; hp = [0, lerp(-0.4, 0.6, u), 0];
       pose = { ...P.rise(t), hy: Math.sin(t) * 0.2 }; face = { ...F.wow, smile: 0.5 };
-      c = mixCam(cam([1.6, 1.9, 5.6], [-0.2, 1.4, -1], 46), cam([1.3, 1.8, 5.0], [-0.2, 1.4, -1], 46), smooth(u));
+      { const az = lerp(-70, 35, smooth(u)) * Math.PI / 180, d = lerp(9, 4.6, smooth(u)); c = cam([Math.sin(az) * d, hp[1] + lerp(-2.5, 1.4, smooth(u)), Math.cos(az) * d], [0, hp[1] + 1.2, 0], 46); }   // v3: drone swoop in through the nebula
     } else if (sh === 24) {
       // the picnic on top of the pillar: mum, dad and kid aliens on the blanket, Gerald on the blanket; unison la peace 56.8
       const u = seg(t, 55.6, 58.0), top = S.blanket.position.y;
       const seats = [[-0.55, 0.2, 0.5], [0.55, 0.15, -0.4], [0.05, -0.45, 0.1]];
-      S.fam.forEach((a, i) => { const [x, z, ry] = seats[i]; a.root.position.set(x, top, z); a.root.rotation.y = ry; const base = { ...POSES.sit(t + i, 0.0), hx: -0.3 };
+      S.fam.forEach((a, i) => { const [x, z, ry] = seats[i]; a.root.position.set(x, top, z); a.root.rotation.y = ry; const base = { ...POSES.sit(t + i, 0.16), lLf: 1.5, lRf: 1.5, lLk: 0.12, lRk: 0.12, hx: -0.3 };   // v3 (note #16): sit ON the blanket, legs out in front (seat 0 sank the legs into the pillar)
         if (t >= 56.5 && t < 57.9) laPeace(a, t, 'picnic', ctx, { ...base, ...POSES.laPeace(t + i * 0.2), bob: base.bob, lLf: base.lLf, lRf: base.lRf, lLk: base.lLk, lRk: base.lRk, hx: -0.3 }); else { a.pose({ ...base, aRf: 1.2, aRe: 0.8 }); a.face({ ...FACES.shock, open: 0.5 }); } });
       cat.root.visible = true; cat.root.position.set(0.75, top + 0.02, 0.55); cat.root.rotation.y = 0.8; cat.root.scale.setScalar(1.0); cat.pose(APOSES.loaf(t)); cat.face(AFACES.deadpan);
       hp = [1.3, top + lerp(-2.6, 1.6, u), -1.4];

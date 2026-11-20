@@ -251,3 +251,6 @@ New, to add to the library with code and a screenshot: universe-ball (+ cosmic-w
 - **Shot 4:** the kid is filmed from the garden looking up (hero high in the sky) rather than "street from above", so the voiced kid is on screen.
 - **Shot 33:** while he hangs from the rim he hangs from its side (from the front his silhouette hid the rim and the ball); the shockwave passes the camera at ~80.1, not 80.4.
 - **Slam level:** about +1.8 dB (0.4 s RMS) over the loudest other moment after the limiter, not the planned +3 dB (the phonk bed is dense; the music was lowered 3 dB).
+
+## v3 (user review, 2026-11-20)
+Furnished room, 3.2 m ceiling, real ceiling/roof holes; the hero stays over his roof hole (vapour trail, drone shot); top-down face shot with tears; Burj detail + photo tourists; top-down shot past the airliner + cockpit interior; fireball, POV and atmosphere break-out; varied space camera angles; Jupiter and a chain of five planets smashed into 3D chunks with pull-backs; one-take fire-trail dribble; hook backboard keeps its frame; Gerald sleeps in the cupola, sits on top of the tumbling Moon; roast r7 and the push gag removed; the kid walks in. Audio rebuilt (`audio/v3_sfx.py` layer).

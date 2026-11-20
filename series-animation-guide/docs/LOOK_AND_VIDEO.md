@@ -69,6 +69,32 @@ Episode 3 v1 cut every ~0.7 s and the user rejected it: confusing, text overlapp
 - Bigger hits on tier changes (thousand, million, billion…).
 - The ×2 badge and the punch-scale must stay inside the 60 px side margins.
 
+## Engagement and set craft (user feedback on episode 5, 2026-11-20) — READ BEFORE PLANNING SHOTS
+**The middle must keep giving dopamine hits.** Ep5 v2 was "him going up in a line": the same rising-hero shot repeated with a new background. Viewers need a spike every few seconds. For every 4–6 s of runtime plan at least one of these, and never the same one twice in a row:
+- **POV / first-person shot** (camera in the hero's head: his fists at the bottom of the frame, clouds, debris or star streaks rushing at the lens, wind on the ears in the sound).
+- **A state change on the hero** (he heats up into a fireball through the atmosphere, frost, glow, sonic boom ring), with its own sound.
+- **Breaking through something big** (planets, moons, asteroids shatter as he punches through them, chunks flying past the lens, flash + boom).
+- **A drone camera move**: fast orbit, fly-under, top-down to low-angle swoop. Change the angle and speed of the camera, not only the background.
+- **Prefer one continuous camera ("one-take") over cuts** for the big sequences: a single drone-like move that travels from close-up to under the feet to top view to low view, showing several "shots" without cutting.
+- Slow motion on the money moment (an extreme close-up of the object, the face dark in the background), with a trail (fire, light) on the moving object.
+**Sets must look lived-in, never bare:** every interior has furniture on every wall in frame (shelves with books, TV, plants, lamps, pictures, curtains, ceiling light). Pause on the first frame of every set: if a wall is empty, dress it.
+**Nothing passes through solid geometry:**
+- A hole someone bursts through is a real cut in a slab with thickness (plaster/joists/rafters/tiles visible on the cut edge, dark cavity behind), never a black decal on a flat plane. It opens on the exact frame the body touches the surface, and debris flies from that point.
+- Ceilings and roofs have thickness; no single-sided planes where the camera can see an edge.
+- Check the frames just before and after every contact (head at ceiling, body at roof, ball at floor) for clipping.
+**Spatial continuity across angle changes:** when the camera changes angle on a moving hero, he must still be where he was (directly above the hole he came out of, on the line he was flying). Compute his position from the same world anchor in every shot of the sequence, and keep the anchor (house, hole) in frame when the angle changes.
+
+**More from the ep5 review rounds:**
+- Nothing passes through vehicles or props (he flies past the plane, not through it). Characters sit ON surfaces (seat height above 0, legs out), never sunk in.
+- Never parent Gerald or other animals to rotating groups: the animal rig breaks (he floats and jumps). Place them in world space, upright.
+- Nobody pops in: walk people into the shot.
+- Long journeys change the camera angle every shot (under him, over the shoulder, top-down, chase from behind, high 3/4, top-down on his face with tears in the wind), never the same front view.
+- Smashes are solid 3D chunks that blast outward, with a fireball and a light inside; chain several in a row, then pull far back to show the mess he made.
+- Big impacts keep a readable structure (the backboard frame survives), add a burst, sparks and a shake, and use a short flash, not a long white wash.
+- Crowds have life: tourists hold up phones and take photos with flashes.
+- Interiors you see into get detail (a cockpit has seats, a co-pilot, yokes, screens, an overhead panel).
+- Code hygiene: never put a `//` comment before more code on the same line (it silently deletes the rest of the line, e.g. `scene.add(room)`).
+
 ## Defect checklist (from episodes 1–2 — check every item yourself, before and after each fix round)
 - **Camera and framing:**
   - Cameras inside walls or characters.
@@ -88,7 +114,8 @@ Episode 3 v1 cut every ~0.7 s and the user rejected it: confusing, text overlapp
   - The big shockwave is a tall glowing ring with debris, bending trees and a flash of 10 or more frames, not a flat disc.
   - Water reads as water; no tube wakes.
   - Trees are rounded, not spikes.
-- **Sets:** no plain box sets (houses, mansions, rooms); no shots of mostly wall (stairs); distant subjects (jets, ships) shot close.
+- **Sets:** no plain box sets (houses, mansions, rooms); no shots of mostly wall (stairs); distant subjects (jets, ships) shot close; no empty walls in interiors (ep5).
+- **Clipping (ep5):** bodies through ceilings/roofs before a real hole opens; holes drawn as flat decals; single-sided planes seen edge-on; a moving hero who jumps sideways when the camera changes angle.
 - **Determinism:** every frame is a pure function of its frame index, so re-rendered frames match exactly.
 
 ## Quality checks before delivery

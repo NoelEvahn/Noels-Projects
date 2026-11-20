@@ -4,6 +4,7 @@ import { makeStage } from '../../../assets/library/stage.js';
 import { universeBall, hoop, shockwave, floorRings, voidFloor, silhouette, cosmicWeb } from '../../../assets/library/fx/dunk.js';
 import { makeGalaxy, makeEarth } from '../../../assets/library/props/world.js';
 import { roofWithHole } from '../../../assets/library/sets/livingroom.js';
+import { fireTrail } from '../../../assets/library/fx/flight.js';
 
 const RIM = new THREE.Vector3(0, 3.05, 0.387);
 const PLANT = [-1.25, 0, 1.75];
@@ -13,6 +14,20 @@ const DRIB = [76.4, 77.2, 78.0, 78.8], STEPS = [76.8, 77.6, 78.4, 79.2];
 const AK = [[79.2, 0], [79.4, 0.16], [79.8, 0.24], [80.0, 0.40]];
 const actionAt = (t) => { if (t <= 79.2) return t - 79.2; if (t >= 80.0) return 0.40 + (t - 80.0); for (let i = 0; i < 3; i++) if (t <= AK[i + 1][0]) return lerp(AK[i][1], AK[i + 1][1], (t - AK[i][0]) / (AK[i + 1][0] - AK[i][0])); return 0.4; };
 // hero x along the dribble run (76.0 -> 79.2), eased steps
+// v3 dribble (user: close-up, slow, fire trail, crossover between the feet): authored ball path, keys = [time, side, y]
+// side: +1 right hand side, -1 left, 0 between the feet / in front. Hands at 76.8 (R), 77.6 (L), 78.4 (L); floor at the DRIB contacts.
+const BK = [[76.4, 1, 0.12, 0.30], [76.8, 1, 0.9, 0.12], [77.2, 0, 0.12, -0.02], [77.6, -1, 0.9, 0.12], [78.0, -1, 0.12, 0.32], [78.4, -1, 0.9, 0.12], [78.8, 0, 0.12, 0.42], [79.2, 0, 1.15, 0.28]];
+const SIDE = 0.4;   // hand/floor offset across his body (his right = +Z while he faces +X)
+function keyPos(k) { return [runX(k[0]) + k[3], k[2], PLANT[2] + k[1] * SIDE]; }
+function ballDrib(t) {
+  if (t <= BK[0][0]) return keyPos(BK[0]);
+  for (let i = 0; i < BK.length - 1; i++) if (t <= BK[i + 1][0]) {
+    const a = keyPos(BK[i]), b = keyPos(BK[i + 1]), k = (t - BK[i][0]) / (BK[i + 1][0] - BK[i][0]);
+    const down = b[1] < a[1], y = down ? a[1] + (b[1] - a[1]) * k * k : a[1] + (b[1] - a[1]) * (1 - (1 - k) * (1 - k));
+    return [lerp(a[0], b[0], k), y, lerp(a[2], b[2], smooth(k))];
+  }
+  return keyPos(BK[BK.length - 1]);
+}
 const runX = (t) => { const xs = [-6.6, -6.6, -5.0, -3.6, -2.3, PLANT[0]]; const ts = [70, 76.4, 76.8, 77.6, 78.4, 79.2]; if (t <= ts[1]) return xs[0]; for (let i = 1; i < ts.length - 1; i++) if (t <= ts[i + 1]) return lerp(xs[i], xs[i + 1], smooth((t - ts[i]) / (ts[i + 1] - ts[i])) * 0.5 + (t - ts[i]) / (ts[i + 1] - ts[i]) * 0.5); return xs[xs.length - 1]; };
 
 export default {
@@ -35,6 +50,21 @@ export default {
     const wave = shockwave({ maxR: 40, dur: 0.8 }); wave.position.set(0, 0, 0.4); scene.add(wave);
     const evts = [...DRIB.map((t) => ({ t, x: 0, z: 0, kind: 'ball' })), ...STEPS.map((t) => ({ t, x: 0, z: 0, kind: 'foot', s: 0.7 })), { t: 80.95, x: -0.2, z: 1.2, s: 2.2, life: 0.6 }, { t: 81.6, x: 0.4, z: 2.6, s: 1.2 }];
     const rings = floorRings(evts, { max: 10 }); scene.add(rings);
+    const trail = fireTrail(72, { size: 0.17 }); scene.add(trail);
+    // v3 (note #7): impact burst at the rim: a vertical shock ring facing the camera + a spray of hot sparks + lightning-white core
+    const burst = new THREE.Group(); burst.position.copy(RIM); scene.add(burst);
+    const bRingM = new THREE.MeshBasicMaterial({ color: 0xffb060, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, side: THREE.DoubleSide });
+    const bRing = new THREE.Mesh(new THREE.TorusGeometry(1, 0.06, 10, 96), bRingM); burst.add(bRing);
+    const bRing2 = new THREE.Mesh(new THREE.TorusGeometry(1, 0.03, 8, 96), bRingM); burst.add(bRing2);
+    const br = rng(81), NS = 700, bp = new Float32Array(NS * 3), bc = new Float32Array(NS * 3), bs = [];
+    for (let i = 0; i < NS; i++) { const d = new THREE.Vector3(br.range(-1, 1), br.range(-0.6, 1), br.range(-0.3, 1)).normalize(); bs.push([d, br.range(3, 14)]); bc.set([1, br.range(0.55, 0.95), br.range(0.2, 0.6)], i * 3); }
+    const bPts = glowPoints(bp, bc, { size: 0.06 }); burst.add(bPts);
+    const bCore = glowPoints(new Float32Array([0, 0, 0]), new Float32Array([1, 0.95, 0.85]), { size: 1.4 }); burst.add(bCore);
+    burst.set = (a, cam) => { burst.visible = a >= 0 && a < 1.0; if (!burst.visible) return; const u = clamp(a / 0.6);
+      if (cam) burst.quaternion.copy(cam.quaternion);
+      const R1 = 0.3 + 7 * (1 - Math.pow(1 - u, 3)); bRing.scale.setScalar(R1); bRing2.scale.setScalar(R1 * 0.62); bRingM.opacity = 1 - smooth(seg(a, 0.2, 0.8));
+      bs.forEach(([d, sp], i) => { const r = sp * (1 - Math.exp(-a * 3)) / 3; bp.set([d.x * r, d.y * r - 2.5 * a * a, d.z * r], i * 3); }); bPts.geometry.attributes.position.needsUpdate = true; bPts.material.uniforms.opacity.value = 1 - smooth(seg(a, 0.4, 1.0));
+      bCore.material.uniforms.opacity.value = Math.exp(-a * 22); };
     // the dive-back ladder (shot 34, 82.0-82.8): its own scene (web -> galaxy + Earth -> the roof with its hole)
     const L = new THREE.Scene(); L.background = new THREE.Color(0x000000);
     L.add(new THREE.HemisphereLight(0xdfeeff, 0x445566, 1.2)); const lk = new THREE.DirectionalLight(0xfff0d6, 2.4); lk.position.set(5, 8, 6); L.add(lk);
@@ -43,7 +73,7 @@ export default {
     const earth = makeEarth(6); earth.position.set(0, 0, -400); L.add(earth);
     const roof = roofWithHole(); roof.position.set(0, -2, -700); L.add(roof);
     const skyBall = new THREE.Mesh(new THREE.SphereGeometry(60, 32, 16), new THREE.MeshBasicMaterial({ color: 0x8fd0ff, side: THREE.BackSide })); skyBall.position.copy(roof.position); L.add(skyBall);
-    return { stage, scene, floor, pool, hero, sil, ball, hp, wave, rings, evts, L, web, gal, earth, roof, skyBall };
+    return { burst, trail, stage, scene, floor, pool, hero, sil, ball, hp, wave, rings, evts, L, web, gal, earth, roof, skyBall };
   },
   frame(t, S, ctx) {
     const { hero, ball, hp, sil } = S;
@@ -62,20 +92,23 @@ export default {
         // 70.8: finger up (left index), the ball drops onto it and spins up; 72.0 la peace with the right hand
         yaw = Math.PI / 2 - 0.35 - 0.35 * smooth(seg(t, 70.8, 71.4));
         const fin = smooth(seg(t, 70.8, 71.2));
-        pose = { ...POSES.idle(t), aLs: 0.2 + 2.6 * fin, aLf: 0.35 * fin, aLe: 0.15, hL: fin > 0.5 ? 'point' : 'relaxed', hx: -0.18 * fin };
-        if (t >= 71.8 && t < 73.6) { const k = smooth(seg(t, 71.8, 72.0)) * (1 - smooth(seg(t, 73.2, 73.6))); pose = { ...pose, ...Object.fromEntries(Object.entries(POSES.laPeace(t)).filter(([kk]) => kk.startsWith('aR') || kk === 'hR' || kk === 'wR').map(([kk, v]) => [kk, typeof v === 'number' ? v * k : (k > 0.5 ? v : 'relaxed')])) }; }
+        pose = { ...POSES.idle(t), aRs: 0.2 + 2.6 * fin, aRf: 0.35 * fin, aRe: 0.15, hR: fin > 0.5 ? 'point' : 'relaxed', hx: -0.18 * fin };   // v3 (note #20): right hand = the camera side
+        if (t >= 71.8 && t < 73.6) { const k = smooth(seg(t, 71.8, 72.0)) * (1 - smooth(seg(t, 73.2, 73.6))); pose = { ...pose, ...Object.fromEntries(Object.entries(POSES.laPeace(t)).filter(([kk]) => kk.startsWith('aR') || kk === 'hR' || kk === 'wR').map(([kk, v]) => [kk.replace('R', 'L'), typeof v === 'number' ? v * k : (k > 0.5 ? v : 'relaxed')])) }; }
       }
       if (t >= 73.6) {
         // tricks 73.6-76.0: finger -> roll across the shoulders -> behind the back -> back to the finger (ball path is authored around the body)
         yaw = Math.PI / 2 - 0.7;
         const u = seg(t, 73.6, 76.0);
-        pose = { ...POSES.idle(t), aLs: u < 0.25 ? 2.8 : u < 0.5 ? 1.6 : u < 0.8 ? 0.4 : 2.8 * smooth(seg(u, 0.8, 0.95)), aRs: u > 0.2 && u < 0.5 ? 1.6 : 0.3, aLe: u < 0.5 ? 0.4 : 0.9, aRe: 0.6, hL: u < 0.25 || u > 0.92 ? 'point' : 'open', hR: 'open', lean: u > 0.5 && u < 0.8 ? 0.12 : 0, twist: Math.sin(u * Math.PI * 2) * 0.25, hx: -0.1 };
+        pose = { ...POSES.idle(t), aRs: u < 0.25 ? 2.8 : u < 0.5 ? 1.6 : u < 0.8 ? 0.4 : 2.8 * smooth(seg(u, 0.8, 0.95)), aLs: u > 0.2 && u < 0.5 ? 1.6 : 0.3, aRe: u < 0.5 ? 0.4 : 0.9, aLe: 0.6, hR: u < 0.25 || u > 0.92 ? 'point' : 'open', hL: 'open', lean: u > 0.5 && u < 0.8 ? 0.12 : 0, twist: Math.sin(u * Math.PI * 2) * 0.25, hx: -0.1 };
       }
     } else if (t < 79.2) {
       // ---------- shot 32: dribble and steps
       hx = runX(t); hz = PLANT[2]; yaw = Math.PI / 2;
       const stepPh = ((t - 76.4) / 0.8) * Math.PI * 2;
-      pose = t < 76.4 ? { ...POSES.idle(t), aRf: 0.5, aRe: 0.8, hR: 'open' } : { ...POSES.run(t, Math.PI / 0.8 * 2 * 0.5 * 2), lean: 0.22, aRf: 0.45, aRs: 0.2, aRe: 0.7, hR: 'open', bob: Math.abs(Math.sin(stepPh / 2)) * 0.05 };
+      const onR = t < 77.3, reach = 0.55 + 0.25 * Math.cos(((t - 76.4) / 0.8) * Math.PI * 2);
+      pose = t < 76.4 ? { ...POSES.idle(t), aRf: 1.1 * (1 - smooth(seg(t, 76.12, 76.4))) + 0.4, aRe: 0.9, aRs: 0.3, hR: 'open' } : { ...POSES.run(t, Math.PI / 0.8 * 2 * 0.5 * 2), lean: 0.26, bob: Math.abs(Math.sin(stepPh / 2)) * 0.05,
+        ...(onR ? { aRf: reach, aRs: 0.25, aRe: 0.6, hR: 'open' } : { aLf: reach, aLs: 0.25, aLe: 0.6, hL: 'open' }), lLf: t > 77.05 && t < 77.35 ? 0.7 : undefined, lRf: t > 77.05 && t < 77.35 ? -0.6 : undefined };   // wide stride as it goes between the feet
+      for (const kk of Object.keys(pose)) if (pose[kk] === undefined) delete pose[kk];
       if (t > 79.0) pose = { ...pose, ...P.crouch(smooth(seg(t, 79.0, 79.2)) * 0.6) };
     } else {
       // ---------- shot 33-34: the jump (action clock), slam, hang, drop, superhero landing
@@ -107,10 +140,10 @@ export default {
     // ---------- the ball
     const hand = (side) => { const h = new THREE.Vector3(), e = new THREE.Vector3(); (side === 'L' ? hero.holdL : hero.holdR).getWorldPosition(h); (side === 'L' ? hero.aL.el : hero.aR.el).getWorldPosition(e); return { h, d: h.clone().sub(e).normalize() }; };
     const inHand = (side, off = 0.11) => { const { h, d } = hand(side); return h.clone().addScaledVector(d, off); };
-    if (t >= 70.8 && t < 73.6) { const tip = inHand('L', 0.1 + 0.12); const drop = smooth(seg(t, 70.8, 71.3)); ballPos = BALLHOME.clone().lerp(tip, drop); ballSpin = t * 0.6 + Math.max(0, t - 71.0) ** 1.4 * 14; }
+    if (t >= 70.8 && t < 73.6) { const tip = inHand('R', 0.1 + 0.12); const drop = smooth(seg(t, 70.8, 71.3)); ballPos = BALLHOME.clone().lerp(tip, drop); ballSpin = t * 0.6 + Math.max(0, t - 71.0) ** 1.4 * 14; }
     if (t >= 73.6 && t < 76.0) {
       const u = seg(t, 73.6, 76.0), head = new THREE.Vector3(); hero.head.getWorldPosition(head);
-      const tipL = inHand('L', 0.22), back = new THREE.Vector3(Math.cos(yaw + Math.PI) * 0.0, 0, 0);
+      const tipL = inHand('R', 0.22), back = new THREE.Vector3(Math.cos(yaw + Math.PI) * 0.0, 0, 0);
       const fwd = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw)), side = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
       const shoulderPath = (k) => head.clone().addScaledVector(side, lerp(0.32, -0.32, k)).addScaledVector(fwd, -0.18).add(new THREE.Vector3(0, -0.22 + Math.sin(Math.PI * k) * 0.05, 0));
       const waistPath = (k) => { const a = lerp(-Math.PI / 2, Math.PI * 1.5, k); return new THREE.Vector3(hx, 0.82, hz).addScaledVector(side, Math.cos(a) * 0.36).addScaledVector(fwd, Math.sin(a) * 0.32); };
@@ -121,10 +154,10 @@ export default {
     }
     if (t >= 76.0 && t < 79.2) {
       // dribble: held in the right palm, pushed down 0.2 s before each contact, back in the palm 0.2 s after (parabolic per bounce)
-      const palm = inHand('R', 0.12); ballPos = palm; ballSpin = -t * 6;
-      if (t < 76.4) ballPos = inHand('L', 0.22).lerp(palm, smooth(seg(t, 76.0, 76.3)));
-      for (const c of DRIB) { const a = t - c; if (a > -0.2 && a < 0.2) { const ground = new THREE.Vector3(hx + 0.35, 0.12, hz + 0.18); const k = Math.abs(a) / 0.2; ballPos = ground.clone().lerp(palm, c === 78.8 && a < 0 ? k * k : k * (2 - k)); if (Math.abs(a) < 0.035) squash = 0.8; } }
-      if (t > 79.0) ballPos = palm.clone().lerp(inHand('L', 0.12), 0.5);
+      ballSpin = -t * 9;
+      if (t < 76.4) { const held = new THREE.Vector3(hx + 0.38, 1.18, hz + 0.22), f = new THREE.Vector3(...ballDrib(76.4)); const k = seg(t, 76.12, 76.4); ballPos = held.lerp(f, k * k); }   // held at chest height for the close-up, then dropped
+      else ballPos = new THREE.Vector3(...ballDrib(t));
+      for (const c of DRIB) if (Math.abs(t - c) < 0.035) squash = 0.8;
     }
     if (t >= 79.2) {
       const A = actionAt(t);
@@ -145,18 +178,41 @@ export default {
     hp.update(a, { hang: t > 80.0 && t < 80.8 ? 1 : 0 });
     S.wave.set(a);
     S.floor.material.userData.U ??= null; const U = S.floor.userData.U; U.rippleR.value = a < 0 ? -10 : 0.3 + 39.7 * (1 - Math.pow(1 - clamp(a / 0.8), 3)); U.rippleA.value = a < 0 ? 0 : 0.18 * Math.exp(-a * 1.8);
-    for (const e of S.evts) if (e.kind) { if (e.kind === 'ball') { e.x = runX(e.t) + 0.35; e.z = PLANT[2] + 0.18; } else { e.x = runX(e.t); e.z = PLANT[2] - 0.15; } }
+    for (const e of S.evts) if (e.kind) { if (e.kind === 'ball') { const b = ballDrib(e.t); e.x = b[0]; e.z = b[2]; } else { e.x = runX(e.t); e.z = PLANT[2] - 0.15; } }
+    // fire trail behind the ball through the dribble (samples its own authored path), fading out into the jump
+    { const k = smooth(seg(t, 76.3, 76.55)) * (1 - smooth(seg(t, 79.05, 79.35))); const smp = [];
+      for (let i = 0; i < 72; i++) { const ti = t - i * 0.011; smp.push(ti < 76.4 ? ballPos.toArray() : i === 0 ? ballPos.toArray() : ballDrib(Math.min(ti, 79.2))); }
+      S.trail.set(smp, k); }
     S.evts.push(); S.rings.set(t);
     // ---------- cameras
     let c;
     if (t < 70.8) { const u = seg(t, 68.4, 70.8); c = mixCam(cam([-2.2, 1.2, 6.2], [-4.6, 1.15, 1.6], 40), cam([-2.8, 1.2, 5.0], [-4.4, 1.15, 1.6], 38), smooth(u)); }
-    else if (t < 73.6) { const u = seg(t, 70.8, 73.6), az = lerp(10, 60, smooth(u)) * Math.PI / 180, d = lerp(4.6, 4.0, smooth(u)); c = cam([hx + Math.sin(az + yaw - Math.PI / 2) * d, 1.5, hz + Math.cos(az + yaw - Math.PI / 2) * d], [hx, 1.6, hz], 40); }
-    else if (t < 76.0) { const u = seg(t, 73.6, 76.0); c = mixCam(cam([hx - 1.2, 1.3, hz + 3.9], [hx, 1.35, hz], 42), cam([hx + 0.9, 1.25, hz + 3.8], [hx, 1.3, hz], 42), smooth(u)); }
-    else if (t < 79.2) { const u = seg(t, 76.0, 79.2), d = lerp(7.5, 4.2, smooth(u)), az = 30 * Math.PI / 180; c = cam([hx + Math.sin(az) * d + 0.8, lerp(1.0, 0.85, u), hz + Math.cos(az) * d], [hx + 0.9 * (1 - u) + 0.3, 1.0, hz], 42); }
+    else if (t < 76.0) {   // v3 (note #20): close on the spinning ball, ease out for the la peace, then follow the ball round his body
+      const b = ballPos.clone(), zoom = t < 73.6 ? smooth(seg(t, 71.6, 72.3)) * (1 - smooth(seg(t, 73.1, 73.6))) : 0;
+      const d = t < 73.6 ? lerp(0.75, 3.4, zoom) : 2.7, az = (t < 73.6 ? lerp(-10, 15, seg(t, 70.8, 73.6)) : lerp(-25, 40, smooth(seg(t, 73.6, 76.0)))) * Math.PI / 180;
+      const tg = b.clone().lerp(new THREE.Vector3(hx, 1.35, hz), t < 73.6 ? zoom * 0.9 : 0.35);
+      c = cam([tg.x + Math.sin(az) * d, tg.y + 0.15, tg.z + Math.cos(az) * d], tg.toArray(), t < 73.6 ? lerp(34, 40, zoom) : 40); }
+    else if (t < 79.2) {
+      // v3 ONE-TAKE drone move (76.0-79.2): extreme close-up on the ball (his dark face behind) -> drops with it -> under his feet as it
+      // crosses between them -> round his side -> top view -> swoops down and lands exactly on the dunk camera at 79.2 (no cut).
+      const KT = [76.0, 76.6, 77.2, 77.6, 78.2, 78.8, 79.2];
+      const KP = [[1.45, 1.2, 1.15], [1.0, 0.45, 1.1], [-1.45, 0.14, 0.05], [-0.4, 0.3, -1.9], [0.4, 6.2, 0.1], [0.8, 0.6, 2.8], null];
+      const FOV = [30, 40, 70, 58, 44, 48, 58];
+      let i = 0; while (i < KT.length - 2 && t > KT[i + 1]) i++;
+      const hAt = (tt) => [runX(tt), 0, PLANT[2]];
+      const pts = KT.map((tt, j) => { if (!KP[j]) return new THREE.Vector3(-2.8, 0.4, 5.6); const h = hAt(tt); return new THREE.Vector3(h[0] + KP[j][0], KP[j][1], h[2] + KP[j][2]); });
+      const curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal');
+      const k = (t - KT[i]) / (KT[i + 1] - KT[i]), u = (i + smooth(k) * 0.5 + k * 0.5) / (KT.length - 1);
+      const p = curve.getPoint(u);
+      const top = smooth(seg(t, 77.8, 78.1)) * (1 - smooth(seg(t, 78.35, 78.6))), end = smooth(seg(t, 78.85, 79.2));
+      const face = 1 - smooth(seg(t, 76.45, 76.9)), tgt = ballPos.clone().lerp(new THREE.Vector3(hx, 1.5, hz), 0.42 * face).lerp(new THREE.Vector3(hx + 0.15, 0.4, hz), top).lerp(new THREE.Vector3(-0.4, 2.0, 0.6), end);
+      const fov = lerp(FOV[i], FOV[i + 1], smooth(k));
+      c = cam(p.toArray(), tgt.toArray(), fov);
+    }
     else if (t < 81.2) {
       const tilt = smooth(seg(t, 79.2, 80.0)), back = a > 0 ? 0.8 * easeOutCubic(clamp(a / 0.5)) : 0;
       c = ctx.hook ? cam([-2.3 - back * 0.4, 1.0, 3.9 + back], [-0.35, 3.0, 0.6], 52) : cam([-2.8 - back * 0.5, 0.4 + 1.0 * smooth(seg(t, 80.1, 80.6)), 5.6 + back], [-0.4, lerp(2.0, 2.75, tilt) - 0.3 * smooth(seg(t, 80.1, 80.6)), 0.6], 58);
-      if (a > 0 && a < 0.5) { const s = 0.12 * (1 - a / 0.5), n = Math.floor(t * 30); c.pos = [c.pos[0] + (hash(n, 1) - 0.5) * 2 * s, c.pos[1] + (hash(n, 2) - 0.5) * 2 * s, c.pos[2] + (hash(n, 3) - 0.5) * 2 * s]; }
+      if (a > 0 && a < (ctx.hook ? 0.7 : 0.5)) { const s = (ctx.hook ? 0.2 : 0.12) * (1 - a / (ctx.hook ? 0.7 : 0.5)), n = Math.floor(t * 30); c.pos = [c.pos[0] + (hash(n, 1) - 0.5) * 2 * s, c.pos[1] + (hash(n, 2) - 0.5) * 2 * s, c.pos[2] + (hash(n, 3) - 0.5) * 2 * s]; }
       if (a > 0) { const p = RIM.clone().add(new THREE.Vector3(0.9, 1.5, 0)); out.plus2Pos = p; }
     } else if (t < 82.0) {
       // follow the ball down, low behind it; 81.6 bounce; 82.0 the ball rides into the lens
@@ -177,10 +233,10 @@ export default {
       out.hideHud = false;
     }
     // the plant / slam flashes
-    if (a >= 0 && a < 0.4) { const fr = Math.floor(a * 30 + 1e-6); out.flash = fr < 2 ? 1 : Math.max(0, 1 - (fr - 1) / 10); }
+    if (a >= 0 && a < 0.4) { const fr = Math.floor(a * 30 + 1e-6); out.flash = fr < 2 ? 1 : Math.max(0, 1 - (fr - 1) / 5); out.flashColor = '255,225,180'; }   // v3 (note #7): shorter, so the burst reads
     if (t >= 81.95 && t < 82.0) out.flash = 0.85;
     out.after = (camera) => {
-      sil.set(t >= 82.0 ? 0 : 1, ball.position, camera);
+      sil.set(t >= 82.0 ? 0 : 1, ball.position, camera); S.burst.set(t < 82.0 ? a : -1, camera); S.burst.updateMatrixWorld(true);
       if (out.plus2Pos) { const p = out.plus2Pos.clone().project(camera); out.plus2 = { x: (p.x * 0.5 + 0.5) * 1080, y: (1 - (p.y * 0.5 + 0.5)) * 1920, age: a }; if (out.plus2.y < 620) out.plus2.y = 620; }
     };
     out.voiceY = { hero_deep: 1560 };
