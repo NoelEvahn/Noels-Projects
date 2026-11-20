@@ -1,0 +1,24 @@
+:root{--bg:#f6f4ef;--card:#fff;--ink:#1b1b1f;--mute:#6b6b76;--line:#e4e1d8;--accent:#e8a400;--good:#1f9d55;--ok:#c98a00;--bad:#d0342c;--bar:#2f6fed}
+@media (prefers-color-scheme:dark){:root{--bg:#121216;--card:#1c1c22;--ink:#f1f0ea;--mute:#9a9aa6;--line:#2c2c35;--accent:#ffc83d;--good:#47c97e;--ok:#f0b429;--bad:#ff6b5f;--bar:#6c9bff}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 Inter,system-ui,sans-serif}
+main{max-width:980px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:26px;margin:4px 0 2px}h2{font-size:16px;margin:28px 0 10px;text-transform:uppercase;letter-spacing:.06em;color:var(--mute)}
+a{color:var(--bar)}.sub{color:var(--mute);margin:0 0 14px}
+.nav{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;margin-bottom:10px}
+.badge{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;background:var(--line);color:var(--mute);margin-right:6px}
+.badge.api{background:var(--good);color:#fff}.badge.manual{background:var(--accent);color:#1b1b1f}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+.kpi .l{font-size:12px;color:var(--mute)}.kpi .v{font-size:24px;font-weight:700;margin-top:2px}.kpi .s{font-size:12px;color:var(--mute)}
+.kpi .v.good{color:var(--good)}.kpi .v.ok{color:var(--ok)}.kpi .v.bad{color:var(--bad)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+.diag{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.diag .d b{display:block;margin-bottom:2px}.pill{font-size:12px;font-weight:700;padding:1px 8px;border-radius:99px;color:#fff}
+.pill.good{background:var(--good)}.pill.ok{background:var(--ok)}.pill.bad{background:var(--bad)}.pill.na{background:var(--mute)}
+table{width:100%;border-collapse:collapse;font-size:13px;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+th,td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}th:first-child,td:first-child{text-align:left}
+th{font-size:12px;color:var(--mute);font-weight:600}.scroll{overflow-x:auto}
+code,pre{font:12.5px ui-monospace,Menlo,monospace}pre{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;overflow-x:auto}
+ul.notes{margin:0;padding-left:18px}.empty{color:var(--mute);font-style:italic}
+svg text{fill:var(--mute);font-size:11px}.chart{width:100%;height:auto}

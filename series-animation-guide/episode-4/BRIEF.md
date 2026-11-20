@@ -16,4 +16,4 @@ The story runs on its own 24.5 s clock (`T` in `src/main.js`); the film re-order
 | 11.91–13.68 | 15.75–17.52 | Tantrum in the hole (tears, cry sound) |
 | 13.68–17.0 | 18.9–22.22 | Hands up, the cat copies; narrator: "Send this to someone who would do this" (15.0) |
 
-Audio `audio/mix.wav` (ffmpeg): music −10%, ducked under the cat claps, the cry and the voice; quiet SFX from `assets/sfx`; `audio/baby_cry.wav` is synthesised (numpy formant synth); `audio/vo.wav` is Piper `en_US-ryan-high`. Analytics that drove this cut: see MASTER_PROMPT "Retention and hooks".
+Audio `audio/mix.wav` (ffmpeg): music −10%, ducked under the cat claps, the cry and the voice; quiet SFX from `assets/sfx`; `audio/baby_cry.wav` is synthesised (numpy formant synth); `audio/vo.wav` is Piper `en_US-ryan-high`. Analytics that drove this cut: see `docs/HOOKS_AND_FORMATS.md` "Retention and hooks".
