@@ -33,3 +33,19 @@ Gerald's stat: `LOVES YOU: NOT YET`, flips to `YES ♥` at 89.2. Final gag: he i
 Reusable ideas not yet used: Gerald on the pitch / stage / roof, Gerald asleep through the climax, Gerald pushing something off a table, Gerald as the only needle that does not move.
 
 **After episode 3:** Gerald converted at the end of ep3. Default for new episodes: he starts as the holdout again (chip `NOT YET`); decide per episode whether he converts at the payoff or stays the holdout, and log it here.
+
+### Ep5 — "What if every 2 seconds, you jumped 5× higher?"
+Gerald is **already there** at every stop, unbothered. No HUD chip this episode (the user removed `GERALD · IMPRESSED: NO` from the HUD and the title card). Final gag: he pushes the universe (the ball) off the coffee table. He stays the holdout.
+| Story s | Gerald is… (as built) | Roast |
+|---|---|---|
+| 0-2 | loafing on the sofa arm, back turned to the hop | (silent) |
+| 4-6 | sitting on the chimney as the hero bursts through the roof | "Gerald was already on the roof." (r1 4.4) |
+| 10-12.8 | sitting on the very tip of the Burj Khalifa spire | "Gerald was higher." (r2 11.6) |
+| 18-21.2 | inside the ISS cupola, nose to the glass | "Gerald stowed away." (r3 19.6) |
+| 26-29.2 | loafing on the Moon as it tumbles away | "Gerald stayed on the Moon." (r4 27.6) |
+| 36-39.2 | loafing (sleepy) on Saturn's ring | "Gerald had been to Saturn." (r5 36.8) |
+| 39.2-41.2 | sitting on Voyager 1's dish, judging | (silent) |
+| 43.6-45.6 | loafing on a comet in the Oort cloud | (silent) |
+| 55.6-58 | on the picnic blanket on the Orion pillar with the alien family | (silent) |
+| 58-60.4 | floating past in a suit and red tie, briefcase drifting beside him | "Gerald had dressed for the occasion." (r6 58.4; reworded from "Gerald dressed…" so Piper pronounces it cleanly) |
+| 85.2-91.6 | on the coffee table; nudges the ball off the edge at 90.4 | "Gerald pushed the universe off the table." (r7 89.6) |

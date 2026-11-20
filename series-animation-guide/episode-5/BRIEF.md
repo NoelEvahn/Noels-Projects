@@ -11,7 +11,7 @@ Format: **DOUBLING with a ×5 multiplier** (master prompt v5 slots 0–8). Film 
 | ENDING | The hero leaves the universe, spins it on his finger like a basketball, dribbles, **dunks it**, and drops back into the living room (§6). |
 | CATCHPHRASE | **"la peace"** (`assets/la_peace.mp3`), with the OK-hand sign and the mewing face on every speaker that has hands and a face (rules in `../docs/AUDIO_AND_CAST.md`). No bomboclat. |
 | MUSIC | Charlie's Inferno, 146 → 150 BPM, ×1.0274, excerpt from 3.030 s (stretched) for 96.8 s. Re-verify the downbeat. |
-| CAT GAG | Gerald is **already there** at every stop, unbothered. Chip `GERALD · IMPRESSED: NO` never changes. Final callback: he pushes the universe off the table (§4). |
+| CAT GAG | Gerald is **already there** at every stop, unbothered. ~~Chip `GERALD · IMPRESSED: NO`~~ **removed (user, 2026-11-20): no Gerald chip on the HUD or the title card.** Final callback: he pushes the universe off the table (§4). |
 | HOOK | **H1 flash-forward + rewind** (the dunk), **H4 loop**. Experiment against ep2's H2. |
 
 ## 2. Clock and hook edit
@@ -240,3 +240,14 @@ New, to add to the library with code and a screenshot: universe-ball (+ cosmic-w
 - Hook: confirm the flash-forward frame 0 shows the hero big, the ball and the caption, and is not a white frame.
 - The slam and music-return must be sample-aligned (±40 ms) with story frame 2400.
 - Check against `../docs/LOOK_AND_VIDEO.md` defect checklist and `../docs/HOOKS_AND_FORMATS.md` hook checklist. After posting, fill in `analytics.data.js` and compare the skip rate with ep2.
+
+## Deviations (as built, v1, 2026-11-20)
+- **Music (user request):** from the shot-26 cut (story 60.4) Charlie's Inferno fades out and **Tiki Tiki phonk** (`assets/tiki_tiki_phonk.mp3`) fades in (crossfade 60.4-62.0). Tiki measured 168.00 BPM (beat 0 at 0.336 s, drops at 11.765 / 26.050 / 60.336 s); stretched 168 -> 150 BPM (x0.892857, pitch kept) so it sits on the 0.4 s grid. Drop A (orig 11.765 s) lands on the launch (62.8), after the 0.8 s break (62.0-62.8, digital zero = Tiki's own 2-beat bass gap). Tiki runs to 77.6, true silence 77.6-80.0, drop B (orig 60.336 s, the biggest) lands on the slam at 80.0 and runs to the end; the hook (film 0-1.2) uses the same drop B on the slam. Charlie no longer returns after 62.0.
+- **Charlie's downbeat re-verified:** the kick (low band) sits on 3.228 s of the stretched track (accent 3.12 vs 1.12 at 3.030, which is the snare/hat eighth). The excerpt now starts at 3.228 s (ep3 used 3.030).
+- **Tag n=23:** "OUT OF THE SOLAR SYSTEM" -> "30% OF THE WAY TO PROXIMA" (1.26 ly is still inside the outer Oort cloud, ~1.6-3 ly).
+- **Gerald chip removed** (user): no `GERALD · IMPRESSED` chip on the HUD and no Gerald line under the title card.
+- **r6** spoken and captioned as "Gerald had dressed for the occasion." (Piper's "Gerald dressed…" was heard as "Jail dressed for the Akayin" by two ASR models).
+- **Hook:** frame 0 shows the premise caption instead of the counter (`HEIGHT: NOT FOUND` would crowd the top band); the hook camera is closer than shot 33.
+- **Shot 4:** the kid is filmed from the garden looking up (hero high in the sky) rather than "street from above", so the voiced kid is on screen.
+- **Shot 33:** while he hangs from the rim he hangs from its side (from the front his silhouette hid the rim and the ball); the shockwave passes the camera at ~80.1, not 80.4.
+- **Slam level:** about +1.8 dB (0.4 s RMS) over the loudest other moment after the limiter, not the planned +3 dB (the phonk bed is dense; the music was lowered 3 dB).

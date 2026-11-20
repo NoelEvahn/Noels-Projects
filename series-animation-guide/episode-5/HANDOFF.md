@@ -102,3 +102,14 @@ episode-5/
 - Music downbeat is ambiguous (chosen by accent in ep3); re-verify the beat grid.
 - The Instagram sync script is untested against the live API (not part of this build).
 - The silhouette readability on a phone screen, the cosmic-web universe-ball look and the glass shatter are new and unproven: prototype them early (§5 step 2).
+
+## 10. As built (2026-11-20, v2)
+- **Deliverables:** `episode-5.mp4` (1080x1920, 30 fps, 96.8 s, 2904 frames) and `episode-5_720p.mp4`. Deviations are listed at the end of `BRIEF.md`.
+- **Music:** Charlie's Inferno (from 3.228 s of the x1.02743 stretch: the kick phase, re-verified) until the 60.4 cut, then **Tiki Tiki phonk** (`assets/tiki_tiki_phonk.mp3`, 168.00 BPM stretched to 150): drop A on the launch (62.8), drop B on the slam (80.0) and in the hook. `audio/music.py` documents the edit.
+- **No Gerald HUD chip** (user): removed from the HUD and the title card.
+- **Rebuild:** deps outside the repo (`npm i three@0.170.0 @fontsource/anton`, copy `three.module.js` + `anton-latin-400-normal.woff2` into `episode-5/vendor/`); Python venv (numpy scipy soundfile librosa pyloudnorm piper-tts faster-whisper pillow).
+  `python audio/music.py && python audio/make_voices.py && PIPER_VOICE=<en_US-ryan-high.onnx> python audio/make_narration.py && python audio/make_audio.py` (writes `build/audio/*` and `audio/mix.wav`),
+  then `NODE_PATH=$(npm root -g) node tools/render.mjs --from 0 --to 2903 --scale 1 --workers 4 --out <frames>` (~29 min on 4 cores, SwiftShader) and `tools/encode.sh <frames> episode-5.mp4 audio/mix.wav 20`.
+  QA: `python tools/qa.py episode-5.mp4`, counter maths: `node tools/check_timeline.mjs`. Preview single parts with `index.html?parts=p7&scale=0.5`.
+- **Code:** `src/timeline.js` (single source of truth), `src/main.js` (EDL), `src/hud.js`, `src/common.js`, `src/scenes/p1..p8.js`. New library items: `fx/dunk.js`, `props/space.js`, `sets/livingroom.js` (registry + screenshots).
+- **Not checked / rough:** nobody listened to the audio (measurements only); the slam is ~+1.8 dB over the loudest other moment, not +3 dB; `.videohub/project.json` does not exist in this repo, so VideoHub settings were not updated.
