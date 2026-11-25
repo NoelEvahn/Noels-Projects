@@ -70,8 +70,8 @@ export default {
       const cf = cloudFloor(240, 7000, 6); cf.scale.set(120, 60, 120); cf.position.y = 900; g.add(cf); }
     const climber = person(scene, 'climber'); L.mountains.add(climber.root);
     // ---- clouds: above the cloud floor, the Earth curving away
-    { const g = grp('clouds'); const cf = cloudFloor(400, 60000, 9); cf.scale.set(500, 200, 500); g.add(cf);
-      const curve = add(g, sph(1, 64, 32), mat(0x4a7ac8, { rough: 0.9 }), [0, -800000, 0]); curve.scale.setScalar(800000 - 300); }
+    { const g = grp('clouds'); const cf = cloudFloor(600, 110, 9); cf.scale.set(500, 260, 500); cf.position.y = 200; g.add(cf);
+      const curve = add(g, sph(1, 96, 48), mat(0x6a9ad8, { rough: 0.9 }), [0, -120000, 0]); curve.scale.setScalar(120000 - 600); }
     // ---- gerald control room (screens show the boy + the counter)
     { const g = grp('gerald'); g.position.set(0, 0, 50000);
       add(g, box(14, 0.1, 10), mat(0x1a1d26, { rough: 0.6 }), [0, 0, 0]); add(g, box(14, 6, 0.2), mat(0x20242e), [0, 3, -5]); add(g, box(0.2, 6, 10), mat(0x20242e), [-7, 3, 0]); add(g, box(0.2, 6, 10), mat(0x20242e), [7, 3, 0]); add(g, box(14, 0.2, 10), mat(0x15171e), [0, 6, 0]);
@@ -188,8 +188,8 @@ export default {
       case 'clouds': {   // 18.4-20.8 (7.4 km -> 14.7 at 20): above the clouds, the Earth curves, his head nearly in space; narrator n2
         L.clouds.visible = true; stage.key.castShadow = false; S.scene.background = skyBG(t < 20 ? '#2a5aa8' : '#16305a', '#b8dcff');
         giant(hero, k, [0, -Hm * 0.25, 0], -0.3, { ...POSES.idle(t), hx: -0.2, aLs: 0.3, aRs: 0.3 }, { ...FACES.happy, smile: 0.6, eye: 1.15, brow: 0.4 });
-        const head = wp(hero.head), d = Hm * lerp(0.9, 1.25, smooth(u));
-        c = cam([head.x + d * 0.7, head.y * 0.55, head.z + d], [head.x, head.y * 0.62, head.z], 50);
+        const head = wp(hero.head), d = Hm * lerp(1.1, 1.5, smooth(u));
+        c = cam([head.x + d * 0.7, head.y * 1.15, head.z + d], [head.x, head.y * 0.3, head.z], 56);
         out.near = Hm * 0.01; out.far = Hm * 400; out.keyFocus = false; break; }
       case 'gerald1': {   // 20.8-22.4: Gerald in his suit in a control room, doing nothing. The counter ticks at 22 on his screen.
         L.gerald.visible = true; stage.key.castShadow = true; setShadow(stage, 8); S.scene.background = skyBG('#0a0c14', '#0a0c14'); hero.root.visible = false;
