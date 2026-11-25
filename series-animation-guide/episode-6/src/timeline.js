@@ -50,14 +50,14 @@ export const growK = (t) => { const a = tickAge(t), n = nAt(t); const pop = a < 
 // ---- speech. kind: kokoro (character dialogue), lapeace (assets/la_peace.mp3 performance), narr (Piper narrator)
 // who: mom | boy | reporter | lady | pilot | nasa | moon. cap = caption (yellow, one at a time). Each line is on screen with its speaker.
 export const LINES = [
-  { id: 'mom1', t: 0.05, kind: 'kokoro', who: 'mom', text: 'Get down here right now!', cap: 'GET DOWN HERE RIGHT NOW!', max: 1.35 },
+  { id: 'mom1', t: 0.05, kind: 'kokoro', who: 'mom', text: 'Get down here right now!', cap: 'GET DOWN HERE RIGHT NOW!', max: 1.35, whole: true },
   { id: 'what', t: 1.45, kind: 'kokoro', who: 'boy', text: 'What?', cap: 'WHAT?', max: 0.5 },
   { id: 'n1', t: 1.95, kind: 'narr', text: 'He gets twice as tall every two seconds. His mom is not having it.', key: ['TWICE', 'TALL', 'NOT', 'HAVING'], max: 3.75 },
   { id: 'lady', t: 5.95, kind: 'lapeace', who: 'lady', cap: 'LA PEACE!' },
   { id: 'oops', t: 7.6, kind: 'kokoro', who: 'boy', text: 'Oops.', cap: 'OOPS.', max: 0.6 },
   { id: 'ah', t: 10.6, kind: 'kokoro', who: 'boy', text: '/ˈɑː!', cap: 'AH!', max: 0.5 },
   { id: 'pilot', t: 12.3, kind: 'lapeace', who: 'pilot', cap: 'LA PEACE!' },
-  { id: 'reporter', t: 13.8, kind: 'kokoro', who: 'reporter', text: 'We can confirm that this man is still growing.', cap: null, max: 2.4 },
+  { id: 'reporter', t: 13.8, kind: 'kokoro', who: 'reporter', text: 'We can confirm that this man is still growing.', cap: 'WE CAN CONFIRM THAT THIS MAN IS STILL GROWING.', max: 2.4 },
   { id: 'yougood', t: 17.0, kind: 'kokoro', who: 'boy', text: 'You good?', cap: 'YOU GOOD?', max: 0.8 },
   { id: 'n2', t: 18.6, kind: 'narr', text: 'At this point, he was becoming a serious problem.', key: ['SERIOUS', 'PROBLEM'], max: 2.6 },
   { id: 'nasa', t: 26.6, kind: 'lapeace', who: 'nasa', cap: 'LA PEACE!' },
