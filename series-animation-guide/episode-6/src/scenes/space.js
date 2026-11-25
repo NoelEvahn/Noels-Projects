@@ -73,16 +73,16 @@ export default {
       case 'marble': {   // 35.4-38.2: "Then he stopped following the rules." (ERROR at 35.6); his body expands past the frame; Earth between two fingers like a marble
         earth.visible = true; const grow = smooth(seg(t, 35.6, 36.6)), k = lerp(6, 30, grow) / HH;
         giant(hero, k, [0, lerp(1.6, 4, grow), lerp(-1.0, -8, grow)], 0.2, { ...POSES.idle(t), aRf: 1.4, aRs: 0.2, aRe: 0.9, hR: 'pinch', hx: 0.3 }, { ...FACES.smug, smile: 0.7 });
-        const hp = wp(hero.handR), sc = lerp(1, 0.25, smooth(seg(t, 36.4, 37.2))); earth.scale.setScalar(sc);
-        if (t > 36.6) earth.position.set(hp.x, hp.y - 0.02 * k, hp.z + 0.09 * k); else earth.position.set(0, 0, 0);
-        const ep = earth.position; c = t < 36.6 ? cam([2.6, 1.2 + 3 * grow, 6 + 10 * grow], [0, 2 + 6 * grow, -2], 55) : cam([ep.x + 1.5, ep.y + 0.35, ep.z + 2.6], [lerp(ep.x, wp(hero.head).x, 0.3), lerp(ep.y, wp(hero.head).y, 0.35), lerp(ep.z, wp(hero.head).z, 0.3)], 52);
+        const hp = wp(hero.handR), sc = lerp(1, 0.55, smooth(seg(t, 36.4, 37.2))); earth.scale.setScalar(sc);
+        if (t > 36.6) earth.position.set(hp.x + 0.03 * k, hp.y + 0.14 * k, hp.z + 0.1 * k); else earth.position.set(0, 0, 0);
+        const ep = earth.position; c = t < 36.6 ? cam([2.6, 1.2 + 3 * grow, 6 + 10 * grow], [0, 2 + 6 * grow, -2], 55) : cam([ep.x + 0.9, ep.y + 0.1, ep.z + 2.6], [ep.x - 0.25, ep.y + 0.9, ep.z - 1.5], 54);
         out.narrY = 1600; out.shakeT = t; break; }
       case 'toss': {   // 38.2-40.6: bigger than the planet, tosses Earth hand to hand: "This is actually pretty cool." 38.6
         earth.visible = true; const k = 12 / HH;
         const ph = ((t - 38.2) / 0.9) % 1, side = Math.floor((t - 38.2) / 0.9) % 2;   // one toss every 0.9 s
         giant(hero, k, [0, 0, 0], 0.0, { ...POSES.idle(t), aLf: 1.2, aRf: 1.2, aLs: 0.5, aRs: 0.5, aLe: 0.9, aRe: 0.9, hL: 'cup', hR: 'cup', hx: 0.25 + 0.15 * Math.sin(ph * Math.PI) * (side ? 1 : -1), hy: (side ? 1 : -1) * (ph - 0.5) * 0.6 }, talk(ctx, 'cool', t, { ...FACES.happy, smile: 0.7 }));
         const a = wp(hero.handL), b = wp(hero.handR), [p0, p1] = side ? [b, a] : [a, b]; earth.scale.setScalar(0.35);
-        earth.scale.setScalar(0.5); earth.position.set(lerp(p0.x, p1.x, ph), lerp(p0.y, p1.y, ph) + Math.sin(ph * Math.PI) * 1.3 + 0.5, lerp(p0.z, p1.z, ph) + 0.6);
+        earth.scale.setScalar(0.5); earth.position.set(lerp(p0.x, p1.x, ph), lerp(p0.y, p1.y, ph) + Math.sin(ph * Math.PI) * 0.9 + 0.45, lerp(p0.z, p1.z, ph) + 1.6);
         const hd = wp(hero.head); c = cam([hd.x + 2.8, hd.y - 2.4, hd.z + 12.5], [hd.x, hd.y - 2.0, hd.z], 55); out.capY.cool = 1580; break; }
       case 'ow': {   // 40.6-42.4: a tiny satellite flashes past and bonks his nose 41.1: "Ow." 41.3
         earth.visible = true; S.sat.visible = true; const k = 12 / HH;
