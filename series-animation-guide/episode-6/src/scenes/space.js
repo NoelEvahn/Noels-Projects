@@ -44,8 +44,8 @@ export default {
     switch (shot.id) {
       case 'nasa': {   // 26.0-28.0: the big screen glitches 59 km -> 118 km -> ERROR... one flight controller: la peace 26.6, then dead silence
         S.nasa.visible = true; S.stars.visible = false; hero.root.visible = false; S.scene.background = skyBG('#0a0c14', '#0a0c14');
-        const [a, b, cc] = S.crew; a.root.position.set(-0.6, 0, 1.2); a.root.rotation.y = Math.PI - 0.5; b.root.position.set(1.6, 0, 0.9); b.root.rotation.y = Math.PI + 0.2; cc.root.position.set(3.4, 0, 1.6); cc.root.rotation.y = Math.PI + 0.4;
-        if (t >= 26.3 && t < 27.6) laPeace(a, t, 'nasa', ctx, { hy: -0.9 }); else { a.pose({ ...POSES.idle(t), hx: -0.3 }); a.face(FACES.shock); }
+        const [a, b, cc] = S.crew; a.root.position.set(0.55, 0, 2.3); a.root.rotation.y = t >= 26.25 ? lerp(Math.PI - 0.5, 0.25, smooth(seg(t, 26.25, 26.45))) : Math.PI - 0.5; b.root.position.set(1.6, 0, 0.9); b.root.rotation.y = Math.PI + 0.2; cc.root.position.set(3.4, 0, 1.6); cc.root.rotation.y = Math.PI + 0.4;
+        if (t >= 26.3 && t < 27.6) laPeace(a, t, 'nasa', ctx, { hy: 0.1 }); else { a.pose({ ...POSES.idle(t), hx: -0.3 }); a.face(FACES.shock); }
         b.pose({ ...POSES.shock(t), hx: -0.35 }); b.face(FACES.shock); cc.pose({ ...POSES.idle(t), aLf: 1.6, aLe: 2.3, hL: 'open', hx: -0.2 }); cc.face({ ...FACES.shock, open: 1 });
         const g = S.nasa.userData.ctx, n = Math.floor(t * 30), W = 1024, H = 512; g.fillStyle = '#061226'; g.fillRect(0, 0, W, H);
         g.fillStyle = 'rgba(80,200,255,0.12)'; for (let y = 0; y < H; y += 32) g.fillRect(0, y, W, 2);
