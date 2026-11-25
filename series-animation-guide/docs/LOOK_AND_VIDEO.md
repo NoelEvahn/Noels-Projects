@@ -5,10 +5,24 @@ Hooks and retention are in `HOOKS_AND_FORMATS.md`, the voices, Gerald, music and
 
 ## Format
 - Vertical 9:16, 1080×1920, 30 fps, H.264 High + AAC-LC stereo 48 kHz.
-- Length follows the episode format (see "Episode formats" in `../MASTER_PROMPT.md`). DOUBLING: about 90 s; the ending payoff and the **share outro** may take it to about 100 s (episode 3 is 100.0 s). REEL: 15–17 s. WORLD: about 120 s.
+- Length follows the episode format (see "Episode formats" in `../MASTER_PROMPT.md`). **DOUBLING from ep6: 70 s, five-act structure below.** Ep1–5 (old): about 90 s; the ending payoff and the **share outro** may take it to about 100 s (episode 3 is 100.0 s). REEL: 15–17 s. WORLD: about 120 s.
 - Deliver two files: the 1080p render from VideoHub and a 720p copy (under 30 MB, so it can be sent to the user's phone).
 
-## Story shape — DOUBLING format: keep the escalation, VARY THE CONTENT EVERY EPISODE
+## Story shape — DOUBLING from ep6: the 70 s five-act structure (user, 2026-11-25)
+Built from the analytics (half the viewers leave in 0–3 s, ~30 % more by 10 s, the old videos flatlined after 45 s because there was no twist, only "bigger and bigger"). This replaces the seven-step scale below for new DOUBLING episodes. Example: `../episode-6/BRIEF.md`.
+
+| Time | Act | Job |
+|---|---|---|
+| 0–3 s | **Hook** | Chaos from frame 1, and tease the twist ("his mom is NOT having it"). Counter on screen from frame 1. |
+| 3–20 s | **Build** | Fast montage, one bass hit + quick pull-back per jump; reach the big scale (space) before the 10 s drop-off point. |
+| 20–45 s | **Chaos** | He breaks the rules; the counter glitches and breaks. This is where people stayed in the old videos: keep it busy. |
+| 45–65 s | **Twist** | A reversal the viewer did not see coming (ep6: Mom stops him). The main musical payoff: the beat drop lands exactly on the reveal frame. Short user-supplied meme clips go here, synced to the music. |
+| 65–70 s | **Exit** | Freeze frame + title card, voiced share line, last frame cuts straight back to frame 1 (loop). |
+
+What the twist fixes: saves (a twist is worth saving, "he gets bigger" is not), skips (the hook teases the twist), comments (a twist gives viewers something to say without asking).
+On-screen text: only the counter and essential story text. No extra captions, chips or overlays.
+
+## Story shape — old DOUBLING (ep1–5): keep the escalation, VARY THE CONTENT EVERY EPISODE
 The seven-step scale is fixed for DOUBLING episodes only. REEL and WORLD episodes use the structure in "Episode formats". What happens inside each step must be new for every topic.
 
 1. **Home** (0–9.6 s): the premise discovered in front of the family. The family may stay, but find a new room or situation each time (kitchen dinner, bathroom, garage, garden BBQ, car ride, bedroom…).
@@ -45,7 +59,7 @@ Episode 3 v1 cut every ~0.7 s and the user rejected it: confusing, text overlapp
 
 ## Layout and text (no overlaps, no glitches)
 - Never let two pieces of text overlap, and never let text sit on a face, a board, a chyron or the counter. One caption at a time. Narration captions, voice captions and Gerald roasts must never be on screen together (check on the timeline table).
-- Faces stay below the counter / tag / chip band (top ~30 % of the frame). Heart tags, banners and effects must also stay out of that band.
+- Faces stay below the counter / tag band (top ~30 % of the frame). Heart tags, banners and effects must also stay out of that band.
 - Test every shot at full resolution (still frames) for: flickering or z-fighting surfaces, objects clipping through walls or characters, floating or half-built props, pop-in, black gaps, instanced crowds showing blank faces from the front.
 - **Sets must be complete and logical.** A theatre or stadium needs real seats that people sit in, aisles, a visible stage/pitch, and people facing the right way; check the establishing shot as a viewer would. If a set cannot be made believable, choose a simpler location.
 

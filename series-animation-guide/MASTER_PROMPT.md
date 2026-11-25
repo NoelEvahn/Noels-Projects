@@ -35,8 +35,8 @@ SLOTS (fill these in)
                  Library samples: "bomboclat" / "bombo" (assets/bomboclat.mp3) or "la peace" (assets/la_peace.mp3).
                  Not every episode is bomboclat: use the one the user names.
 5. MUSIC:        attached track name
-6. CAT GAG:     Gerald's bit for this episode (new location + new unbothered action in every scene,
-                 his own stat for the HUD chip, and the final callback). See `docs/AUDIO_AND_CAST.md`.
+6. CAT GAG:     Gerald's bit for this episode: where he randomly pops up in the background and how he reacts
+                 (animation and facial expression only; no HUD chip, no Gerald text or captions). See `docs/AUDIO_AND_CAST.md`.
 7. EXTRA GAGS:   optional
 8. HOOK:         one hook format from docs/HOOKS_AND_FORMATS.md (H1 flash-forward + rewind, H2 premise object, H3 snap-zoom burst; H4 loop is always on).
                  If not named, pick it and say why.
@@ -68,14 +68,14 @@ Not every episode is a doubling. The format sets the length, the structure and t
 
 | Format | Length | Structure | On-screen device |
 |---|---|---|---|
-| **DOUBLING** (default) | ~90 s (up to 100 s with payoff and outro) | The seven-step escalation + payoff + share outro (below) | Counter with ×2 badges (HUD rules below) |
+| **DOUBLING** (default) | **70 s from ep6** (ep1–5 were ~90–100 s) | Five acts: hook 0–3, build 3–20, chaos 20–45, twist 45–65, exit 65–70 (`docs/LOOK_AND_VIDEO.md` → Story shape). Ep1–5 used the seven-step escalation. | Counter (HUD rules in LOOK_AND_VIDEO); no Gerald chip |
 | **REEL** (funny short) | 15–17 s, one gag | Flash-forward hook (the payoff in the first second) + rewind, setup, one escalating gag, the punchline, then the **voiced** share line over the last shot (no end card). No seven-step scale. No Gerald. See `docs/HOOKS_AND_FORMATS.md`. | Caption or sign only; no counter |
 | **WORLD** ("in this world…") | ~120 s (2 min) | A world premise (e.g. everyone has a bodyguard): 3–4 chapters, each a different angle of the same world, the hero in every chapter, then a closing twist and share outro. Use the 0.4 s grid, the same caption rules, and no counter. No Gerald. | Chapter title card (Anton, yellow) per chapter, optional chyron |
 
 Rules for every format:
 - Same hero, same family, same narrator voice and caption style.
 - **Catchphrases (bomboclat, la peace) are DOUBLING only,** unless the user names one for a REEL or WORLD episode. REEL and WORLD have no catchphrase lines, no OK-hand or mewing gag.
-- **Gerald is DOUBLING only.** REEL and WORLD episodes have no Gerald, no Gerald roasts, no HUD chip and no Gerald callback.
+- **Gerald is DOUBLING only.** REEL and WORLD episodes have no Gerald, no Gerald roasts and no Gerald callback. No format ever has a Gerald HUD chip or Gerald text.
 - Same SFX library (`assets/sfx/`). Pick by category, not by habit.
 - Keep the mix, defect checklist and quality checks. The shot-length rule (2–3 s per shot) applies to DOUBLING and WORLD. A REEL can have shorter shots (min 1 s), but each shot still shows one clear thing.
 - Set the length in `timeline.js` (`DUR`, `FRAMES`) and in `.videohub/project.json` (`render.env.DUR`, `live.dur`) for each episode. Put the chosen format at the top of `episode-N/BRIEF.md`.

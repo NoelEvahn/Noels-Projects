@@ -11,7 +11,7 @@ tail flick, yawn, turning his back, sitting on the one thing everybody is lookin
 ## Rules for every episode
 1. Gerald appears in **every scene** (at least one clear shot each, shown in a wide/establishing shot first), doing something unbothered that suits the location.
 2. Each appearance gets a short **narrator roast** (≤ 2 s, deadpan, past tense, third person, e.g. "Gerald remained unconvinced."). Max ~7 per episode; roast lines are extra to the five story lines, mixed quietly, captions in a different colour (pink-orange), key word in yellow.
-3. A small HUD chip near the counter tracks Gerald's own stat for the episode's topic (ep3: `GERALD · LOVES YOU: NO`). It never changes while the big counter explodes. Inside the 60 px side margins and out of the top 110 px / bottom 300 px.
+3. **No Gerald UI (user, 2026-11-25).** No HUD chip, no stat chip, no "GERALD · IMPRESSED" text, no Gerald line on the title card. He is a background character who pops up at random; his reaction is animation and facial expression only.
 4. Gerald is **not** a recurring trope for the "max 2 recurring tropes" rule (he is cast, not a gag device) but his gag must still change every episode (new location, new bit).
 5. Never repeat a roast line. Log every line and gag below. Build callbacks to earlier episodes (e.g. "Gerald, once again, did not care.").
 6. Gerald is never harmed, scared for real, or used for cruelty; he is always the calm one. Keep it family-safe.
@@ -32,7 +32,7 @@ Gerald's stat: `LOVES YOU: NOT YET`, flips to `YES ♥` at 89.2. Final gag: he i
 
 Reusable ideas not yet used: Gerald on the pitch / stage / roof, Gerald asleep through the climax, Gerald pushing something off a table, Gerald as the only needle that does not move.
 
-**After episode 3:** Gerald converted at the end of ep3. Default for new episodes: he starts as the holdout again (chip `NOT YET`); decide per episode whether he converts at the payoff or stays the holdout, and log it here.
+**After episode 3:** Gerald converted at the end of ep3. Default for new episodes: he starts as the holdout again (no chip, acted only); decide per episode whether he converts at the payoff or stays the holdout, and log it here.
 
 ### Ep5 — "What if every 2 seconds, you jumped 5× higher?"
 Gerald is **already there** at every stop, unbothered. No HUD chip this episode (the user removed `GERALD · IMPRESSED: NO` from the HUD and the title card). Final gag: he pushes the universe (the ball) off the coffee table. He stays the holdout.
