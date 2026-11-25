@@ -3,6 +3,16 @@
 Part of the master prompt (`../MASTER_PROMPT.md`). Read this before planning shots. It covers the video format, the story shape, pacing, layout, detail, the counter, the series look and camera, the defect checklist and the delivery checks.
 Hooks and retention are in `HOOKS_AND_FORMATS.md`, the voices, Gerald, music and mix are in `AUDIO_AND_CAST.md`.
 
+## Episode 6 verdict — READ FIRST (user, 2026-11-25)
+"The storyline is good, but it sucks: the background is empty, there are a lot of glitches, you can't see the clouds, you can't even see his finger when he spins the ball, everything moves too slow. There should always be action or something moving, never just him growing with nothing. There must be a size comparison in the background. We need dopamine hits so people get addicted." These rules apply to every shot of every format:
+1. **Never an empty background.** Every frame has foreground, midground and background dressing from the asset library (`assets/library/INDEX.md`, packs `city`, `nature`, `landmarks`, `space`, `interiors`, `motion`). A sky-only, star-only or flat-colour background is a defect. Pause on any frame: if more than ~30 % of it is plain colour, dress it.
+2. **Something is always moving.** Every frame has at least three independent motions besides the hero: traffic, crowds, birds, clouds drifting, debris, particles, flags, water, spinning satellites, camera drift. Use each asset's `update(t)`; use `motion` pack parallax layers so no shot is static. Never hold a camera still for more than 1 s unless it is a deliberate freeze.
+3. **A dopamine hit every 2–3 seconds** (not 4–6): a growth pop with shockwave + debris, a smash, a reaction, a speed ramp, a camera whip/swoop, a punch-zoom on a face, a flash cut. Plan them on the timeline table (column "hit") and check there is no gap longer than 3 s.
+4. **Size comparison always in frame.** Every shot of a growing/shrinking subject shows a recognisable reference at true scale (`landmarks` pack: people, cars, houses, landmarks, mountains, planets; `motion` sizeMarker/ruler). When he outgrows one reference, the next bigger one is already in the background. The counter is not enough on its own.
+5. **Faster.** Average shot 1.5–2.5 s in DOUBLING (was 2–3 s); camera always moving (push, orbit, crane, follow); cut on action. Slow motion only on the payoff (one per act at most).
+6. **The gag must be readable at phone size.** Hands, fingers and held objects are framed so you see the contact (the ball on the fingertip, the foot on the palm). Clouds must read as clouds (volume, shading, soft edges, visible tops). Check gags at 1/3 scale in the contact sheet: if you cannot tell what happens, re-frame.
+7. **No glitches:** no camera inside geometry, no giant body part filling the frame by accident, no floating/clipping, no white-out longer than 3 frames (dust, flash), no objects popping. Every fix round re-checks the whole film, not just the changed shot.
+
 ## Format
 - Vertical 9:16, 1080×1920, 30 fps, H.264 High + AAC-LC stereo 48 kHz.
 - Length follows the episode format (see "Episode formats" in `../MASTER_PROMPT.md`). **DOUBLING from ep6: 70 s, five-act structure below.** Ep1–5 (old): about 90 s; the ending payoff and the **share outro** may take it to about 100 s (episode 3 is 100.0 s). REEL: 15–17 s. WORLD: about 120 s.

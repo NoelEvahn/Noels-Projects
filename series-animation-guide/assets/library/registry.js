@@ -183,3 +183,8 @@ reg({ id: 'set_livingroom', cat: 'sets', title: 'Living room (ep5) with the ceil
   build: () => { const s = buildLivingRoom(); s.setHole(1); return { obj: s.group, cam: { pos: [0.6, 1.7, 5.8], target: [0, 1.1, -1], fov: 52 } }; } });
 reg({ id: 'set_house_exterior', cat: 'sets', title: 'Bungalow outside (ep5) with the roof hole and chimney', note: 'houseExterior().setHole(k), userData.chimneyTop, holeWorld()', stage: { sky: ['#7fc8ff', '#e9f6ff'], ground: 0x6fbf4a },
   build: () => { const h = houseExterior(); h.setHole(1); return { obj: h, cam: { pos: [-5, 4.4, 11], target: [0, 3.2, 0], fov: 50 } }; } });
+
+// --- asset packs (2026-11-25): each pack registers its items in registry/<pack>.js; a broken pack only logs a warning ---
+for (const p of ['city', 'nature', 'landmarks', 'space', 'interiors', 'motion']) {
+  try { const m = await import(`./registry/${p}.js`); ITEMS.push(...m.ITEMS); } catch (e) { console.warn('pack failed to load:', p, e.message); }
+}
