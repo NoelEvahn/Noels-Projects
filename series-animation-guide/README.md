@@ -18,4 +18,4 @@
 | 3 | What if every 2 seconds, twice as many people loved you? | Complete (v5 final cut, 100 s) |
 | 4 | Mama I'm a criminal (REEL, 17 s) | v4 retention cut |
 | 5 | What if every 2 seconds, you jumped 5× higher? | v1 built (96.8 s, H1 dunk hook; Tiki Tiki phonk from the 60.4 cut); see `episode-5/HANDOFF.md` §10 |
-| 6 | What if you got 2× taller every 2 seconds? (70 s, Mom twist) | Pre-production: brief, phonk asset, OIIA cat clip; 2 meme clips pending (`episode-6/BRIEF.md`) |
+| 6 | What if you got 2× taller every 2 seconds? (70 s, Mom twist) | Pre-production done: brief, phonk asset, three keyed meme cats; ready to build (`episode-6/BRIEF.md`) |

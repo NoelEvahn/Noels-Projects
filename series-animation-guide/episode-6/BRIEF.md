@@ -2,7 +2,7 @@
 
 **Format:** DOUBLING, 70 s, new five-act structure (`docs/LOOK_AND_VIDEO.md` → Story shape).
 **Hook:** H1-style chaos at frame 0 (Mom already furious, house wrecked) + H4 loop (last frame cuts back to frame 1).
-**Status:** pre-production. Script, counter, music and voices locked; 1 of 3 meme clips saved (see §7).
+**Status:** pre-production. Script, counter, music, voices and all three meme clips ready; next step is the build.
 
 ## 1. Structure
 
@@ -71,9 +71,11 @@ Reference: `reference/mom_physique_reference.jpg` (user-supplied "chad" physique
 
 ## 7. Cat memes: the space-fight audience (58–62 s)
 - **Only used in the space fight** (user): three meme cats sit side by side like an audience watching Mom beat him up, like people eating popcorn at a show, but there is no popcorn: it's just the meme clips, keyed, on camera-facing cards (`fx/clip.js` `clipCard()`), floating in space at the edge of the frame. Brief cuts between the HIT 1 / HIT 2 beats, synced to the phonk. Clip sound ducked under the music or muted (the phonk is the payoff).
-- Library clips (`assets/library/clips/`):
-  - `oiia_cat.webm` — the OIIA spinning cat, **saved** (green screen removed, VP9 + alpha + sound, 16.9 s, poster `oiia_cat_poster.png`). Source: Internet Archive item `video_20250118_211344`.
-  - Happy Happy Happy cat, German cat, Maxwell the cat — **not yet saved**: YouTube blocks downloads from the cloud session and the Internet Archive has no copies. Green-screen versions on YouTube: Happy cat `NSU2hJ5wT08`, German cat `ASPhC1KeN-w`, Maxwell `rXh8Hvo7gfs`. Once the files are supplied, key them with `assets/library/tools/key_clip.py` and add them to `clips/`.
+- The three cats (all in `assets/library/clips/`, background removed, VP9 + alpha + sound; German cat dropped by the user):
+  - `oiia_cat.webm` — OIIA spinning cat, 16.9 s (Internet Archive item `video_20250118_211344`).
+  - `happy_cat.webm` — Happy Happy Happy cat, 7.1 s (user's screen recording).
+  - `maxwell_cat.webm` — Maxwell the cat, 13.4 s (user's screen recording, cut before the phone UI at 13.45 s).
+- New clips: key with `assets/library/tools/key_clip.py`.
 
 ## 8. Deliverables
 `episode-6.mp4` (1080×1920, 30 fps, 70 s) + `episode-6_720p.mp4`, analytics page (`analytics.html` / `analytics.data.js`, added to `analytics/index.html`), `HANDOFF.md`.

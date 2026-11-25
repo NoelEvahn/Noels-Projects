@@ -111,6 +111,8 @@ Heart eyes: people `face({ hearts: 0..1 })` (or `FACES.love` / `FACES.lovestruck
 - **Sand toys** (`props/beach.js`): `toyShovel(color)` (holdable, grip at origin; ep4 holds it with `rot: [PI*0.95,0,0]`, scale 1.45), `sandBucket(color)`. Screenshot `prop_beach`.
 - **Park sand pit** (`sets/sandpark.js`): `buildSandPark()` + `SANDPARK_STAGE` (no stage ground: the set has its own lawn ring so the pit stays open). `dig(k)` grows the hole (`PIT`) forward under whoever sits at the origin; `heightAt(x, z)`. Screenshot `set_sandpark`.
 - **`clips/oiia_cat.webm`** (2026-11-25): the OIIA spinning tabby meme, background removed (VP9 + alpha + its sound, 480×853, 16.9 s, poster `clips/oiia_cat_poster.png`). Alternates a standing stare with fast spins every 1–2 s. Keyed with `tools/key_clip.py` (handles a background that flashes light green / white; keeps only the largest blob). Used in ep6 as one of the space-fight audience cats.
+- **`clips/happy_cat.webm`** (2026-11-25): Happy Happy Happy cat, dancing with paws out, background removed (VP9 + alpha + sound, 480×498, 7.1 s, poster `clips/happy_cat_poster.png`). From the user's screen recording; low-res source.
+- **`clips/maxwell_cat.webm`** (2026-11-25): Maxwell the cat, the loafed black-and-white cat turning round, background removed (VP9 + alpha + sound, 480×418, 13.4 s, poster `clips/maxwell_cat_poster.png`). From the user's screen recording, cut at 13.40 s before the phone UI appears.
 - The clapping black cat clip (`clips/clap_cat.webm`) frame map used in ep4: 0-56 grinning clap loop, 84-150 shocked / paw over mouth, ~24 both paws raised and spread.
 
 ## Episode 5 additions (2026-11-20)
