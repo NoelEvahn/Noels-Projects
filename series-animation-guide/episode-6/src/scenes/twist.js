@@ -129,7 +129,7 @@ export default {
         S.cats.forEach((cc, i) => { cc.group.position.set(rockTop.x - 0.85 + i * 0.78, rockTop.y + 0.05, rockTop.z + (i === 1 ? -0.2 : 0)); });
         if (shot.id === 'jump') { tgt = mp.clone().lerp(cheek, 0.5); c = cam([tgt.x + 5, tgt.y - 0.5, tgt.z + 9], [tgt.x, tgt.y, tgt.z], 55); out.capY.dinner = 760; }
         else if (shot.id === 'cats') { const rt = rockTop; c = cam([rt.x + 0.2, rt.y + 0.75, rt.z + 4.4], [rt.x, rt.y + 0.55, rt.z], 52); }
-        else { tgt = new THREE.Vector3(0.5, 1.0, -1.2); const wide = t < 60.95; c = wide ? cam([tgt.x + 6, tgt.y + 9, tgt.z + 20], [tgt.x - 1, tgt.y - 1, tgt.z], 58) : cam([tgt.x + 2.4, tgt.y + 0.5, tgt.z + 5.8], [tgt.x - 0.2, tgt.y + 0.4, tgt.z], 50); out.capY.veg = 1600; if (t > 60.75 && t < 61.0) { const s = (1 - seg(t, 60.75, 61.0)) * 0.15; c.pos[0] += Math.sin(t * 90) * s; } }
+        else { tgt = new THREE.Vector3(0.5, 1.0, -1.2); const wide = t < 60.95; c = wide ? cam([tgt.x + 2.5, tgt.y + 13, tgt.z + 6.5], [tgt.x, tgt.y + 0.4, tgt.z], 62) : cam([tgt.x + 2.4, tgt.y + 0.5, tgt.z + 5.8], [tgt.x - 0.2, tgt.y + 0.4, tgt.z], 50); out.capY.veg = 1600; if (t > 60.75 && t < 61.0) { const s = (1 - seg(t, 60.75, 61.0)) * 0.15; c.pos[0] += Math.sin(t * 90) * s; } }
         if (t > TL.BEATS.punch && t < TL.BEATS.punch + 0.25) { const s = (1 - seg(t, TL.BEATS.punch, TL.BEATS.punch + 0.25)) * 0.25; c.pos[0] += Math.sin(t * 95) * s; c.pos[1] += Math.cos(t * 80) * s; out.flash = 0.4 * (1 - seg(t, TL.BEATS.punch, TL.BEATS.punch + 0.2)); }
         const camW = new THREE.Vector3(...c.pos).add(SPACE); for (let i = 0; i < S.cats.length; i++) S.cats[i].show((t - 57.8) + [0.0, 3.4, 1.0][i], camW);
       }
