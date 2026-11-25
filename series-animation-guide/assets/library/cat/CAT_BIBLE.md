@@ -49,3 +49,12 @@ Gerald is **already there** at every stop, unbothered. No HUD chip this episode 
 | 55.6-58 | on the picnic blanket on the Orion pillar with the alien family | (silent) |
 | 58-60.4 | floating past in a suit and red tie, briefcase drifting beside him | "Gerald had dressed for the occasion." (r6 58.4; reworded from "Gerald dressed…" so Piper pronounces it cleanly) |
 | 85.2-91.6 | on the coffee table; nudges the ball off the edge at 90.4 | "Gerald pushed the universe off the table." (r7 89.6) |
+
+### Ep6 — "What if you got 2× taller every 2 seconds?" (70 s, Mom twist)
+Gerald is his old self: a silent background pop-up, no lines, no captions, no chip (user, 2026-11-25). No roasts this episode.
+| Film s | Gerald is… |
+|---|---|
+| 0-2 | loafing on the fallen wardrobe in the wrecked bedroom while the house shakes |
+| 20.8-22.4 | in his black suit with a tiny tablet, sitting in a futuristic control room, the counter ticking on the screen behind him; one slow blink |
+| 52.0-53.0 | same control room, right after Mom catches the foot: still doing nothing |
+| 62.6-65.0 | loafing on the bedroom windowsill as the boy crashes through the roof |

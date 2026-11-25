@@ -120,3 +120,11 @@ Heart eyes: people `face({ hearts: 0..1 })` (or `FACES.love` / `FACES.lovestruck
 - **Space props** (`props/space.js`): `issStation()` (cupola `userData.cupola`), `satellite()`, `voyager1()` (googly eyes, `look(t)`), `sunFace()` (`setShades(k)`, `setMouth(k)`), `bandedPlanet()` (vertex-colour bands), `saturn()`, `icyRock()`, `comet()`, `nebulaPillar()`, `picnicBlanket()`, `telescope()`, `tinyPlanet()`, `moonFlag()`, `cockpitNose()` (see-through windscreen, `userData.seat`). Screens `prop_space`, `prop_space_b`.
 - **Living room + bungalow** (`sets/livingroom.js`): `buildLivingRoom()` (sofa, armchair, coffee table, rug, lamp, windows, door, frames; `setHole(k)` punches the ceiling above `HOLE`), `houseExterior()` (pitched tiled roof, front chimney `userData.chimneyTop`, `setHole(k)`, `userData.holeWorld()`), `roofWithHole()`, `LIVING_STAGE`. Screens `set_livingroom`, `set_house_exterior`.
 - Episode-level cast (in `episode-5/src/common.js`, not presets): tourist, pilot, astronauts (with `helmet(ch)` glass bubble), aliens (`antennae(ch)`), Gerald's suit + tie (`geraldSuit(cat)`) and `briefcase()`.
+
+## Episode 6 additions (2026-11-25)
+Episode-level helpers in `episode-6/src/common.js` (not yet in the registry):
+- `momPower(ch)` → `set(k, t)`: power-up for any rig (deltoid/biceps/triceps/forearm bulges, veins as thin tubes, trapezius, glowing eyes + halo, fresnel aura). Used on Mom at the beat drop.
+- `giantShoe({ shin })`: the hero's sneaker at giant scale (tread, laces, red stripe, sock, shin), sole at y=0, toe toward +Z, length 1.
+- `helicopter()` (glass front cockpit, `userData.seat/rotor/tail`), `eiffel()` (~27 units), `mountain(h, r, seed, snow)`, `cracks()`, `dustCloud()`, `ring()` (additive shockwave ring), `skyBG(top, bottom)`.
+- Bedroom set + exterior with a roof hole: `buildBedroom`, `buildExterior`, `bed`, `wardrobe` in `episode-6/src/scenes/hook.js`.
+- `tools/key_clip.py`: keyer for meme clips whose green background flashes white / light green.

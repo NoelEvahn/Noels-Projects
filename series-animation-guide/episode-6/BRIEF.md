@@ -2,7 +2,7 @@
 
 **Format:** DOUBLING, 70 s, new five-act structure (`docs/LOOK_AND_VIDEO.md` → Story shape).
 **Hook:** H1-style chaos at frame 0 (Mom already furious, house wrecked) + H4 loop (last frame cuts back to frame 1).
-**Status:** pre-production. Script, counter, music, voices and all three meme clips ready; next step is the build.
+**Status:** built (v1/v2, see §10 As built).
 
 ## 1. Structure
 
@@ -80,6 +80,22 @@ Reference: `reference/mom_physique_reference.jpg` (user-supplied "chad" physique
 ## 8. Deliverables
 `episode-6.mp4` (1080×1920, 30 fps, 70 s) + `episode-6_720p.mp4`, analytics page (`analytics.html` / `analytics.data.js`, added to `analytics/index.html`), `HANDOFF.md`.
 
+## 10. As built (2026-11-25)
+Code: `src/timeline.js` (single source of truth: shots, counter, speech table, beats, music cues), `src/main.js`, `src/hud.js`, `src/common.js`, `src/scenes/{hook,build,space,twist,home}.js`; audio `audio/{make_voices,music,make_audio}.py`; tools `tools/{render.mjs,sheet.py,encode.sh}`.
+Rebuild: deps outside the repo (`npm i three@0.170.0 @fontsource/anton`, copy `three.module.js` + `anton-latin-400-normal.woff2` into `vendor/`); Python venv (numpy scipy soundfile librosa pyloudnorm piper-tts faster-whisper kokoro-onnx pillow); Kokoro model files `kokoro-v1.0.onnx` + `voices-v1.0.bin` (github.com/thewh1teagle/kokoro-onnx releases) in `$KOKORO_DIR`; Piper `en_US-ryan-high.onnx` in `$PIPER_VOICE`.
+`python ../assets/library/tools/clip_frames.py ../assets/library/clips/<cat>.webm build/clip_<cat>` for happy_cat, oiia_cat, maxwell_cat;
+`KOKORO_DIR=… PIPER_VOICE=… python audio/make_voices.py && python audio/music.py && python audio/make_audio.py`;
+`NODE_PATH=$(npm root -g) node tools/render.mjs --from 0 --to 2099 --scale 1 --workers 4 --out <frames>`; `tools/encode.sh <frames> episode-6.mp4 audio/mix.wav 20`. Preview one part: `index.html?parts=twist&scale=0.5`.
+
+Deviations from the script (§9) and why:
+- Times follow the user-confirmed 2 s doubling (§3), so the landmark beats are on the 2 s ticks; each build shot straddles a tick (growth pop + pull-back mid-shot).
+- The lady's "la peace" is at 5.95 (after narrator line 1, which runs at natural pace to 5.61); the Statue shot starts at 7.1.
+- Gerald has no lines (user): control room 20.8-22.4 and 52.0-53.0, sitting in his suit with a tablet, doing nothing; plus pop-ups on the wardrobe (hook) and the windowsill (landing).
+- Cat memes only in the space fight (user): Happy Happy Happy cat, OIIA cat and Maxwell on a little asteroid, visible during the jump/punch/throw and in their own 0.8 s cut (59.4). Their own sound is muted so the phonk stays the payoff.
+- Music: Charlie's Inferno from frame 0; X-COOL phonk enters at 28.4 from asset 2.78 s and fades in over 20 s (user); its drop lands at 48.400 (measured in the stem). A 0.35 s dip (-12 dB) right before the drop makes it hit; the drop is +5 dB over the moment before.
+- Dialogue: Kokoro (Mom af_sarah, boy am_puck pitched x1.12, reporter am_michael, Moon bm_lewis after the la peace sample); "Ah!" and "Ow." are fed to Kokoro as phonemes. Mom's "I SAID DINNER'S READY!" has a long echo tail.
+- The landing boy is 4.4 m (lying diagonally, bed crushed, feet through the right wall); the peace sign at 65.2 is the rig's 'peace' hand.
+- SFX are only files from `assets/sfx/` (user).
 ## 9. Script (user, verbatim; the decisions above override it)
 
 > Your 70s structure is perfect for this data:

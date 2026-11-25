@@ -13,7 +13,7 @@ from common import *
 src = open(os.path.join(os.path.dirname(__file__), '../src/timeline.js')).read()
 blk = re.search(r'export const LINES = \[(.*?)\n\];', src, re.S).group(1)
 LINES = []
-for m in re.finditer(r"\{ id: '(\w+)', t: ([\d.]+), kind: '(\w+)'(.*?)\},?\n", blk):
+for m in re.finditer(r"\{ id: '(\w+)', t: ([\d.]+), kind: '(\w+)'(.*?)\},?(?:\n|$)", blk):
     d = dict(id=m.group(1), t=float(m.group(2)), kind=m.group(3)); rest = m.group(4)
     for k in ('who', 'text', 'cap'):
         mm = re.search(k + r""": (['"])(.*?)\1""", rest)
