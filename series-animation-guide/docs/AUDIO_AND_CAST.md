@@ -3,6 +3,7 @@
 Part of the master prompt (`../MASTER_PROMPT.md`). Read this before writing the speech timeline and the audio build.
 
 ## The catchphrase rule
+- **From ep6 (user, 2026-11-25): scripted dialogue is allowed.** Characters with real lines (Mom, the boy, reporters) are voiced with **Kokoro TTS**, one distinct voice per character, never the narrator's voice. The catchphrase lines below still come from the sample.
 - Characters only ever say the CATCHPHRASE or its short form. The narrator is the only normal speech.
 - All lines are built from the attached sample, at the PITCH slot (default 1.10× and 1.15× registers, measured within ±3% against the same syllables of the source).
 - About 1.2× faster than the sample. Nothing slow except one slow-motion scream layered under the final crowd.

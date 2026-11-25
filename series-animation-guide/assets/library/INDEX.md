@@ -110,6 +110,7 @@ Heart eyes: people `face({ hearts: 0..1 })` (or `FACES.love` / `FACES.lovestruck
 - **Baby** (`baby.js`): `makeBaby()` = the people rig at toddler proportions (bald, white tee with black stripes, grey trousers, bare feet with toes). `BABY_POSES.sit(t)` (on the ground, legs splayed), `.tip(t, k)` (falling back), `.cry(t)`; `baby.cry(k, t)` = scrunched eyes, wailing mouth, modelled tears. Screenshot `char_baby`.
 - **Sand toys** (`props/beach.js`): `toyShovel(color)` (holdable, grip at origin; ep4 holds it with `rot: [PI*0.95,0,0]`, scale 1.45), `sandBucket(color)`. Screenshot `prop_beach`.
 - **Park sand pit** (`sets/sandpark.js`): `buildSandPark()` + `SANDPARK_STAGE` (no stage ground: the set has its own lawn ring so the pit stays open). `dig(k)` grows the hole (`PIT`) forward under whoever sits at the origin; `heightAt(x, z)`. Screenshot `set_sandpark`.
+- **`clips/oiia_cat.webm`** (2026-11-25): the OIIA spinning tabby meme, background removed (VP9 + alpha + its sound, 480×853, 16.9 s, poster `clips/oiia_cat_poster.png`). Alternates a standing stare with fast spins every 1–2 s. Keyed with `tools/key_clip.py` (handles a background that flashes light green / white; keeps only the largest blob). Used in ep6 as one of the space-fight audience cats.
 - The clapping black cat clip (`clips/clap_cat.webm`) frame map used in ep4: 0-56 grinning clap loop, 84-150 shocked / paw over mouth, ~24 both paws raised and spread.
 
 ## Episode 5 additions (2026-11-20)

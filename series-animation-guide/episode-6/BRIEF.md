@@ -2,26 +2,48 @@
 
 **Format:** DOUBLING, 70 s, new five-act structure (`docs/LOOK_AND_VIDEO.md` → Story shape).
 **Hook:** H1-style chaos at frame 0 (Mom already furious, house wrecked) + H4 loop (last frame cuts back to frame 1).
-**Status:** pre-production. Script and audio locked; meme clips still to be supplied (see §5).
+**Status:** pre-production. Script, counter, music and voices locked; 1 of 3 meme clips saved (see §7).
 
 ## 1. Structure
 
 | Time | Act | Content |
 |---|---|---|
 | 0–3 s | Hook | Mom already angry, boy's head through the roof, `HEIGHT: 14.4m` |
-| 3–20 s | Build | Landmark montage up to space, Gerald control-room pop-up at 14–16 s |
+| 3–20 s | Build | Landmark montage up to space (one landmark per 2 s doubling), Gerald pop-up in the control room |
 | 20–45 s | Chaos | Earth-scale, Moon spin, counter breaks, Earth as a marble, the walk toward Earth (`WAIT FOR IT`) |
-| 45–65 s | Twist | Foot descends, **Mom holds it up on the beat drop (48.4 s)**, two cat memes, Mom throws him, space fight, bedroom landing |
+| 45–65 s | Twist | Foot descends, **Mom holds it up on the beat drop (48.4 s)**, Mom throws him, space fight watched by three meme cats, bedroom landing |
 | 65–70 s | Exit | "La peace…" / "Eat your dinner.", freeze frame, title card, voiced share line, loop |
 
 Full shot-by-shot script from the user: §8 (verbatim).
 
 ## 2. Production rules (user)
 - Keep the height counter and essential story text only. No extra captions or overlays.
-- **No Gerald UI:** no "impressed" text, no status chip. Gerald is a background character who pops up; reactions by animation and facial expression only. His two script lines ("I'm not even impressed anymore." at 14–16 s, "Finally." at 52–55 s) are **acted, not spoken or captioned**: slow head shake → presses the button; disbelief → genuine respect (slow nod / slow clap).
-- Gerald in the control room wears the black suit (`geraldSuit(cat)` from episode 5) and holds a tiny tablet.
+- **Gerald = his old character, in his suit, doing nothing** (user, 2026-11-25). Background pop-up only: no lines, no captions, no "impressed" text, no status chip, no button press, no reaction beat. The script's Gerald lines ("I'm not even impressed anymore.", "Finally.") are dropped. In the control-room shots he just stands there in the black suit (`geraldSuit(cat)` from episode 5) with the tiny tablet, half-lidded, unbothered. The counter doubles on its own.
+- At 52–55 s (where the script had Gerald's reaction + memes) hold on Mom's power-up and the wind-up for the throw; at most a 1 s cut of Gerald standing in the control room, doing nothing.
 
-## 3. Music and the beat drop (the main payoff)
+## 3. Counter: doubles every 2 seconds (user confirmed)
+`HEIGHT = 14.4 m × 2^floor(t / 2)`. The script's heights are exactly this series; only the times move so each value holds 2 s. One landmark per value:
+
+| Film s | HEIGHT | Beat (script) |
+|---|---|---|
+| 0–2 | 14.4m | Hook: Mom in the doorway, head through the roof |
+| 2–4 | 28.8m | Hook ends; lady at the window, "La peace!" (3–4 s) |
+| 4–6 | 57.6m | Statue of Liberty, "Oops." |
+| 6–8 | 115.2m | Eiffel Tower selfie, phone cracks |
+| 8–10 | 230.4m | Big Ben rings, "AH!" |
+| 10–12 | 460.8m | Empire State + helicopter, pilot "La peace!" |
+| 12–14 | 921.6m | Burj Khalifa, news reporter line |
+| 14–16 | 1.8km | Mountain range, climber, "You good?" |
+| 16–18 | 3.7km | Above the clouds, narrator "serious problem"; short Gerald control-room pop-up |
+| 18–20 | 7.4km | Rests his elbow on Everest |
+| 20–22 | 14.7km | Beyond the atmosphere, sky turns black |
+| 22–24 | 29.5km | Floats above Earth |
+| 24–26 | 59km | Counter starts glitching; NASA "La peace!" |
+| 26 → | 118km → ERROR | "He stopped following the rules": the counter glitches (118km → 500km → 1,000km → 10,000km → ERROR) and stays broken; title card: FINAL HEIGHT: NOT FOUND… |
+
+The chaos act (Earth-scale, Moon spin, Earth as a marble, the walk) fits into 26–45 s by trimming the script's slack (35–40 s "distraction"). The title "every 2 seconds" now matches the counter.
+
+## 4. Music and the beat drop (the main payoff)
 
 | Track | File | Use |
 |---|---|---|
@@ -29,38 +51,34 @@ Full shot-by-shot script from the user: §8 (verbatim).
 | X-COOL phonk (slowed), main section | `assets/x_cool_phonk_slowed.mp3` | Fades in 20 s before the Mom reveal; the drop is the reveal |
 
 **Phonk asset:** cut from the user's upload (`Xcool_phonk.mp3`, 66.7 s). The upload was: silence 0–4.5 s, a short intro section 4.5–10.6 s, a gap, then the main section from 10.64 s. Per the user, the intro section is removed; the asset is the main section only (10.64 → 64.80 of the upload, 54.2 s, 256 kbps).
-- **Beat drop in the asset: 22.78 s** (measured: RMS jumps from about −23 dB to −14 dB at 22.780 s, 5 ms windows, verified after the encode).
+- **Beat drop in the asset: 22.78 s** (RMS jumps from about −23 dB to −14 dB at 22.780 s, 5 ms windows, measured after the encode).
 
 **Placement (user):** start the phonk 20 s before the Mom reveal and fade it in slowly, so the drop lands on the reveal.
-- Mom reveal frame (Mom holding the foot): **film 48.4 s** (on the 0.4 s grid, inside the script's 48–52 s window).
-- Phonk enters at **film 28.4 s**, playing from **asset 2.78 s** (= 22.78 − 20). Drop: 2.78 + 20 = 22.78 → film 48.4 s.
-- Gain: phonk rises slowly from silent at 28.4 s to full by the drop (ease-in curve, most of the rise in the last 8 s); Charlie's Inferno crossfades out underneath and is gone by ~45 s (the `WAIT FOR IT` / descending-foot section is phonk only).
-- This supersedes the script's "music begins transitioning at 40–45 s": the transition now starts at 28.4 s and completes by 45 s.
-- Superhero power-up SFX layered on the drop (from `assets/sfx/reveal/`, under the music).
-- Meme clips at 52–55 s: duck the phonk ~9 dB while a clip with its own sound plays (AUDIO_AND_CAST rule), cuts on phonk beats.
+- Mom reveal frame (Mom holding the foot): **film 48.4 s** (0.4 s grid, inside the script's 48–52 s window).
+- Phonk enters at **film 28.4 s**, playing from **asset 2.78 s** (= 22.78 − 20). Drop → film 48.4 s.
+- Gain: phonk rises slowly from silent at 28.4 s to full by the drop (ease-in, most of the rise in the last 8 s); Charlie's Inferno crossfades out underneath and is gone by ~45 s (the `WAIT FOR IT` / descending-foot section is phonk only).
+- This replaces the script's "music begins transitioning at 40–45 s".
+- Superhero power-up SFX layered on the drop (`assets/sfx/reveal/`, under the music).
 - Verify after the mix: the drop transient sits within ±1 frame (33 ms) of the reveal frame.
 
-## 4. Mom design
-Reference: `reference/mom_physique_reference.jpg` (user-supplied "chad" physique photo, grey-scale). Use it for **the power-up form only**, translated into the series' cartoon style, in colour, and as a mom: same proportions and attitude (huge shoulders, defined arms with veins, confident smile, chin up), on Mom's existing family character (her hair, clothes, apron/cardigan stretched by the muscles). No textures (series rule): muscles and veins are modelled geometry. Normal-sized Mom everywhere else; the power-up (glowing eyes, muscles expanding, veins) plays on the drop at 48.4 s and holds through the throw and the space fight.
+## 5. Voices
+- Narrator: Piper `en_US-ryan-high` as in every episode.
+- **Dialogue (Mom, the boy, the news reporter): Kokoro TTS** (user, 2026-11-25), one distinct Kokoro voice per character, different from the narrator. Mom: firm, loud female voice; the boy: young male voice. Kokoro (`kokoro` on PyPI, model `hexgrad/Kokoro-82M` on Hugging Face) is reachable from the cloud session.
+- "La peace" lines (lady, pilot, NASA, Moon, the boy's last line) use the sample `assets/la_peace.mp3` with the OK hand + mewing face (AUDIO_AND_CAST).
 
-## 5. Cat meme clips (still needed)
-The user named: Happy Happy Happy cat, German cat, the OIIA spinning cat ("O-E-E-A / U-U-U-I-I-A-A-O-O-O") and Maxwell the cat. The script uses **two**: one under Gerald's reaction (52–54 s) and one as Mom prepares to throw the foot (54–55 s).
-- Green-screen versions were found on YouTube, but YouTube blocks downloads from the cloud session ("sign in to confirm you're not a bot"), so the files could not be fetched here. Candidates found:
-  - Happy Happy Happy cat: "Green Screen Happy Happy Happy Cat Meme" (YouTube id `NSU2hJ5wT08`, 8 s)
-  - German cat: "German Cat GreenScreen" (`ASPhC1KeN-w`, 6 s)
-  - OIIA cat: "OIIAOIIA CAT | Green Screen HD" (`NoQ8Tj73WrY`, 13 s)
-  - Maxwell: "Maxwell the Cat green screen (spin+dance)" (`rXh8Hvo7gfs`, 15 s)
-- Once the files are in `episode-6/media/`: key with ffmpeg `chromakey` + `despill` into 30 fps PNG frames (`audio/make_clip.py` pattern from ep3/ep5) and play them on camera-facing cards (`fx/clip.js` `clipCard()`).
+## 6. Mom design
+Reference: `reference/mom_physique_reference.jpg` (user-supplied "chad" physique photo, grey-scale). Use it for **the power-up form only**, translated into the series' cartoon style, in colour, and as a mom: same proportions and attitude (huge shoulders, defined arms with veins, confident smile, chin up), on Mom's existing family character (her hair, clothes stretched by the muscles). No textures (series rule): muscles and veins are modelled geometry. Normal-sized Mom everywhere else; the power-up (glowing eyes, muscles expanding, veins) plays on the drop at 48.4 s and holds through the throw and the space fight.
 
-## 6. Open points to confirm before the build
-1. Which two memes, in which order (default plan: Happy Happy Happy cat under Gerald's respect reaction, OIIA spin as Mom winds up the throw).
-2. Counter maths: the script doubles every ~1 s from 3 s (28.8 m at 3 s, 57.6 m at 4 s…), then every 1–2 s, while the title says every 2 s. Default: keep the script's heights and times as written (it is the comedy timing) and keep the title.
-3. Catchphrase: "La peace" lines (lady, pilot, NASA, Moon, the boy at the end) use `assets/la_peace.mp3` with the OK hand + mewing face per AUDIO_AND_CAST. Mom and the boy's other lines ("GET DOWN HERE RIGHT NOW!", "What?", "Oops.", "You good?", "I SAID DINNER'S READY!"…) need real speech, which breaks the catchphrase-only rule of earlier episodes; plan: TTS voices distinct from the narrator.
+## 7. Cat memes: the space-fight audience (58–62 s)
+- **Only used in the space fight** (user): three meme cats sit side by side like an audience watching Mom beat him up, like people eating popcorn at a show, but there is no popcorn: it's just the meme clips, keyed, on camera-facing cards (`fx/clip.js` `clipCard()`), floating in space at the edge of the frame. Brief cuts between the HIT 1 / HIT 2 beats, synced to the phonk. Clip sound ducked under the music or muted (the phonk is the payoff).
+- Library clips (`assets/library/clips/`):
+  - `oiia_cat.webm` — the OIIA spinning cat, **saved** (green screen removed, VP9 + alpha + sound, 16.9 s, poster `oiia_cat_poster.png`). Source: Internet Archive item `video_20250118_211344`.
+  - Happy Happy Happy cat, German cat, Maxwell the cat — **not yet saved**: YouTube blocks downloads from the cloud session and the Internet Archive has no copies. Green-screen versions on YouTube: Happy cat `NSU2hJ5wT08`, German cat `ASPhC1KeN-w`, Maxwell `rXh8Hvo7gfs`. Once the files are supplied, key them with `assets/library/tools/key_clip.py` and add them to `clips/`.
 
-## 7. Deliverables
+## 8. Deliverables
 `episode-6.mp4` (1080×1920, 30 fps, 70 s) + `episode-6_720p.mp4`, analytics page (`analytics.html` / `analytics.data.js`, added to `analytics/index.html`), `HANDOFF.md`.
 
-## 8. Script (user, verbatim)
+## 9. Script (user, verbatim; the decisions above override it)
 
 > Your 70s structure is perfect for this data:
 > 0-3s hook: You lose 50% instantly. Need chaos immediately.
