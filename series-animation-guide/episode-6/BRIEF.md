@@ -96,6 +96,32 @@ Deviations from the script (§9) and why:
 - Dialogue: Kokoro (Mom af_sarah, boy am_puck pitched x1.12, reporter am_michael, Moon bm_lewis after the la peace sample); "Ah!" and "Ow." are fed to Kokoro as phonemes. Mom's "I SAID DINNER'S READY!" has a long echo tail.
 - The landing boy is 4.4 m (lying diagonally, bed crushed, feet through the right wall); the peace sign at 65.2 is the rig's 'peace' hand.
 - SFX are only files from `assets/sfx/` (user).
+## 11. v2 plan (user feedback on v1, 2026-11-25: "storyline good, renders suck")
+Fixes the verdict in `docs/LOOK_AND_VIDEO.md` → Episode 6 verdict: dense backgrounds from the new asset packs, ≥ 3 motions per frame, a hit every 2–3 s, a size reference in every shot, readable gags, no glitches. Timing, voices and music stay (the story and the drop are approved).
+
+| Film s | Shot | Hit (dopamine) | Motion (besides hero) | Size reference in frame |
+|---|---|---|---|---|
+| 0–2.0 | Wrecked bedroom, Mom in doorway, tilt up his legs | frame-0 shout, plaster rain, punch-zoom on Mom | ceiling dust falling, swinging lamp, shaking furniture, curtains | Mom (1.7 m), bed, wardrobe |
+| 2.0–3.0 | His POV down through the roof | tile bonks Mom, growth pop (x2) | dust, neighbours running out, cars stopping | houses, cars, trees |
+| 3.0–7.1 | Suburb: face at the lady's window | growth pop at 4 and 6 (shockwave rings, roof tiles fly), curtains slam | traffic, kids on bikes, birds scatter, flags | houses + cars, then the street from above |
+| 7.1–8.4 | Harbour: pokes the Liberty crown | crown poke + torch flicker spark | ferries, gulls, waves, helicopters | Statue of Liberty (93 m) |
+| 8.4–10.0 | Paris selfie | camera-flash + screen crack close-up insert | traffic, tourists, Seine boats | Eiffel Tower (330 m) |
+| 10.0–11.8 | Big Ben rings | sound rings + flinch | buses, pigeons, river boats | Big Ben (96 m) + Parliament |
+| 11.8–13.6 | Manhattan + helicopter | whip-pan to the cockpit, la peace | traffic grid, other helicopters, windows | Empire State (443 m) + skyline |
+| 13.6–16.4 | Dubai reporters | growth pops at 14 and 16, cloud scratch | cars, palm trees, crowd filming with phones | Burj Khalifa (828 m) |
+| 16.4–18.4 | Climber on the peak | "You good?" + thumbs-up | snow blowing, eagles, clouds drifting | mountain range, climber |
+| 18.4–20.8 | Above volumetric clouds | growth pop, airliner passes at his shoulder | cloud sea drifting, jets with contrails | airliner (jet height 11 km) |
+| 20.8–22.4 | Gerald control room | (calm beat) counter ticks on wall screens | blinking consoles, staff walking behind, scrolling screens | — |
+| 22.4–24.2 | Elbow on Everest | summit snow burst under the elbow | climbers, wind snow, clouds | Everest (8,849 m) |
+| 24.2–26.0 | Out of the atmosphere | sky snaps to black, speed lines | Earth limb haze, satellites, ISS passing | atmosphere layers, ISS |
+| 26.0–28.0 | NASA | screens glitch, la peace | staff, scrolling consoles, alarms | — |
+| 28.0–35.4 | Global problem, see-all, Moon | Moon grab with fingers visible, Moon spins ON the fingertip (close, readable) | asteroids, satellites, starfield parallax, Earth clouds | Earth, Moon, ISS |
+| 35.4–42.4 | Rules break, marble, toss, satellite | ERROR glitch, Earth pinch, toss arcs, nose bonk | debris field, satellites, comet | Earth as a marble, planets |
+| 42.4–48.4 | Walk, foot over Earth, Mom looks up | WAIT FOR IT, shadow over the city, impact from space | clouds swirling, city lights, birds fleeing | Earth, then the house/street |
+| 48.4–52.0 | THE DROP: Mom holds the foot | flash + shockwave + debris + power-up | dust clearing, aura particles, neighbours' jaws drop | house, cars, street |
+| 52–62.6 | Gerald, push, fly, shout, jump, cats, hammer | launch, punch, cats, throw | starfield parallax, debris, Earth rotating | Earth, the boy's size vs Mom |
+| 62.6–70 | Landing, peace, freeze | crash through the roof, Mom lands, title | dust, plaster, curtains | bedroom |
+
 ## 9. Script (user, verbatim; the decisions above override it)
 
 > Your 70s structure is perfect for this data:
