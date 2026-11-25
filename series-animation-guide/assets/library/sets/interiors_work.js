@@ -80,7 +80,7 @@ export function buildNewsStudio({ seed = 22, wrecked = 0, ceiling = true, people
   const tp = new THREE.Group(); P(tp, rg(0.55, 0.35, 0.05, 0.02), mat(0x15151c), [0, 0, 0]); const ts = liveScreen('code', 0.5, 0.3, { px: 128, fg: '#ffffff', bg: '#10141a' }); ts.position.z = 0.03; tp.add(ts); R.reg(ts); tp.position.set(0, 1.3, 0.62); cam1.add(tp);
   const cabl = new THREE.Group(); for (let i = 0; i < 4; i++) tube(cabl, [[-4 + i * 1.6, 0.015, 3.4], [-3.4 + i * 1.2, 0.015, 2.0], [-1.5 + i * 0.7, 0.015, 0.2], [0.5 + i * 0.5, 0.015, -2.6]], 0.015, 0x15151c, { seg: 18, sides: 4 }); R.g.add(cabl);
   R.g.add(clutter({ x: 0, z: 1.6, w: 9, d: 4 }, { kind: ['papers', 'trash', 'office'], seed: seed + 8, density: 0.15 + wrecked * 2.4, avoid: [] }));
-  return R.finish({ anchors }, { pos: [0.0, 1.9, hd + 3.0], target: [0, 1.6, -hd + 1.2], fov: 56 });
+  return R.finish({ anchors }, { pos: [0.0, 2.1, hd + 5.2], target: [0, 1.9, -hd + 1.2], fov: 56 });
 }
 
 // ---------------------------------------------------------------- mission control (raked rows of consoles + huge wall display; camera behind the staff)
@@ -115,7 +115,7 @@ export function buildMissionControl({ seed = 23, wrecked = 0, ceiling = true, pe
   for (const s of [-1, 1]) { const dor = door({ w: 1.2, h: 2.3, color: 0x3a4660, frame: 0x8a8e98 }); R.place(dor, s * (hw - 0.04), 0, hd - 1.5, s * -HP); }
   for (const s of [-1, 1]) for (let i = 0; i < 3; i++) { const fl = new THREE.Group(); P(fl, cg(0.012, 0.012, 0.8, 6), mat(0xc8ccd6), [0, 0, 0], [0, 0, HP * 0.2]); P(fl, bg(0.5, 0.32, 0.01), mat([0xe04a3a, 0x3a78d0, 0xffd23f][(i + (s > 0 ? 1 : 0)) % 3]), [0.25, -0.1, 0.01]); mountOnWall(R, fl, -1.5 + i * 2.0, 3.5, s < 0 ? 'left' : 'right'); }
   R.g.add(clutter({ x: 0, z: 1.8, w: 12, d: 7 }, { kind: ['papers', 'trash'], seed: seed + 9, density: 0.1 + wrecked * 2.4, avoid: [] }));
-  const cam = { pos: [0.0, (rows - 1) * 0.45 + 2.3, hd + 3.0], target: [0, 3.0, -hd + 1.0], fov: 62 };
+  const cam = { pos: [0.0, (rows - 1) * 0.45 + 2.2, hd + 8.0], target: [0, 2.7, -hd + 1.0], fov: 56 };
   return R.finish({ bigScreen: big, sitters }, cam);
 }
 
