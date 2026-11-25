@@ -75,7 +75,7 @@ export default {
       if (t >= TL.BEATS.land && t < D + 2.4) { S.dust.position.set(MP[0], 0, MP[2]); S.dust.set(t - TL.BEATS.land + 0.2, 5, 2.6); }
       S.debris.set(t - D, [MP[0], 0.5, MP[2]], 2.0); S.shock.set(t - D, [MP[0], 0.2, MP[2]], 9, 0.7, new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0))); S.shock2.set(t - D - 0.12, [MP[0], 0.2, MP[2]], 7, 0.7, new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0)));
       // cameras
-      if (shot.id === 'momlook') { c = mixCam(cam([3.6, 0.6, 12.5], [0.0, 3.4, 4.6], 60), cam([3.2, 0.5, 11.8], [0.0, 5.2, 4.6], 64), smooth(u)); out.capY.mom2 = 1600; }
+      if (shot.id === 'momlook') { c = mixCam(cam([1.6, 1.0, 8.6], [0.0, 1.9, 4.6], 52), cam([3.4, 0.5, 12.2], [0.0, 5.4, 4.6], 64), smooth(u)); out.capY.mom2 = 1600; }
       else if (shot.id === 'reveal') { const a = t - D; if (t < 50.4) c = mixCam(cam([4.6, 0.6, 12.8], [0.3, 4.4, 4.4], 62), cam([3.9, 0.7, 11.6], [0.2, 4.0, 4.4], 60), smooth(seg(t, D + 0.3, 50.4)));
         else { const hd = wp(mom.head); c = mixCam(cam([hd.x + 1.4, hd.y + 0.02, hd.z + 2.8], [hd.x - 0.15, hd.y + 0.32, hd.z], 54), cam([hd.x + 1.1, hd.y + 0.05, hd.z + 2.3], [hd.x - 0.15, hd.y + 0.35, hd.z], 52), smooth(seg(t, 50.4, 52.0))); } if (a < 0.5) { const s = (1 - a / 0.5) * 0.12; c.pos[0] += Math.sin(t * 90) * s; c.pos[1] += Math.cos(t * 77) * s; } out.flash = a < 0.35 ? 0.9 * (1 - a / 0.35) : 0; out.flashColor = '255,248,220'; }
       else if (shot.id === 'push') { c = cam([5.0, 0.6, 14.4], [0.0, 3.6 + 4 * smooth(seg(t, 53.9, 55.0)), 4.6], 62); if (t > 53.9 && t < 54.3) { const s = (1 - seg(t, 53.9, 54.3)) * 0.1; c.pos[0] += Math.sin(t * 90) * s; } }

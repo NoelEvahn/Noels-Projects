@@ -99,11 +99,11 @@ export default {
         earth.visible = true;
         if (t < 43.6) {   // wide: giant striding over the little planet
           const k = 10 / HH; giant(hero, k, [lerp(-3, -1.2, u * 2.6), 1.6, -1.5], 1.25, { ...POSES.walk(t * 0.55), lLf: 0.6 * Math.sin(t * 2.6) }, { ...FACES.happy, smile: 0.5 });
-          c = cam([0.6, 0.6, 9.0], [-0.6, 4.0, -1.5], 55);
+          c = cam([1.2, 1.5, 15.0], [-1.6, 4.2, -1.5], 58);
         } else {          // the giant sneaker over the Earth, descending in slow motion
           hero.root.visible = false; S.shoe.visible = true; const d = smooth(seg(t, 43.6, 45.6));
           S.shoe.scale.setScalar(2.2); S.shoe.position.set(lerp(-1.2, 0.0, d), lerp(2.9, 1.55, d), 0.0); S.shoe.rotation.set(0.25 - 0.2 * d, 0.6, 0.1);
-          c = cam([2.8, lerp(0.6, 0.3, d), 5.6], [S.shoe.position.x * 0.5, S.shoe.position.y * 0.55, 0], 60);
+          c = cam([2.8, lerp(0.6, 0.3, d), 5.6], [S.shoe.position.x * 0.6, S.shoe.position.y * 0.72, 0], 64);
           S.stage.key.position.set(2, 8, 3); S.stage.key.target.position.set(0, 0, 0);
         }
         out.keyFocus = false; break; }
