@@ -2,6 +2,7 @@
 import * as TW from '../props/landmarks_towers.js';
 import * as LT from '../props/landmarks_lattice.js';
 import * as MA from '../props/landmarks_monuments.js';
+import * as MB from '../props/landmarks_monuments_b.js';
 import { bigStage } from '../props/landmarks_kit.js';
 
 export const ITEMS = [];
@@ -41,3 +42,12 @@ entry({ id: 'colosseum', title: 'Colosseum (48 m)', make: () => MA.colosseum(), 
 entry({ id: 'giza', title: 'Pyramids of Giza + Sphinx (139 m)', make: () => MA.pyramidsGiza(), H: 139, d: 720, hy: 0.3, az: 0.8, el: 0.4, ground: 0xe6c98a, R: 700 });
 entry({ id: 'tajmahal', title: 'Taj Mahal (73 m)', make: () => MA.tajMahal(), H: 73, d: 230, hy: 0.4, az: 0.2, el: 0.5, ground: 0xd8c79a, R: 300 });
 entry({ id: 'christ', title: 'Christ the Redeemer (38 m)', make: () => MA.christRedeemer(), H: 38, d: 100, hy: 0.62, az: 0.3, el: 0.55, ground: 0x5a9a4a, R: 400, sky: ['#6fb8ee', '#fff0d6'] });
+
+entry({ id: 'sydney', title: 'Sydney Opera House (65 m) + Harbour Bridge (134 m)', make: () => MB.sydneyOperaHouse(), H: 65, d: 330, hy: 0.7, az: 0.5, el: 0.9, ground: 0x2f8fc4, R: 600 });
+entry({ id: 'goldengate', title: 'Golden Gate Bridge (227 m towers)', make: () => MB.goldenGate(), H: 227, d: 1500, hy: 0.35, az: 0.5, el: 0.4, ground: 0x2a7fb6, R: 1300 });
+entry({ id: 'towerbridge', title: 'Tower Bridge (65 m)', make: () => MB.towerBridge(), H: 65, d: 260, hy: 0.4, az: 0.5, el: 0.8, ground: 0xb8b4a8, R: 320 });
+entry({ id: 'arc', title: 'Arc de Triomphe (50 m)', make: () => MB.arcDeTriomphe(), H: 50, d: 160, hy: 0.45, az: 0.4, el: 0.7, ground: 0xd4c8aa, R: 300 });
+entry({ id: 'stbasils', title: "St Basil's Cathedral (47 m)", make: () => MB.stBasils(), H: 47, d: 150, hy: 0.45, az: 0.5, el: 0.6, ground: 0xb4b2ac, R: 260 });
+entry({ id: 'kremlin', title: 'Kremlin Spasskaya Tower (71 m)', make: () => MB.kremlinTower(), H: 71, d: 160, hy: 0.5, az: 0.4, el: 0.5, ground: 0xa8a49c, R: 260 });
+entry({ id: 'washington', title: 'Washington Monument (169 m)', make: () => MB.washingtonMonument(), H: 169, d: 360, hy: 0.45, az: 0.4, el: 0.5, ground: 0x5aa84a, R: 400 });
+entry({ id: 'gatewayarch', title: 'Gateway Arch (192 m)', make: () => MB.gatewayArch(), H: 192, d: 380, hy: 0.45, az: 0.45, el: 0.5, ground: 0x5aa84a, R: 450 });
