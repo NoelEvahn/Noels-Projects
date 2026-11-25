@@ -128,3 +128,20 @@ Episode-level helpers in `episode-6/src/common.js` (not yet in the registry):
 - `helicopter()` (glass front cockpit, `userData.seat/rotor/tail`), `eiffel()` (~27 units), `mountain(h, r, seed, snow)`, `cracks()`, `dustCloud()`, `ring()` (additive shockwave ring), `skyBG(top, bottom)`.
 - Bedroom set + exterior with a roof hole: `buildBedroom`, `buildExterior`, `bed`, `wardrobe` in `episode-6/src/scenes/hook.js`.
 - `tools/key_clip.py`: keyer for meme clips whose green background flashes white / light green.
+
+## Asset packs (2026-11-25) — USE THESE FOR DENSE, MOVING SCENES
+Built by six parallel builders under `packs/BUILDER_RULES.md` (deterministic, no textures, real scale, `userData.update(t)` on everything that moves). Each pack registers in `registry/<pack>.js` and documents every asset in `index/<pack>.md` (screenshots `screenshots/<pack>_*.jpg`).
+| Pack | Contents | Detail |
+|---|---|---|
+| `city` | City: buildings, street furniture, vehicles, traffic/crowd generators | `index/city.md` |
+| `nature` | Nature / sky: volumetric clouds, cloud sea, forests, water, terrain, Everest | `index/nature.md` |
+| `landmarks` | Landmarks at true scale + sizeLadder / scaleReference | `index/landmarks.md` |
+| `space` | Space: planets, craft, sky kit, spaceBackdrop, solarSystemTour | `index/space.md` |
+| `interiors` | Interiors: 19 furnished rooms (wrecked option) + 9 prop kits | `index/interiors.md` |
+| `motion` | Motion / FX / dopamine: blasts, elements, ambient motion, camera hits, size markers | `index/motion.md` |
+
+**Scale and camera notes for episodes (from the builders' reports):**
+- Big assets are modelled at 1 unit = 1 m. Set the camera `near` to about distance/1500 for 100 m+ subjects (`landmarks_kit.js prepCamera(cam, d)`); the default near 0.05 z-fights at 150 m+. Large flat ground slabs need polygon-offset layers (`city_kit.js Batch.layer`) or a raised slab.
+- Km-scale nature assets need camera `far` ≈ 60000, or the `scaled(obj, k)` wrapper in `nature_common.js`. Space backdrops need `far` ≥ 2000.
+- Use the `detail/lod: 'low'` options and `base: false` (landmarks) for backgrounds: `cityGrid` ≈ 280k tris, landmark bases carry thousands of instances.
+- Not yet built or reviewed: airplane cabin / train carriage (interiors), weather + `atmosphereLayers` / `earthHorizon` (nature), ships / Saturn V / giraffe / 2 m human reference (landmarks; `props/landmarks_ships.js` is written but untested and unregistered). Several shots were not re-reviewed after the builders' final tweaks (listed in each `index/<pack>.md` or the builder reports): review an asset's screenshot before using it in an episode.
