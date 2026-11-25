@@ -27,10 +27,11 @@ print(len(LINES), 'lines')
 from kokoro_onnx import Kokoro
 KD = os.environ['KOKORO_DIR']; KOK = Kokoro(os.path.join(KD, 'kokoro-v1.0.onnx'), os.path.join(KD, 'voices-v1.0.bin'))
 # character -> (Kokoro voice, base speed, pitch shift after TTS, drive, level LUFS)
-CAST = {'mom': ('af_sarah', 1.08, 1.00, 1.8, -18.5), 'boy': ('am_puck', 1.05, 1.12, 1.2, -19.0), 'reporter': ('bm_george', 1.05, 1.0, 1.0, -20.0), 'moon': ('bm_lewis', 0.82, 0.92, 1.0, -20.0)}
+CAST = {'mom': ('af_sarah', 1.08, 1.00, 1.8, -18.5), 'boy': ('am_puck', 1.05, 1.12, 1.2, -19.0), 'reporter': ('am_michael', 1.05, 1.0, 1.0, -20.0), 'moon': ('bm_lewis', 0.82, 0.92, 1.0, -20.0)}
 def kokoro(text, who, speed):
     v, s0, p, dr, lv = CAST[who]
-    y, sr = KOK.create(text, voice=v, speed=s0 * speed, lang='en-us')
+    ph = text.startswith('/')   # '/...' = IPA phonemes (interjections the text front-end mangles)
+    y, sr = KOK.create(text[1:] if ph else text, voice=v, speed=s0 * speed, lang='en-us', is_phonemes=ph)
     y = librosa.resample(np.asarray(y, np.float64), orig_sr=sr, target_sr=SR)
     if p != 1.0: y = rubberband(y, SR, tempo=1.0, pitch=p)
     return trim(y)
@@ -70,7 +71,7 @@ LAP = {   # who -> (pitch, tempo, fx)
     'lady': (1.15, 1.2, lambda z: reverb(z, SR, 0.35, 0.12, 1)),                                        # unbothered, quick, from a window
     'pilot': (1.10, 1.15, lambda z: reverb(drive(bandpass(z, 220, 5000), 1.6), SR, 0.3, 0.1, 2)),     # cockpit
     'nasa': (1.10, 1.12, lambda z: bandpass(drive(z, 2.2), 350, 3400)),                                # mission-control radio
-    'moon': (0.9, 0.75, lambda z: reverb(echo(z, 0.3, 0.4, 3), SR, 1.0, 0.25, 3)),                    # slow, big, low
+    'moon': (0.9, 0.9, lambda z: reverb(echo(z, 0.25, 0.3, 2), SR, 0.6, 0.2, 3)),                    # slow, big, low
     'boy': (1.10, 0.95, lambda z: z),                                                                   # dry, close, defeated (final line)
 }
 from faster_whisper import WhisperModel
@@ -105,7 +106,7 @@ for L in LINES:
     elif kind == 'moon':
         p, tp, fx = LAP['moon']; z, m = calib(y0, p, tp); a = fx(z)
         b = kokoro(L['text'], 'moon', 1.0); b = reverb(b, SR, 0.8, 0.2, 4)
-        gap = int(0.12 * SR); y = np.concatenate([norm_lufs(a, -19.5), np.zeros(gap), norm_lufs(b, -20.0)]); y = fade(y, 0.002, 0.04); note = 'la peace (slow echo) + Kokoro bm_lewis "please stop."'
+        a = trim(a, 0.02, 0.0, 0.05); gap = int(0.08 * SR); y = np.concatenate([norm_lufs(a, -19.5), np.zeros(gap), norm_lufs(b, -20.0)]); y = fade(y[: int(L['max'] * SR)], 0.002, 0.12); note = 'la peace (slow echo) + Kokoro bm_lewis "please stop."'
     else:   # narr
         ls = 1.0
         for _ in range(6):
@@ -116,6 +117,7 @@ for L in LINES:
     dur = len(y) / SR
     if kind in ('kokoro', 'narr', 'moon'):
         text = L['text'] if kind != 'moon' else 'la peace please stop.'
+        if text.startswith('/'): text = L['cap'].title()
         toks, rel, heard = word_times(y, text)
         if kind == 'moon': toks = ['LA', 'PEACE…', 'PLEASE', 'STOP.']
         WORDS[L['id']] = [dict(w=tk, t0=round(L['t'] + a, 3), t1=round(L['t'] + b, 3)) for tk, (a, b) in zip(toks, rel)]
