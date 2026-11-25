@@ -40,7 +40,7 @@ function wordsLine(g, shown, words, keys, y, px, fill, key, stroke, k) {
 }
 // word-by-word caption in chunks of up to 3 words (narration: white + yellow keys; dialogue: all yellow)
 export function drawWords(g, line, t, words, y, { fill = '#ffffff', key = '#ffd21f', maxPx = 96, chunk = 3 } = {}) {
-  if (!words?.length) return; const t1 = words[words.length - 1].t1 + 0.35; if (t < words[0].t0 - 0.02 || t > t1) return;
+  if (!words?.length) return; const t1 = Math.min(words[words.length - 1].t1 + 0.35, line.max ? line.t + line.max + 0.45 : 1e9); if (t < words[0].t0 - 0.02 || t > t1) return;
   const chunks = []; for (let i = 0; i < words.length; i += chunk) chunks.push(words.slice(i, i + chunk));
   let cur = null; for (const c of chunks) if (t >= c[0].t0 - 0.02) cur = c; if (!cur) return;
   const shown = cur.filter((w) => t >= w.t0 - 0.02), txt = shown.map((w) => w.w.toUpperCase()).join(' ');

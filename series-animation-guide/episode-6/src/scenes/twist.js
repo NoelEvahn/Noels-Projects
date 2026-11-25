@@ -32,7 +32,7 @@ export default {
     // the three meme cats on a little asteroid (the fight's audience; no popcorn, just the memes)
     const rock = icyRock(4, 1.6); space.add(rock);
     const dir = (n) => new URL(`../../build/clip_${n}/`, import.meta.url);
-    const cats = []; for (const [n, h, feet] of [['happy_cat', 1.25, 0.02], ['oiia_cat', 1.15, 0.2], ['maxwell_cat', 0.85, 0.08]]) { try { const c = await clipCard(dir(n), { height: h, feet }); space.add(c.group); cats.push(c); } catch (e) { console.warn('clip missing', n); } }
+    const cats = []; for (const [n, h, feet] of [['happy_cat', 1.35, 0.04], ['oiia_cat', 2.5, 0.33], ['maxwell_cat', 1.05, 0.1]]) { try { const c = await clipCard(dir(n), { height: h, feet }); space.add(c.group); cats.push(c); } catch (e) { console.warn('clip missing', n); } }
     // Gerald's control room (tiny, far away)
     const room = new THREE.Group(); room.position.set(0, 0, 70000); scene.add(room);
     add(room, box(12, 0.1, 10), mat(0x1a1d26), [0, 0, 0]); add(room, box(12, 6, 0.2), mat(0x20242e), [0, 3, -5]); add(room, box(0.2, 6, 10), mat(0x20242e), [-6, 3, 0]);
@@ -126,9 +126,9 @@ export default {
         S.punchRing.set(t - TL.BEATS.punch, cheek.toArray(), 2.4, 0.5); S.punchRing2.set(t - TL.BEATS.punch - 0.08, cheek.toArray(), 1.8, 0.5);
         // the cats on their asteroid (just the memes, watching)
         const rockTop = new THREE.Vector3(-7, -1.0, 6); S.rock.scale.setScalar(0.55); S.rock.position.set(rockTop.x, rockTop.y - 1.3, rockTop.z);
-        S.cats.forEach((cc, i) => { cc.group.position.set(rockTop.x - 1.3 + i * 1.3, rockTop.y + 0.05, rockTop.z + (i === 1 ? 0.3 : 0)); });
+        S.cats.forEach((cc, i) => { cc.group.position.set(rockTop.x - 0.85 + i * 0.78, rockTop.y + 0.05, rockTop.z + (i === 1 ? -0.2 : 0)); });
         if (shot.id === 'jump') { tgt = mp.clone().lerp(cheek, 0.5); c = cam([tgt.x + 5, tgt.y - 0.5, tgt.z + 9], [tgt.x, tgt.y, tgt.z], 55); out.capY.dinner = 760; }
-        else if (shot.id === 'cats') { const rt = rockTop; c = cam([rt.x + 0.6, rt.y + 0.9, rt.z + 4.2], [rt.x, rt.y + 0.6, rt.z], 46); }
+        else if (shot.id === 'cats') { const rt = rockTop; c = cam([rt.x + 0.2, rt.y + 0.75, rt.z + 4.4], [rt.x, rt.y + 0.55, rt.z], 52); }
         else { tgt = new THREE.Vector3(0.5, 1.0, -1.2); const wide = t < 60.95; c = wide ? cam([tgt.x + 6, tgt.y + 9, tgt.z + 20], [tgt.x - 1, tgt.y - 1, tgt.z], 58) : cam([tgt.x + 2.4, tgt.y + 0.5, tgt.z + 5.8], [tgt.x - 0.2, tgt.y + 0.4, tgt.z], 50); out.capY.veg = 1600; if (t > 60.75 && t < 61.0) { const s = (1 - seg(t, 60.75, 61.0)) * 0.15; c.pos[0] += Math.sin(t * 90) * s; } }
         if (t > TL.BEATS.punch && t < TL.BEATS.punch + 0.25) { const s = (1 - seg(t, TL.BEATS.punch, TL.BEATS.punch + 0.25)) * 0.25; c.pos[0] += Math.sin(t * 95) * s; c.pos[1] += Math.cos(t * 80) * s; out.flash = 0.4 * (1 - seg(t, TL.BEATS.punch, TL.BEATS.punch + 0.2)); }
         const camW = new THREE.Vector3(...c.pos).add(SPACE); for (let i = 0; i < S.cats.length; i++) S.cats[i].show((t - 57.8) + [0.0, 3.4, 1.0][i], camW);
