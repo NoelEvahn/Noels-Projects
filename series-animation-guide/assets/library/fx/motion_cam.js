@@ -199,7 +199,7 @@ export function sizeLadder({ items = null, gap = 0.35, popEvery = 0.22, seed = 4
   list.forEach((it, i) => {
     const { grp, w } = build(it); const wrap = new THREE.Group(); x += w / 2; wrap.position.x = x; wrap.add(grp); g.add(wrap);
     const tag = glyphLabel(12, lh, 0xffffff), val = glyphLabel(8, lh * 0.8, 0xffd23f); tag.text(it.name ?? it.kind, 'center'); val.text(fmt(it.h), 'center');
-    const bw = Math.max(tag.widthM, val.widthM) + lh, bg = new THREE.Mesh(rbox(bw, lh * 2.5, lh * 0.2, lh * 0.2), new THREE.MeshBasicMaterial({ color: 0x1b2a5c })); const ty = it.h + lh * 2.1; bg.position.set(0, ty, 0.02); tag.position.set(0, ty + lh * 0.55, 0.12); val.position.set(0, ty - lh * 0.5, 0.12); const lab = new THREE.Group(); lab.add(bg, tag, val); wrap.add(lab);
+    const bw = Math.max(tag.widthM, val.widthM) + lh, bg = new THREE.Mesh(rbox(bw, lh * 2.5, lh * 0.2, lh * 0.2), new THREE.MeshBasicMaterial({ color: 0x1b2a5c })); const ty = it.h + lh * 2.1; bg.position.set(0, ty, 0.02); tag.position.set(0, ty + lh * 0.55, lh * 0.3); val.position.set(0, ty - lh * 0.5, lh * 0.3); const lab = new THREE.Group(); lab.add(bg, tag, val); wrap.add(lab);
     E.push({ wrap, grp, lab, it, sway: r() * 6, i }); x += w / 2 + maxH * gap * 0.12 + w * 0.15;
   });
   const dash = pool(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 }), 60); g.add(dash);

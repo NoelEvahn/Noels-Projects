@@ -4,6 +4,7 @@ import * as LT from '../props/landmarks_lattice.js';
 import * as MA from '../props/landmarks_monuments.js';
 import * as MB from '../props/landmarks_monuments_b.js';
 import * as MC from '../props/landmarks_monuments_c.js';
+import { sizeLadder } from '../props/landmarks_ladder.js';
 import { bigStage } from '../props/landmarks_kit.js';
 
 export const ITEMS = [];
@@ -60,3 +61,7 @@ entry({ id: 'hoover', title: 'Hoover Dam (221 m)', make: () => MC.hooverDam(), H
 entry({ id: 'angkor', title: 'Angkor Wat (65 m)', make: () => MC.angkorWat(), H: 65, d: 520, ty: 30, cy: 250, az: Math.PI + 0.35, ground: 0x4f9a46, R: 700 });
 entry({ id: 'machupicchu', title: 'Machu Picchu (peak ~290 m above site)', make: () => MC.machuPicchu(), H: 290, d: 560, ty: 80, cy: 210, az: 0.3, ground: 0x4f8f48, R: 700 });
 entry({ id: 'hollywood', title: 'Hollywood sign (13.7 m letters)', make: () => MC.hollywoodSign(), H: 13.7, d: 320, ty: 170, cy: 195, az: 0.25, ground: 0xc0aa68, R: 350 });
+
+// size ladder: world towers at true scale, side by side with height boards
+ITEMS.push({ id: 'landmarks_ladder_towers', cat: 'landmarks', title: 'Size ladder: Statue of Liberty, Pisa, Big Ben, Eiffel, Empire State, CN Tower, Burj Khalifa', note: 'sizeLadder(items,{spacing}) / scaleReference(name)', stage: { sky: ['#7fc4f2', '#eaf5ff'], ground: 0x8fbf6a, groundR: 60, fog: null },
+  build(ctx) { const obj = sizeLadder(['pisa', 'liberty', 'bigben', 'eiffel', 'empire', 'cntower', 'burj'], { spacing: 40 }); const W = obj.userData.realWidthM; const pos = [W * 0.5, 420, 1500]; bigStage(ctx, 1100, pos); return { obj, cam: { pos, target: [W * 0.5, 400, 0], fov: 38 }, update: (t) => obj.userData.update(t) }; } });
