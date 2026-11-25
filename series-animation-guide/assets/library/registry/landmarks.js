@@ -64,4 +64,4 @@ entry({ id: 'hollywood', title: 'Hollywood sign (13.7 m letters)', make: () => M
 
 // size ladder: world towers at true scale, side by side with height boards
 ITEMS.push({ id: 'landmarks_ladder_towers', cat: 'landmarks', title: 'Size ladder: Statue of Liberty, Pisa, Big Ben, Eiffel, Empire State, CN Tower, Burj Khalifa', note: 'sizeLadder(items,{spacing}) / scaleReference(name)', stage: { sky: ['#7fc4f2', '#eaf5ff'], ground: 0x8fbf6a, groundR: 60, fog: null },
-  build(ctx) { const obj = sizeLadder(['pisa', 'liberty', 'bigben', 'eiffel', 'empire', 'cntower', 'burj'], { spacing: 40 }); const W = obj.userData.realWidthM; const pos = [W * 0.5, 420, 1500]; bigStage(ctx, 1100, pos); return { obj, cam: { pos, target: [W * 0.5, 400, 0], fov: 38 }, update: (t) => obj.userData.update(t) }; } });
+  build(ctx) { const obj = sizeLadder(['pisa', 'liberty', 'bigben', 'eiffel', 'empire', 'cntower', 'burj'], { spacing: 40 }); const W = obj.userData.realWidthM; const pos = [W * 0.5, 450, 2300]; bigStage(ctx, 1500, pos); return { obj, cam: { pos, target: [W * 0.5, 330, 0], fov: 38 }, update: (t) => obj.userData.update(t) }; } });

@@ -28,7 +28,7 @@ export function sizeLadder(items, { spacing = 30, labels = true, ruler = true } 
   objs.forEach((o, i) => {
     const w = o.userData.realWidthM ?? o.userData.realHeightM * 0.3, h = o.userData.realHeightM ?? 10;
     x += w / 2; o.position.x = x; g.add(o); kids.push(o);
-    if (labels) { const bw = Math.max(8, Math.min(w * 1.1, maxH * 0.35)), b = heightBoard(o.userData.name ?? 'item', `${Math.round(h)} m`, { w: bw, h: bw * 0.46 }); b.position.set(x, bw * 0.23 + 0.05, w * 0.55 + 4); g.add(b); }
+    if (labels) { const bw = Math.max(12, maxH * 0.14), b = heightBoard(o.userData.name ?? 'item', `${Math.round(h)} m`, { w: bw, h: bw * 0.46 }); b.position.set(x, bw * 0.23 + 0.05, 30); g.add(b); }
     x += w / 2 + spacing;
   });
   if (ruler) for (let y = 100; y <= maxH; y += 100) { const l = new THREE.Mesh(new THREE.BoxGeometry(x + 40, Math.max(0.3, maxH * 0.0015), 0.3), lmat(0xffffff, { opacity: 0.5, rough: 1 })); l.position.set(x / 2, y, -2); g.add(l); }
