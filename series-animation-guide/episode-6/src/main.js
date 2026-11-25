@@ -49,8 +49,10 @@ function draw(i) {
   if (r.vignette) HUD.drawVignette(g2, r.vignette);
   if (f < TL.HUD_OFF && !r.hideHud) HUD.drawCounter(g2, f);
   HUD.drawWaitForIt(g2, f);
+  const ordered = [...TL.LINES].sort((a, b) => a.t - b.t);
   for (const v of TL.LINES) {
     const y = r.capY?.[v.id] ?? r.capYAll ?? 1480;
+    const nxt = ordered.find((x) => x.t > v.t + 1e-6); if (nxt && f >= nxt.t - 0.02) continue;   // one caption at a time: each ends where the next begins
     if (v.kind === 'narr') HUD.drawWords(g2, v, f, wordsOf(v), r.narrY ?? 1520);
     else if (v.whole) HUD.drawWhole(g2, v.cap, f - v.t, y, Math.max(0.7, lineDur(v) + 0.25));
     else if (v.kind === 'lapeace') HUD.drawPunch(g2, v.cap, f - v.t, y, Math.min(1.1, lineDur(v) + 0.2));
