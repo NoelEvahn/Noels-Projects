@@ -27,7 +27,7 @@ export function trafficLight({ dir = 0, phaseOffset = 0, arm = 5.5, side = 1 } =
   const head = (x, y, z, ry) => {
     const hg = new THREE.Group(); hg.position.set(x, y, z); hg.rotation.y = ry; g.add(hg);
     const hb = new Batch(); hb.box(0.46, 1.32, 0.38, 0x20242b, [0, 0, 0], { rough: 0.5 }); hb.box(0.58, 0.08, 0.5, 0x20242b, [0, 0.7, 0.04]); hb.build(hg);
-    const L = [[0xff2b2b, 0.42], [0xffc21a, 0], [0x2bff6a, -0.42]].map(([c, yy]) => { const m = lampMesh(gCyl(0.15, 0.15, 0.1, 14), c, 0.1); m.rotation.x = Math.PI / 2; m.position.set(0, yy, 0.2); hg.add(m); const vz = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.3, 12, 1, true, -Math.PI / 2, Math.PI), mat(0x20242b, { side: THREE.DoubleSide })); vz.rotation.z = 0; vz.rotation.x = 0; vz.position.set(0, yy + 0.07, 0.3); vz.rotation.y = Math.PI / 2 * 0; hg.add(vz); vz.scale.set(1, 1, 1); vz.rotation.set(0, Math.PI, 0); vz.rotation.x = Math.PI / 2; vz.visible = false; const h = halo(c, 0.42, 0); h.position.set(0, yy, 0.32); hg.add(h); return { m, h }; });
+    const L = [[0xff2b2b, 0.42], [0xffc21a, 0], [0x2bff6a, -0.42]].map(([c, yy]) => { const m = lampMesh(gCyl(0.15, 0.15, 0.1, 14), c, 0.1); m.rotation.x = Math.PI / 2; m.position.set(0, yy, 0.2); hg.add(m); const vz = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.3, 12, 1, true, -Math.PI / 2, Math.PI), mat(0x20242b, { side: THREE.DoubleSide })); vz.rotation.z = 0; vz.rotation.x = 0; vz.position.set(0, yy + 0.07, 0.3); vz.rotation.y = Math.PI / 2 * 0; hg.add(vz); vz.scale.set(1, 1, 1); vz.rotation.set(0, Math.PI, 0); vz.rotation.x = Math.PI / 2; vz.visible = false; const h = halo(c, 0.26, 0); h.position.set(0, yy, 0.3); hg.add(h); return { m, h }; });
     heads.push(L);
   };
   head(side * arm * 0.55, H - 0.95, 0.0, 0); head(side * arm * 0.95, H - 1.0, 0.0, 0); head(0, H - 1.3, 0.3, 0);
@@ -45,7 +45,7 @@ export function trafficLight({ dir = 0, phaseOffset = 0, arm = 5.5, side = 1 } =
   const sn2 = signMesh('5TH AVE', 1.8, 0.42, { bg: '#1d6a3a', fg: '#ffffff', double: true }); sn2.rotation.y = Math.PI / 2; sn2.position.set(0, H + 0.6, 0.0); g.add(sn2); b.cyl(0.03, 0.03, 0.5, 6, pole, [0, H + 0.25, 0]);
   A.on((t) => {
     const ph = signalPhase(t + phaseOffset, dir);
-    heads.forEach((L) => L.forEach((l, i) => { const on = (ph === 2 && i === 0) || (ph === 1 && i === 1) || (ph === 0 && i === 2); l.m.material.userData.set(on ? 1.5 : 0.1); l.h.material.opacity = on ? 0.35 : 0; l.h.visible = on; }));
+    heads.forEach((L) => L.forEach((l, i) => { const on = (ph === 2 && i === 0) || (ph === 1 && i === 1) || (ph === 0 && i === 2); l.m.material.userData.set(on ? 1.5 : 0.1); l.h.material.opacity = on ? 0.3 : 0; l.h.visible = on; }));
     const u = (((t + phaseOffset + dir * 13) % SIGNAL_T) + SIGNAL_T) % SIGNAL_T;               // ped. light is the cross direction: walk while this direction is red
     const walk = u >= 14 && u < 22, flashing = u >= 22 && u < 26;
     mm.userData.set(walk ? 1.4 : 0.08); hm.userData.set(walk ? 0.08 : (flashing ? (fract(t * 2) < 0.5 ? 1.4 : 0.08) : 1.4)); if (!flashing && !walk) hm.userData.set(1.4);
@@ -78,10 +78,10 @@ export function streetLamp({ kind = 'cobra', seed = 1, on = true } = {}) {
     b.box(0.3, 0.5, 0.2, 0x59616d, [0, 1.8, 0.14]);
   }
   // pool of light on the ground (additive disc) + halo
-  const pool = new THREE.Mesh(new THREE.CircleGeometry(kind === 'classic' ? 2.2 : 4.0, 28), new THREE.MeshBasicMaterial({ color: 0xffe9a8, transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false })); pool.rotation.x = -Math.PI / 2; pool.position.set(lampPos[0], 0.035, lampPos[2]); g.add(pool);
-  const hl = halo(0xffe9a8, kind === 'classic' ? 0.7 : 0.9, 0.3); hl.position.set(lampPos[0], kind === 'classic' ? 4.35 : H - 0.1, lampPos[2]); g.add(hl);
+  const pool = new THREE.Mesh(new THREE.CircleGeometry(kind === 'classic' ? 1.8 : 3.0, 28), new THREE.MeshBasicMaterial({ color: 0xffd98a, transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false })); pool.rotation.x = -Math.PI / 2; pool.position.set(lampPos[0], 0.035, lampPos[2]); g.add(pool);
+  const hl = halo(0xffe9a8, kind === 'classic' ? 0.5 : 0.5, 0.25); hl.position.set(lampPos[0], kind === 'classic' ? 4.35 : H - 0.1, lampPos[2]); g.add(hl);
   const ph = rnd() * 6;
-  A.on((t) => { const k = on ? 1 + 0.05 * Math.sin(t * 9 + ph) * (fract(t * 0.13 + ph) > 0.93 ? 4 : 1) : 0.1; for (const m of g.userData.lamps) m.material.userData.set(k * 1.3); pool.material.opacity = on ? 0.2 * k : 0.0; hl.material.opacity = on ? 0.3 * k : 0.0; });
+  A.on((t) => { const k = on ? 1 + 0.05 * Math.sin(t * 9 + ph) * (fract(t * 0.13 + ph) > 0.93 ? 4 : 1) : 0.1; for (const m of g.userData.lamps) m.material.userData.set(k * 1.3); pool.material.opacity = on ? 0.12 * k : 0.0; hl.material.opacity = on ? 0.25 * k : 0.0; });
   return done(S, H + 0.5, 2.5, 'streetLamp');
 }
 
@@ -119,7 +119,7 @@ export function hydrant({ color = 0xd9392f, spray = false } = {}) {
   const N = 40; let spr = null, sp2 = null;
   if (spray) {
     spr = new THREE.InstancedMesh(gSph(1, 6, 4), new THREE.MeshStandardMaterial({ color: 0xbfe6ff, roughness: 0.2, transparent: true, opacity: 0.8 }), N); spr.frustumCulled = false; spr.castShadow = false; g.add(spr);
-    const pud = new THREE.Mesh(gCyl(1.6, 1.6, 0.03, 24), new THREE.MeshStandardMaterial({ color: 0x78b8e8, roughness: 0.1, metalness: 0.1, transparent: true, opacity: 0.75 })); pud.position.set(0, 0.03, 2.4); pud.scale.set(1, 1, 1.5); g.add(pud);
+    const pud = new THREE.Mesh(gCyl(0.9, 0.9, 0.03, 24), new THREE.MeshStandardMaterial({ color: 0x78b8e8, roughness: 0.1, metalness: 0.1, transparent: true, opacity: 0.75 })); pud.position.set(0, 0.03, 2.0); pud.scale.set(1, 1, 1.3); g.add(pud);
   }
   A.on((t) => { if (!spr) return; for (let i = 0; i < N; i++) { const p = fract(t * 0.9 + i / N), v = 4.2, a = 0.9, tt = p * 0.95; const z = 0.36 + v * Math.cos(0.5) * tt * 1.3, y = 0.46 + v * Math.sin(0.5) * tt * 1.3 - 4.9 * tt * tt * 0.95 * 1.1; _o.position.set(Math.sin(i * 12.9) * 0.05 * tt, Math.max(0.03, y), z); _o.scale.setScalar(0.05 + 0.03 * Math.sin(i * 4.3)); _o.rotation.set(0, 0, 0); _o.updateMatrix(); spr.setMatrixAt(i, _o.matrix); } spr.instanceMatrix.needsUpdate = true; });
   return done(S, 0.95, 0.75, 'hydrant');
@@ -138,8 +138,8 @@ export function busStop({ route = '42', seed = 3 } = {}) {
   for (let i = 0; i < 3; i++) b.rbox(2.2, 0.05, 0.12, 0.02, 0x7a8696, [0, 0.55, -D / 2 + 0.2 + i * 0.14], {}); b.box(0.06, 0.45, 0.3, frame, [-1.0, 0.33, -D / 2 + 0.3]); b.box(0.06, 0.45, 0.3, frame, [1.0, 0.33, -D / 2 + 0.3]);
   b.box(1.1, 1.8, 0.14, 0x20232b, [W / 2 + 0.2 + 0.0, 1.2, -0.2 + 0.0], { }); b.box(0.04, 0.04, 0.04, 0, [0, -9, 0]);
   const ad = signMesh('FRESH PIZZA\n', 0.98, 1.65, { bg: '#f6c235', fg: '#d9392f', lines: [{ text: 'PIZZA', y: 0.3, size: 0.3, color: '#d9392f' }, { text: 'SLICE', y: 0.5, size: 0.3, color: '#2a2a2a' }, { text: '$2', y: 0.74, size: 0.55, color: '#d9392f' }], radius: 0.06, double: true }); ad.position.set(W / 2 + 0.2, 1.2, -0.2 + 0.08); g.add(ad); const adb = signMesh('x', 0.98, 1.65, { bg: '#2f6fd6', lines: [{ text: 'RIDE', y: 0.3, size: 0.32, color: '#ffffff' }, { text: 'GREEN', y: 0.55, size: 0.3, color: '#7dff9a' }, { text: 'BIKE', y: 0.78, size: 0.3, color: '#ffffff' }], radius: 0.06 }); adb.position.set(W / 2 + 0.2, 1.2, -0.2 - 0.075); adb.rotation.y = Math.PI; g.add(adb);
-  const board = [3, 2, 1, 0].map((m, i) => { const bs = signMesh('', 1.5, 0.42, { bg: '#0a0a0a', lines: [{ text: route + '  DOWNTOWN   ' + (m ? m + ' MIN' : 'DUE'), y: 0.52, size: 0.55, color: '#ffb020' }], radius: 0.1 }); bs.position.set(0, Hh - 0.05, -D / 2 + 0.07); g.add(bs); bs.visible = i === 0; return bs; });
-  b.box(1.6, 0.52, 0.08, 0x20232b, [0, Hh - 0.05, -D / 2 + 0.03]);
+  const board = [3, 2, 1, 0].map((m, i) => { const bs = signMesh('', 1.5, 0.42, { bg: '#0a0a0a', lines: [{ text: route + '  DOWNTOWN   ' + (m ? m + ' MIN' : 'DUE'), y: 0.52, size: 0.55, color: '#ffb020' }], radius: 0.1 }); bs.position.set(0, Hh - 0.6, -D / 2 + 0.07); g.add(bs); bs.visible = i === 0; return bs; });
+  b.box(1.6, 0.52, 0.08, 0x20232b, [0, Hh - 0.6, -D / 2 + 0.03]);
   // route pole with flag sign
   b.cyl(0.05, 0.05, 3.2, 8, 0x8a909a, [-W / 2 - 1.2, 1.6, 0.6], { metal: 0.5 }); const rs = signMesh(route, 0.55, 0.55, { bg: '#2f6fd6', fg: '#ffffff', border: '#ffffff', double: true }); rs.position.set(-W / 2 - 1.2, 3.0, 0.6); g.add(rs); const bsg = signMesh('BUS STOP', 0.8, 0.28, { bg: '#ffffff', fg: '#1d2b5c', double: true }); bsg.position.set(-W / 2 - 1.2, 2.55, 0.6); g.add(bsg);
   // two waiting commuters (low poly) that shift their weight
@@ -242,8 +242,8 @@ export function manholeSteam({ stack = true } = {}) {
   b.cyl(0.62, 0.62, 0.05, 28, 0x3a3f4a, [0, 0.025, 0], { metal: 0.4 }); for (let i = 0; i < 4; i++) b.add(new THREE.TorusGeometry(0.15 + i * 0.13, 0.012, 4, 24), 0x20232b, { p: [0, 0.055, 0], r: [Math.PI / 2, 0, 0] });
   for (let i = 0; i < 8; i++) b.box(0.04, 0.012, 0.5, 0x20232b, [0, 0.058, 0], { r: [0, i * Math.PI / 8, 0] });
   if (stack) { b.cyl(0.32, 0.42, 1.6, 14, 0xe8e8ea, [1.4, 0.8, 0.0]); for (let i = 0; i < 4; i++) b.cyl(0.355 - (i * 0.02), 0.355 - (i * 0.02), 0.26, 14, 0xf08a2b, [1.4, 0.2 + i * 0.4, 0]); b.cyl(0.28, 0.3, 0.1, 14, 0x3a3f4a, [1.4, 1.65, 0]); b.cyl(0.45, 0.45, 0.1, 14, 0x59616d, [1.4, 0.05, 0]); }
-  const s1 = plume({ n: 12, rise: 3.5, r0: 0.18, r1: 0.9, period: 4, drift: [0.6, 0, 0.3], color: 0xf2f4f8, seed: 3, spread: 0.3, opacity: 0.72 }); s1.position.set(0, 0.1, 0); g.add(s1); A.on(s1.userData.update);
-  if (stack) { const s2 = plume({ n: 14, rise: 7, r0: 0.3, r1: 1.4, period: 6, drift: [1.4, 0, 0.5], color: 0xf2f4f8, seed: 9, spread: 0.25, opacity: 0.72 }); s2.position.set(1.4, 1.7, 0); g.add(s2); A.on(s2.userData.update); }
+  const s1 = plume({ n: 14, rise: 3.0, r0: 0.12, r1: 0.55, period: 4, drift: [0.6, 0, 0.3], color: 0xf2f4f8, seed: 3, spread: 0.3, opacity: 0.72 }); s1.position.set(0, 0.1, 0); g.add(s1); A.on(s1.userData.update);
+  if (stack) { const s2 = plume({ n: 18, rise: 6, r0: 0.2, r1: 0.9, period: 6, drift: [1.4, 0, 0.5], color: 0xf2f4f8, seed: 9, spread: 0.25, opacity: 0.72 }); s2.position.set(1.4, 1.7, 0); g.add(s2); A.on(s2.userData.update); }
   return done(S, stack ? 9.0 : 3.6, 3, 'manholeSteam');
 }
 
@@ -266,7 +266,7 @@ export function roadworks({ seed = 7 } = {}) {
   const wk = new THREE.Group(), wb = new Batch(); wb.cyl(0.24, 0.22, 0.75, 10, 0xf6c235, [0, 1.15, 0]); wb.sph(0.22, 0xd99a6c, [0, 1.75, 0], { w: 10, h: 8 }); wb.add(new THREE.SphereGeometry(0.25, 10, 6, 0, TAU, 0, Math.PI * 0.55), 0xf6c235, { p: [0, 1.8, 0] }); wb.cyl(0.115, 0.1, 0.75, 8, 0x2b3a6a, [-0.12, 0.45, 0]); wb.cyl(0.115, 0.1, 0.75, 8, 0x2b3a6a, [0.12, 0.45, 0]); wb.box(0.13, 0.08, 0.26, 0x20232b, [-0.12, 0.04, 0.04]); wb.box(0.13, 0.08, 0.26, 0x20232b, [0.12, 0.04, 0.04]);
   wb.bar([-0.28, 1.35, 0.0], [-0.22, 0.95, 0.4], 0.09, 0xf6c235); wb.bar([0.28, 1.35, 0.0], [0.22, 0.95, 0.4], 0.09, 0xf6c235); wb.build(wk); wk.position.set(0.0, 0, -0.2); wk.rotation.y = 0; g.add(wk);
   const jh = new THREE.Group(), jb = new Batch(); jb.cyl(0.06, 0.06, 1.0, 8, 0x59616d, [0, 0.5, 0], { metal: 0.5 }); jb.rbox(0.2, 0.3, 0.2, 0.05, 0xf6c235, [0, 1.0, 0]); jb.box(0.4, 0.06, 0.06, 0x20232b, [0, 1.2, 0]); jb.cyl(0.02, 0.02, 0.3, 6, 0xc9ced6, [0, -0.1, 0], { metal: 0.6 }); jb.build(jh); jh.position.set(0.0, 0.07, 0.4); g.add(jh);
-  const dust = plume({ n: 8, rise: 1.4, r0: 0.08, r1: 0.4, period: 1.6, drift: [0.2, 0, 0.1], color: 0xb09a7a, seed: 5, spread: 0.6, opacity: 0.8 }); dust.position.set(0, 0.2, 0.45); g.add(dust); A.on(dust.userData.update);
+  const dust = plume({ n: 10, rise: 1.2, r0: 0.04, r1: 0.2, period: 1.4, drift: [0.2, 0, 0.1], color: 0xb09a7a, seed: 5, spread: 0.6, opacity: 0.8 }); dust.position.set(0, 0.2, 0.45); g.add(dust); A.on(dust.userData.update);
   A.on((t) => { jh.position.y = 0.07 + Math.abs(Math.sin(t * 38)) * 0.04; jh.rotation.z = Math.sin(t * 53) * 0.012; wk.position.y = Math.sin(t * 38) * 0.012; wk.rotation.z = Math.sin(t * 29) * 0.012; const k = fract(t * 1.4) < 0.5 ? 1 : 0; fl.material.userData.set(0.2 + 1.5 * k); fh.material.opacity = 0.5 * k; fh.visible = !!k; diamond.rotation.z = Math.sin(t * 0.8) * 0.02; });
   return done(S, 3.0, 8.5, 'roadworks');
 }
@@ -288,7 +288,7 @@ export function scaffolding({ bays = 4, levels = 6, bay = 2.5, lift = 2.0, seed 
   const net = new THREE.Mesh(gPlane(Wd, Hh - lift), new THREE.MeshStandardMaterial({ color: 0x3aa04a, transparent: true, opacity: 0.4, side: THREE.DoubleSide, roughness: 1, depthWrite: false })); net.position.set(0, lift + (Hh - lift) / 2 + 0.2, depth + 0.05); g.add(net);
   for (let i = 0; i < 3; i++) b.box(0.8, 0.3, 0.5, 0xb5573f, [-Wd / 2 + 1.0 + i * 0.9, 2 * lift + 0.4 + 0.0, 0.6], {});
   const ban = flag(Wd * 0.5, 0.8, [0xf6c235, 0xf6c235], { seg: 10 }); ban.position.set(-Wd * 0.25 + 0.0, Hh * 0.5 + 0.0, depth + 0.1); g.add(ban);
-  const bs = signMesh('BUILD IT RIGHT CO.', Wd * 0.5 - 0.1, 0.7, { bg: null, fg: '#1a1a1a', weight: 400 }); bs.position.set(0.0, Hh * 0.5, depth + 0.14); bs.position.x = 0; g.add(bs); ban.position.x = -Wd * 0.25;
+  const bs = signMesh('BUILD CO.', Wd * 0.3, 0.7, { bg: null, fg: '#1a1a1a', weight: 400 }); bs.position.set(-Wd * 0.25, Hh * 0.5, depth + 0.3); bs.position.x = 0; g.add(bs); ban.position.x = -Wd * 0.25;
   // hoist with a bucket that rides up and down + tiny worker on the top lift
   const hx = Wd / 2 - 0.2, hz = depth + 0.5; tube([hx, 0, hz], [hx, Hh + 1.2, hz], 0.08); tube([hx + 0.5, 0, hz], [hx + 0.5, Hh + 1.2, hz], 0.08); for (let i = 0; i < Hh / 0.5; i++) b.bar([hx, i * 0.5, hz], [hx + 0.5, i * 0.5 + 0.5, hz], 0.03, steel);
   b.box(0.9, 0.5, 0.5, 0x59616d, [hx + 0.25, Hh + 1.5, hz]);

@@ -279,8 +279,8 @@ export function cornerShop({ w = 9, d = 8.5, seed = 5, color = 0xf0c38a, lod = '
   S.extra.push(makeWindows(fw, { lod: hi ? 'high' : 'low', frame: 0x3a5a3a, flicker: false }));
   b.box(1.3, 2.6, 0.14, 0x3a5a3a, [0.1, 1.4, d / 2 + 0.07]); b.box(1.0, 2.1, 0.05, 0xffe9b0, [0.1, 1.35, d / 2 + 0.15], { glow: true }); b.sph(0.05, 0xf0c64a, [0.55, 1.2, d / 2 + 0.2], { metal: 0.7, rough: 0.3 });
   awning(b, { x: 0, y: 3.45, z: d / 2 + 0.05, w: w - 0.4, out: 1.6, drop: 0.85, c1: PAL.green, c2: PAL.white, n: 12 });
-  const sg = signMesh(name, w - 1.2, 0.85, { bg: '#2a5a3a', fg: '#fff6d8', border: '#fff6d8' }); sg.position.set(0, 3.95, d / 2 + 0.085); g.add(sg);
-  b.box(w - 1.0, 0.95, 0.12, 0x1f3f2a, [0, 3.95, d / 2 + 0.0], { rough: 0.6 });
+  const sg = signMesh(name, w - 1.4, 0.8, { bg: '#2a5a3a', fg: '#fff6d8', border: '#fff6d8' }); sg.position.set(0, 4.3, d / 2 + 0.085); g.add(sg);
+  b.box(w - 1.0, 0.95, 0.12, 0x1f3f2a, [0, 4.3, d / 2 + 0.0], { rough: 0.6 });
   // OPEN neon (blinks), fruit crates, newspaper stand, A-frame board
   const neon = lampMesh(gBox(0.9, 0.34, 0.04), 0xff5a5a); neon.position.set(-2.4, 1.3, d / 2 + 0.09); g.add(neon);
   const nsg = signMesh('OPEN', 0.9, 0.34, { bg: null, fg: '#fff', weight: 400, fit: 0.9 }); nsg.position.set(-2.4, 1.3, d / 2 + 0.12); g.add(nsg);

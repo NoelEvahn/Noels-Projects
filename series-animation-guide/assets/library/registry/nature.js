@@ -4,6 +4,7 @@ import { cumulus, cloudField, cloudSea, stormCloud } from '../props/nature_cloud
 import { scaled } from '../props/nature_common.js';
 import { forest, meadow, jungle, palmTree } from '../props/nature_forest.js';
 import { ocean, beachShore, river, lake, waterfall, sailboat } from '../props/nature_water.js';
+import { mountainRange, famousPeak, cliffs, canyon, dunes, volcano, glacier, rollingHills, island, windmill } from '../props/nature_terrain.js';
 import { skyDome, sun, rainbow, birdFlock, hotAirBalloon, balloonFleet, jetliner, contrailJet } from '../props/nature_sky.js';
 
 export const ITEMS = [];
@@ -56,3 +57,23 @@ reg({ id: 'nature_lake', cat: 'nature', title: 'Lake', note: 'lake', stage: LAND
   build: () => wrap(lake({}), { pos: [-20, 12, 150], target: [0, 20, -150], fov: 55 }) });
 reg({ id: 'nature_waterfall', cat: 'nature', title: 'Waterfall', note: 'waterfall', stage: LAND({ ground: null, fog: ['#dff0ff', 200, 600], shadow: { extent: 80 } }),
   build: () => wrap(waterfall({ height: 60 }), { pos: [0, 22, 105], target: [0, 28, 0], fov: 50 }) });
+
+const FAR = (o = {}) => ({ sky: ['#4a8ee0', '#d8ecff'], ground: null, keyPos: [60, 90, 70], shadow: { extent: 200 }, fog: ['#d8ecff', 900, 2600], ...o });
+reg({ id: 'nature_mountain_range', cat: 'nature', title: 'Mountain range', note: 'mountains', stage: FAR(),
+  build: () => wrap(scaled(mountainRange({}), 0.045), { pos: [0, 210, 720], target: [0, 60, -40], fov: 42 }) });
+reg({ id: 'nature_everest', cat: 'nature', title: 'Famous peak (8849 m)', note: 'everest', stage: FAR({ fog: ['#cfe4ff', 1200, 3200] }),
+  build: () => wrap(scaled(famousPeak({}), 0.03), { pos: [160, 240, 760], target: [0, 215, 0], fov: 40 }) });
+reg({ id: 'nature_cliffs', cat: 'nature', title: 'Sea cliffs', note: 'cliffs', stage: FAR({ fog: ['#d8ecff', 700, 1800] }),
+  build: () => wrap(scaled(cliffs({}), 0.5), { pos: [-140, 70, 330], target: [0, 45, 0], fov: 50 }) });
+reg({ id: 'nature_canyon', cat: 'nature', title: 'Canyon', note: 'canyon', stage: FAR({ fog: ['#f0e0c8', 1000, 3000], sky: ['#5a9ee0', '#fbe8d0'] }),
+  build: () => wrap(scaled(canyon({}), 0.1), { pos: [-20, 62, 20], target: [0, 10, -200], fov: 55 }) });
+reg({ id: 'nature_dunes', cat: 'nature', title: 'Desert dunes', note: 'dunes', stage: FAR({ fog: ['#f8e4c0', 400, 1600], sky: ['#4a8ee0', '#fbe8c8'], shadow: { extent: 80 } }),
+  build: () => wrap(dunes({}), { pos: [-40, 14, 70], target: [-100, 6, 0], fov: 60 }) });
+reg({ id: 'nature_volcano', cat: 'nature', title: 'Volcano', note: 'volcano', stage: FAR({ sky: ['#2a3a6a', '#f0a070'], fog: ['#e8a888', 1000, 2800], keyPos: [-60, 60, 80] }),
+  build: () => wrap(scaled(volcano({}), 0.05), { pos: [0, 40, 330], target: [0, 90, 0], fov: 55 }) });
+reg({ id: 'nature_glacier', cat: 'nature', title: 'Glacier + icebergs', note: 'glacier', stage: FAR({ fog: ['#dff0ff', 800, 2400], shadow: { extent: 150 } }),
+  build: () => wrap(scaled(glacier({}), 0.12), { pos: [0, 70, 180], target: [0, -5, -130], fov: 55 }) });
+reg({ id: 'nature_hills', cat: 'nature', title: 'Rolling hills', note: 'hills', stage: FAR({ fog: ['#dff0ff', 400, 1400], shadow: { extent: 120 } }),
+  build: () => wrap(rollingHills({}), { pos: [-60, 45, 130], target: [10, 14, -60], fov: 55 }) });
+reg({ id: 'nature_island', cat: 'nature', title: 'Tropical island', note: 'island', stage: FAR({ fog: ['#cfe8ff', 800, 2200], shadow: { extent: 200 } }),
+  build: () => wrap(island({}), { pos: [120, 60, 420], target: [0, 20, 0], fov: 50 }) });

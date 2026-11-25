@@ -229,10 +229,10 @@ export function blinker(parent, A, x, y, z, color, size, { period = 2, phase = 0
 
 // ---------- water ----------
 // rippling water plane (vertex displacement, flat-shaded facets). update via returned .wave(t)
-export function makeWater(w, d, { seg = 40, amp = 0.4, color = COL.water, speed = 1, scale = 1, holes } = {}) {
+export function makeWater(w, d, { seg = 40, amp = 0.4, color = COL.water, speed = 1, scale = 1, opacity } = {}) {
   const g = new THREE.PlaneGeometry(w, d, seg, Math.max(2, Math.round(seg * d / w))); g.rotateX(-Math.PI / 2);
   const p = g.attributes.position, orig = Float32Array.from(p.array);
-  const m = new THREE.Mesh(g, lmat(color, { rough: 0.25, metal: 0.15, flat: true, layer: 1 }));
+  const m = new THREE.Mesh(g, lmat(color, { rough: 0.25, metal: 0.15, flat: true, layer: 1, ...(opacity !== undefined ? { opacity, depthWrite: false } : {}) }));
   m.receiveShadow = true;
   m.userData.wave = (t) => {
     for (let i = 0; i < p.count; i++) { const x = orig[i * 3], z = orig[i * 3 + 2]; p.setY(i, (Math.sin(x * 0.11 / scale + t * speed * 1.3) * Math.cos(z * 0.09 / scale + t * speed) + 0.5 * Math.sin((x + z) * 0.2 / scale + t * speed * 1.9)) * amp + amp * 1.6); }
@@ -456,3 +456,37 @@ export function stripedDome(profile, seg, colors, { mode = 'spiral', n = 8, twis
   g.setAttribute('color', new THREE.BufferAttribute(col, 3)); return g;
 }
 export const stripedMat = () => lmat(0xffffff, { vc: true, rough: 0.5, metal: 0.1 });
+
+// hull: ship hull as a ring loft along Z (bow +Z). len, beam, top (above waterline), draft (below), bow taper start, stern taper
+export function hullGeo(len, beam, top, draft, { bowStart = 0.72, sternStart = 0.1, sheer = 0.12, n = 36 } = {}) {
+  const rings = [];
+  for (let i = 0; i <= n; i++) {
+    const s = i / n, z = (s - 0.5) * len;
+    let b = beam / 2;
+    if (s > bowStart) { const t = (s - bowStart) / (1 - bowStart); b *= Math.sqrt(Math.max(0, 1 - Math.pow(t, 1.9))); }
+    if (s < sternStart) { const t = 1 - s / sternStart; b *= 1 - 0.28 * t * t; }
+    b = Math.max(b, 0.05);
+    const tp = top * (1 + sheer * Math.pow(s, 4)) * (1 + 0.03 * Math.pow(1 - s, 3)), dr = draft * (1 - 0.7 * Math.pow(Math.max(0, (s - 0.8) / 0.2), 2));
+    rings.push([[-b, tp, z], [-b * 1.0, 0, z], [-b * 0.9, -dr * 0.45, z], [-b * 0.45, -dr, z], [b * 0.45, -dr, z], [b * 0.9, -dr * 0.45, z], [b, 0, z], [b, tp, z]].reverse());
+  }
+  return ringLoft(rings, { cap: true });
+}
+// dotted row of windows / portholes along a hull side (instanced)
+export function porthole(parent, material, z0, z1, y, x, step, size, side = 1) {
+  const l = []; for (let z = z0; z <= z1; z += step) l.push({ p: [x * side, y, z], r: [0, side * Math.PI / 2, 0], s: [size, size, 0.1] });
+  return instances(parent, new THREE.CylinderGeometry(0.5, 0.5, 1, 8), material, l.map((q) => ({ ...q, r: [0, 0, Math.PI / 2] })).map((q) => ({ p: q.p, r: [0, 0, Math.PI / 2], s: [size, 0.2, size] })));
+}
+// rising smoke puffs, closed-form cycle. returns nothing; positions relative to parent
+export function smoke(parent, A, x, y, z, { n = 14, rise = 40, spread = 10, size = 3, wind = [8, 0, 0], period = 8, color = 0x4a4a52, seed = 1 } = {}) {
+  const r = rng(seed), m = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 1), lmat(color, { rough: 1, opacity: 0.85 }), n), o = new THREE.Object3D(), P = [];
+  for (let i = 0; i < n; i++) P.push({ ph: i / n, jx: (r() - 0.5) * 2, jz: (r() - 0.5) * 2 }); m.frustumCulled = false; m.castShadow = false; parent.add(m);
+  A.add((t) => { P.forEach((p, i) => { const u = frac(p.ph + t / period); o.position.set(x + wind[0] * u * period * 0.3 + p.jx * spread * u, y + rise * u, z + wind[2] * u * period * 0.3 + p.jz * spread * u); o.scale.setScalar(size * (0.5 + 1.6 * u)); o.updateMatrix(); m.setMatrixAt(i, o.matrix); }); m.instanceMatrix.needsUpdate = true; });
+  return m;
+}
+// foam blobs around a hull (bow wave + wake); positions static, size pulses
+export function foam(parent, A, len, beam, { y = 0.3, seed = 1 } = {}) {
+  const r = rng(seed), l = []; for (let i = 0; i < 60; i++) { const s = r(), z = (s - 0.5) * len; const side = r() < 0.5 ? -1 : 1; const wid = beam / 2 * (s > 0.75 ? Math.sqrt(Math.max(0.05, 1 - Math.pow((s - 0.75) / 0.25, 1.9))) : 1); l.push({ x: side * (wid + 0.5 + r() * 2), z, ph: r() * 6 }); }
+  for (let i = 0; i < 40; i++) { const z = -len / 2 - r() * len * 0.5, side = r() < 0.5 ? -1 : 1; l.push({ x: side * (r() * beam * 0.35 + Math.abs(z + len / 2) * 0.08), z, ph: r() * 6 }); }
+  const m = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 8, 5), lmat(0xffffff, { rough: 1, layer: 3 }), l.length), o = new THREE.Object3D(); m.frustumCulled = false; m.castShadow = false; parent.add(m);
+  A.add((t) => { l.forEach((b, i) => { const k = 0.6 + 0.4 * Math.sin(t * 2.2 + b.ph); o.position.set(b.x, y, b.z); o.scale.set(beam * 0.07 * k, 0.3, beam * 0.09 * k); o.updateMatrix(); m.setMatrixAt(i, o.matrix); }); m.instanceMatrix.needsUpdate = true; });
+}

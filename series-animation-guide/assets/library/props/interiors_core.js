@@ -172,7 +172,7 @@ export function room(o = {}) {
   }
   const R = { g, w, d, h, T, anims, r, wrecked, seed, holeOn };
   R.anim = (fn) => { anims.push(fn); };
-  R.place = (obj, x = 0, y = 0, z = 0, ry = 0) => { obj.position.set(x, y, z); obj.rotation.y = ry; g.add(obj); R.reg(obj); return obj; };
+  R.place = (obj, x = 0, y = 0, z = 0, ry) => { obj.position.set(x, y, z); if (ry !== undefined) obj.rotation.y = ry; g.add(obj); R.reg(obj); return obj; };
   R.reg = (obj) => { obj.traverse((o) => { const f = o.userData.update; if (f && !anims.includes(f)) anims.push(f); }); return obj; };
   // topple furniture when wrecked: wraps obj in a pivot at its base edge (hw = half footprint along the fall axis). Use BEFORE R.place: R.place(R.topple(chair, 0.25, 0.5), x, 0, z, ry)
   R.topple = (obj, hw = 0.4, thr = 0.4, { sign } = {}) => {

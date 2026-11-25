@@ -74,7 +74,7 @@ export function motionTrail({ path, radius = 0.12, seconds = 0.5, segments = 28,
     const m = new THREE.Mesh(geo, mat); m.frustumCulled = false; g.add(m); m.userData.rk = rk; return m;
   };
   const core = mkMesh(1, new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false, side: THREE.DoubleSide }));
-  const halo = glow ? mkMesh(2.3, new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, side: THREE.DoubleSide })) : null;
+  const halo = glow ? mkMesh(1.9, new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, side: THREE.DoubleSide })) : null;
   const cH = new THREE.Color(head), cT = new THREE.Color(tail), c = new THREE.Color(), pts = Array.from({ length: n }, () => new THREE.Vector3()), tg = new THREE.Vector3(), u = new THREE.Vector3(), v = new THREE.Vector3(), up = V(0, 1, 0);
   const at = (t, out) => { const p = path(t); if (Array.isArray(p)) out.set(p[0], p[1], p[2]); else out.copy(p); return out; };
   const set = (t) => {
@@ -101,24 +101,24 @@ export function impactStar({ color = 0xffc928, color2 = 0xff5a1e, size = 1, spik
   const layer = (sh, col, z, sc, rot) => { const geo = new THREE.ExtrudeGeometry(sh, { depth: 0.05, bevelEnabled: true, bevelThickness: 0.025, bevelSize: 0.03, bevelSegments: 2 }); geo.translate(0, 0, -0.025); const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color, toneMapped: false })); m.position.z = z; m.scale.setScalar(sc); m.rotation.z = rot; inner.add(m); return m; };
   const ls = [layer(starShape(1, spikes), 0x7a1208, 0, 1.12, 0), layer(starShape(1, spikes), color2, 0.03, 1.0, 0), layer(starShape(2, spikes, 0.6), color, 0.06, 0.74, TAU / (spikes * 4)), layer(starShape(3, spikes - 2, 0.62), 0xfff6d8, 0.09, 0.4, TAU / 9)];
   const rayM = new THREE.MeshBasicMaterial({ color: 0xffe9a0, toneMapped: false, transparent: true }), rp = pool(spindleGeo(), rayM, rays); g.add(rp);
-  const RA = Array.from({ length: rays }, (_, i) => ({ a: (i + r.range(-0.3, 0.3)) / rays * TAU, len: r.range(0.35, 0.7), d: r.range(1.15, 1.5) }));
-  const ringM = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, toneMapped: false, depthWrite: false }), ring = new THREE.Mesh(new THREE.TorusGeometry(1, 0.03, 6, 48), ringM); g.add(ring);
+  const RA = Array.from({ length: rays }, (_, i) => ({ a: (i + r.range(-0.3, 0.3)) / rays * TAU, len: r.range(0.55, 0.95), d: r.range(1.1, 1.4) }));
+  const ringM = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, toneMapped: false, depthWrite: false }), ring = new THREE.Mesh(new THREE.TorusGeometry(1, 0.018, 6, 48), ringM); g.add(ring);
   const set = (age, cam) => {
     g.visible = age >= 0 && age < 0.85; if (!g.visible) return;
     if (cam) faceCamera(g, cam);
     const pop = easeOutBack(clamp(age / 0.14), 2.4), out = 1 - smooth((age - 0.55) / 0.28), s = S * pop * out * (1 + 0.04 * Math.sin(age * 55) * (age < 0.5 ? 1 : 0));
     inner.scale.setScalar(Math.max(1e-4, s)); inner.rotation.z = (age < 0.5 ? 0.07 : 0.02) * Math.sin(age * 38) + age * 0.25;
     const k = clamp((age - 0.02) / 0.5);
-    for (let i = 0; i < rays; i++) { const p = RA[i], d = S * (p.d + 1.3 * easeOutCubic(k)), len = S * p.len * (1 - k * 0.7), a = age < 0.02 ? 0 : 1; rp.put(i, Math.cos(p.a) * d, Math.sin(p.a) * d, 0.05, len * a * (1 - smooth((age - 0.4) / 0.3)), 0, 0, p.a, S * 0.06, S * 0.06); }
+    for (let i = 0; i < rays; i++) { const p = RA[i], d = S * (p.d + 1.3 * easeOutCubic(k)), len = S * p.len * (1 - k * 0.7), a = age < 0.02 ? 0 : 1; rp.put(i, Math.cos(p.a) * d, Math.sin(p.a) * d, 0.05, len * a * (1 - smooth((age - 0.4) / 0.3)), 0, 0, p.a, S * 0.1, S * 0.1); }
     rp.flush();
-    ring.scale.setScalar(S * (0.6 + 2.0 * easeOutCubic(k))); ringM.opacity = (1 - k) * (age > 0.01 ? 1 : 0); ring.visible = k < 1;
+    ring.scale.setScalar(S * (0.8 + 0.7 * easeOutCubic(k))); ring.scale.z = 1; ringM.opacity = (1 - k) * (age > 0.01 ? 0.9 : 0); ring.visible = k < 1;
   };
   return finish(g, set, { duration: 0.85, sizeM: S * 2 });
 }
 
 // ============================================================ confettiBurst
 // confettiBurst({origin, count=220, power=9, floor=0, colors, streamers=true, waves=1, seed}) .set(age): cannon burst of paper rectangles, discs and streamers with drag, flutter and tumbling; pieces land and lie flat on `floor`.
-export function confettiBurst({ origin = [0, 0.2, 0], count = 220, power = 9, floor = 0, colors = [0xff3f7f, 0xffd23f, 0x4aa0e0, 0x4cd07a, 0xffffff, 0xff8a2b, 0xa66bff], streamers = true, waves = 1, spread = 0.7, seed = 17, size = 0.13 } = {}) {
+export function confettiBurst({ origin = [0, 0.2, 0], count = 220, power = 9, floor = 0, colors = [0xff3f7f, 0xffd23f, 0x4aa0e0, 0x4cd07a, 0xffffff, 0xff8a2b, 0xa66bff], streamers = true, waves = 1, spread = 0.7, seed = 17, size = 0.2 } = {}) {
   const g = new THREE.Group(), r = rng(seed), nS = streamers ? Math.floor(count * 0.18) : 0, nP = count - nS;
   const rectM = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, toneMapped: false }), discG = new THREE.CircleGeometry(0.5, 10);
   const rects = pool(new THREE.PlaneGeometry(1, 0.6), rectM, Math.ceil(nP * 0.65)), discs = pool(discG, rectM, Math.floor(nP * 0.35)), strm = pool(new THREE.PlaneGeometry(0.06, 1), rectM, Math.max(1, nS));
@@ -212,7 +212,7 @@ export function ambientMotes({ area = [12, 6, 8], kind = 'dust', count = 120, se
     pollen: { type: 'glow', size: [0.06, 0.12], v: [0.2, 0.08, 0.1], col: [1.0, 0.9, 0.3], wob: 0.5, shape: 'soft' },
     fireflies: { type: 'glow', size: [0.12, 0.22], v: [0.05, 0.02, 0.05], col: [0.6, 1.4, 0.2], wob: 1.2, shape: 'soft', blink: true },
     embers: { type: 'glow', size: [0.05, 0.11], v: [0.15, 1.1, 0.1], col: [2.0, 0.8, 0.12], wob: 0.4, shape: 'soft', flick: true },
-    sparkle: { type: 'glow', size: [0.12, 0.3], v: [0.0, 0.1, 0.0], col: [1.0, 0.95, 0.7], wob: 0.3, shape: 'star', blink: true },
+    sparkle: { type: 'glow', size: [0.05, 0.13], v: [0.0, 0.1, 0.0], col: [1.0, 0.95, 0.7], wob: 0.3, shape: 'star', blink: true },
     snow: { type: 'ball', size: [0.04, 0.1], v: [0.2, -0.9, 0.1], col: [1, 1, 1], wob: 0.6 },
     bubbles: { type: 'bubble', size: [0.08, 0.3], v: [0.0, 0.7, 0.0], col: [1, 1, 1], wob: 0.4 },
     rain: { type: 'streak', size: [0.012, 0.02], v: [-1.2, -14, 0.2], col: [0.85, 0.93, 1], wob: 0 },
@@ -245,7 +245,7 @@ export function ambientMotes({ area = [12, 6, 8], kind = 'dust', count = 120, se
 
 // ============================================================ coinShower
 // coinShower({count=60, mode:'rain'|'fountain', area:[4,4], height=8, origin, floor=0, seed}) .set(age): gold coins with a rim and embossed centre tumble, bounce, ring and settle flat with glints. rain = pour from above, fountain = burst up from origin.
-export function coinShower({ count = 60, mode = 'rain', area = [4, 4], height = 8, origin = [0, 0.5, 0], floor = 0, seed = 33, size = 0.22, power = 7 } = {}) {
+export function coinShower({ count = 60, mode = 'rain', area = [4, 4], height = 8, origin = [0, 0.5, 0], floor = 0, seed = 33, size = 0.5, power = 7 } = {}) {
   const g = new THREE.Group(), r = rng(seed);
   const coin = mergeGeos([{ geo: new THREE.CylinderGeometry(0.5, 0.5, 0.12, 20), color: 0xd9a21b }, { geo: new THREE.CylinderGeometry(0.38, 0.38, 0.145, 20), color: 0xffe07a }, { geo: new THREE.CylinderGeometry(0.2, 0.2, 0.16, 12), color: 0xd9a21b }]);
   const pl = pool(coin, new THREE.MeshStandardMaterial({ color: 0xffffff, vertexColors: true, metalness: 0.75, roughness: 0.28, emissive: 0x6a3a00, emissiveIntensity: 0.5 }), count, { cast: true }); g.add(pl);
@@ -257,9 +257,9 @@ export function coinShower({ count = 60, mode = 'rain', area = [4, 4], height = 
       if (a < 0) { pl.hide(i); gl.hide(i); continue; }
       const b = mode === 'rain' ? ballistic(c.x, c.y, c.z, 0, -1.5, 0, a, { floor: floor + c.s * 0.07, e: 0.5, fric: 0.5 }) : ballistic(origin[0], origin[1], origin[2], Math.sin(c.el) * Math.cos(c.th) * c.sp, Math.cos(c.el) * c.sp * 1.15, Math.sin(c.el) * Math.sin(c.th) * c.sp, a, { floor: floor + c.s * 0.07, e: 0.5, fric: 0.45 });
       const spinT = b.rest ? b.tRest : a, rest = b.rest ? smooth((a - b.tRest) / 0.3) : 0, rx = c.w * spinT, fin = Math.round(rx / Math.PI) * Math.PI;
-      pl.put(b.rest ? b.x : b.x, b.y, b.z, c.s, rx * (1 - rest) + fin * rest + c.tilt * (1 - rest), c.ph, 0, c.s, c.s);
+      pl.put(i, b.x, b.y, b.z, c.s, rx * (1 - rest) + fin * rest + c.tilt * (1 - rest), c.ph, 0, c.s, c.s);
       const gl_ = Math.pow(Math.max(0, Math.sin(a * 8 + c.ph)), 12) * (a < 3 ? 1 : 0.6);
-      if (gl_ < 0.05) gl.hide(i); else gl.dot(i, b.x, b.y + c.s * 0.3, b.z, c.s * 3.4 * gl_, 2.2 * gl_, 1.8 * gl_, 0.7 * gl_);
+      if (gl_ < 0.05) gl.hide(i); else gl.dot(i, b.x, b.y + c.s * 0.3, b.z, c.s * 1.6 * gl_, 2.2 * gl_, 1.8 * gl_, 0.7 * gl_);
     }
     pl.flush(); gl.flush();
   };
@@ -303,5 +303,5 @@ export function parallaxLayers({ width = 100, speed = 1, seed = 37, fog = 0xd4e8
     }
   };
   set(0);
-  return finish(g, set, { loop: true, sizeM: width, extra: { layers: L.map((o) => ({ kind: o.d.kind, z: o.d.z, speedMps: o.vel })) } });
+  return finish(g, set, { loop: true, sizeM: width, extra: { layerInfo: L.map((o) => ({ kind: o.d.kind, z: o.d.z, speedMps: o.vel })) } });
 }

@@ -1,13 +1,13 @@
 // Landmarks pack: monuments B (Sydney Opera House + Harbour Bridge, Golden Gate, Tower Bridge, Arc de Triomphe, St Basil's, Kremlin tower, Washington Monument, Gateway Arch). 1 unit = 1 m.
 import { THREE, rng, mat, glow, add, sph, box, cyl, cone, tor, rbox, shade, clamp, lerp, smooth, TAU, COL, lmat, animator, finish, frac, ngon, rectPts, scalePts, rotPts, loft, frustum, lathe, merge, xf, ledgeBands, instances, beams, xBrace, flagPole, FLAGS, blinker, makeWater, makeCrowd, makeTraffic, ringPath, linePath, trees, scatter, slab, ring, disc, patch, makeBoats, boatMesh, ringLoft, stripedDome, stripedMat, fbm, makeFlag } from './landmarks_kit.js';
 
-const birds = (parent, A, n, cx, cy, cz, R, seed, size = 1, speed = 0.5) => {
+export const birds = (parent, A, n, cx, cy, cz, R, seed, size = 1, speed = 0.5) => {
   const r = rng(seed), P = []; for (let i = 0; i < n; i++) P.push({ a: r() * TAU, rr: R * (0.6 + r() * 0.5), y: (r() - 0.5) * R * 0.3, sp: speed * (0.7 + r() * 0.6), ph: r() * 6 });
   const bg = new THREE.BufferGeometry(); bg.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0.5 * size, -1.5 * size, 0.35 * size, -0.1 * size, 0, 0, -0.5 * size, 0, 0, 0.5 * size, 1.5 * size, 0.35 * size, -0.1 * size, 0, 0, -0.5 * size], 3)); bg.computeVertexNormals();
   const m = new THREE.InstancedMesh(bg, lmat(0x3a3f4c, { rough: 0.8, side: THREE.DoubleSide }), n), o = new THREE.Object3D(); m.frustumCulled = false; m.castShadow = false; parent.add(m);
   A.add((t) => { P.forEach((p, i) => { const a = p.a + t * p.sp; o.position.set(cx + Math.cos(a) * p.rr, cy + p.y + Math.sin(t * 3 + p.ph) * 0.8 * size, cz + Math.sin(a) * p.rr); o.rotation.set(0, -a, 0); o.scale.set(1, 0.3 + 1.6 * Math.abs(Math.sin(t * 7 + p.ph)), 1); o.updateMatrix(); m.setMatrixAt(i, o.matrix); }); m.instanceMatrix.needsUpdate = true; });
 };
-const drift = (parent, A, n, area, y, seed, speed = 6, size = 30, color = 0xffffff, ei = 0.25) => {
+export const drift = (parent, A, n, area, y, seed, speed = 6, size = 30, color = 0xffffff, ei = 0.25) => {
   const r = rng(seed), flat = [];
   for (let i = 0; i < n; i++) { const x = (r() - 0.5) * area, z = (r() - 0.5) * area, yy = y + r() * y * 0.15; for (let k = 0; k < 5; k++) flat.push({ x: x + (k - 2) * size * 0.45 + r() * 6, y: yy + r() * size * 0.15, z: z + (r() - 0.5) * size * 0.4, s: size * (0.35 + r() * 0.3) }); }
   const m = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 1), lmat(color, { rough: 1, emissive: 0x9aa8b8, ei }), flat.length), o = new THREE.Object3D(); m.frustumCulled = false; m.castShadow = false; parent.add(m);
@@ -23,37 +23,27 @@ function clockFace(parent, A, x, y, z, r, ry, { face = 0xfff6dc, rim = 0xe0b040,
   add(hh, box(r * 0.09, r * 0.5, 0.12), lmat(hand), [0, r * 0.25, 0]); add(mh, box(r * 0.06, r * 0.78, 0.12), lmat(hand), [0, r * 0.39, 0]); add(hh, sph(r * 0.07, 8, 6), lmat(rim, { metal: 0.6 }), [0, 0, 0.1]);
   A.add((t) => { mh.rotation.z = -t * TAU / 12 * speed; hh.rotation.z = -t * TAU / 144 * speed; });
 }
-const crenel = (parent, len, y, z, color, { step = 5, w = 2.6, h = 2.4, d = 1.6, swallow = false } = {}) => { const l = []; for (let x = -len / 2; x <= len / 2; x += step) l.push({ p: [x, y + h / 2, z], s: [w, h, d], c: color }); instances(parent, box(1, 1, 1), lmat(0xffffff, { rough: 0.85 }), l); };
+export const crenel = (parent, len, y, z, color, { step = 5, w = 2.6, h = 2.4, d = 1.6, swallow = false } = {}) => { const l = []; for (let x = -len / 2; x <= len / 2; x += step) l.push({ p: [x, y + h / 2, z], s: [w, h, d], c: color }); instances(parent, box(1, 1, 1), lmat(0xffffff, { rough: 0.85 }), l); };
 
 // ============================================================ Sydney Opera House (65 m) + Harbour Bridge (134 m)
 export function sydneyOperaHouse({ base = true } = {}) {
   const g = new THREE.Group(), A = animator();
   const shellMat = lmat(0xf6f1e4, { rough: 0.28, metal: 0.05, side: THREE.DoubleSide });
-  const sail = (L, W, H, lean = 0.12) => {
-    const nu = 14, nv = 16, pos = [], idx = [];
-    for (let j = 0; j <= nv; j++) for (let i = 0; i <= nu; i++) {
-      const v = j / nv, u = i / nu - 0.5, w = (W / 2) * (1 - Math.pow(v, 2.4)) * (1 - 0.15 * v);
-      const x = L / 2 - L * v * (1 - lean * 0.2), y = H * Math.pow(v, 1.35), bulge = (1 - 4 * u * u) * W * 0.18 * (1 - v);
-      pos.push(x, y + bulge * 0.5, u * 2 * w);
-    }
-    for (let j = 0; j < nv; j++) for (let i = 0; i < nu; i++) { const a = j * (nu + 1) + i, b = a + 1, c = a + nu + 1, d = c + 1; idx.push(a, c, b, b, c, d); }
-    const gg = new THREE.BufferGeometry(); gg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); gg.setIndex(idx); gg.computeVertexNormals(); return gg;
-  };
-  // three shell groups: concert hall (4 pairs), Joan Sutherland theatre (3 pairs), restaurant (2)
+  // each shell is an octant of a sphere (triangular curved sail, like the real roof which is cut from one sphere)
+  const octant = new THREE.SphereGeometry(1, 22, 14, 0, Math.PI / 2, 0, Math.PI / 2);
   const group = (x, z, sizes, scale, ry) => {
     const G = new THREE.Group(); G.position.set(x, 7, z); G.rotation.y = ry; g.add(G);
     sizes.forEach((H, i) => {
-      const L = 52 * scale * (1 - i * 0.1), W = 36 * scale * (1 - i * 0.05), zz = i * 22 * scale;
-      const a = add(G, sail(L, W, H * scale), shellMat, [0, 0, zz]); a.castShadow = true;
-      add(G, sail(L * 0.72, W * 0.82, H * scale * 0.78), shellMat, [0, 0, zz - 2.5 * scale], [0, Math.PI, 0]).position.x = -L * 0.12;
-      for (const s of [-1, 1]) add(G, cyl(0.12, 0.12, 0.2, 4), lmat(0xd8d0bc), [0, 0, 0]).visible = false;
+      const k = scale * (1 - i * 0.07), zz = i * 22 * scale;
+      const a = add(G, octant, shellMat, [0, 0, zz], [0, 0, -0.32], [H * 0.62 * k / 0.9 * 0.9, H * scale, 24 * k]); a.castShadow = true;
+      a.rotation.set(0, Math.PI * 0.5, -0.0); a.rotation.order = 'YXZ'; a.rotation.x = -0.0;
+      const b = add(G, octant, shellMat, [-3 * scale, 0, zz + 2], [0, 0, 0], [H * 0.5 * k, H * 0.74 * scale, 20 * k]); b.rotation.set(0, -Math.PI * 0.5, 0); b.castShadow = true;
+      b.position.x = 9 * scale;
     });
-    // glass foyers at the open end
-    add(G, box(8 * scale, 14 * scale, sizes.length * 20 * scale), lmat(0x4a6a80, { rough: 0.1, metal: 0.3 }), [-24 * scale, 8 * scale, (sizes.length - 1) * 11 * scale]);
+    add(G, box(10 * scale, 6 * scale, sizes.length * 22 * scale), lmat(0xd8d0bc, { rough: 0.6 }), [-6 * scale, 3 * scale, (sizes.length - 1) * 11 * scale]);
     return G;
   };
   group(-34, -34, [64, 55, 45, 34], 1.0, 0.0); group(-34, 56, [42, 36, 28], 0.95, 0.0);
-  add(g, box(6, 18, 6), lmat(0xd8d0bc), [0, 0, 0]).visible = false;
   // podium: broad granite steps, forecourt, then the harbour-side promenade
   add(g, box(190, 7, 130), lmat(0xd8c9a8, { rough: 0.9 }), [0, 3.5, 20]);
   for (let i = 0; i < 6; i++) add(g, box(110 - i * 0, 1.2, 8), lmat(i % 2 ? 0xe2d4b4 : 0xd2c3a2), [-10, 0.6 + i * 1.2, 94 + (5 - i) * 8 * 0 + (5 - i) * 6]);
@@ -144,7 +134,7 @@ export function goldenGate({ base = true } = {}) {
     makeTraffic(g, A, 30, linePath(-980, 0, 980, 0, 6), 3920, { speed: 16, scale: 1.8, y: DECK + 2.9, seed: 3 });
     // fog banks rolling through the gap
     const fg = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 1), lmat(0xffffff, { rough: 1, emissive: 0xc8d4e0, ei: 0.35, opacity: 0.92 }), 26), o = new THREE.Object3D(), fr = rng(5), P = []; fg.frustumCulled = false; fg.castShadow = false; g.add(fg);
-    for (let i = 0; i < 26; i++) P.push({ x: fr() * 2400, z: -380 + fr() * 760 * 0.7 + (i % 3) * 20, y: 40 + fr() * 150, s: 60 + fr() * 120, h: 22 + fr() * 28 });
+    for (let i = 0; i < 26; i++) P.push({ x: fr() * 2400, z: -700 + fr() * 300 + (i % 3) * 20, y: 20 + fr() * 40, s: 40 + fr() * 70, h: 12 + fr() * 18 });
     A.add((t) => { P.forEach((p, i) => { const x = ((p.x + t * 9) % 2400) - 1200; o.position.set(x, p.y * 0.4 + 20, p.z); o.scale.set(p.s * 1.7, p.h, p.s * 0.8); o.updateMatrix(); fg.setMatrixAt(i, o.matrix); }); fg.instanceMatrix.needsUpdate = true; });
     // container ship passing underneath, sailing boats
     const ship = new THREE.Group(); g.add(ship); add(ship, rbox(34, 14, 220, 3), lmat(0x2a4a6a), [0, 2, 0]); add(ship, box(22, 30, 14), lmat(0xf4f0e8), [0, 18, -90]);
@@ -202,7 +192,7 @@ export function towerBridge({ base = true } = {}) {
     const TL = new THREE.Group(); TL.position.set(-120, 0, -140); g.add(TL); add(TL, box(36, 28, 36), lmat(0xefe9d8), [0, 14, 0]); for (const a of [-1, 1]) for (const b of [-1, 1]) { add(TL, cyl(4, 4, 34, 8), lmat(0xefe9d8), [a * 18, 17, b * 18]); add(TL, sph(4.3, 10, 8), lmat(0x6a7a82), [a * 18, 34, b * 18], [0, 0, 0], [1, 0.7, 1]); }
     add(TL, box(130, 8, 100), lmat(0xcfc3a8), [0, 4, 0]).visible = false; flagPole(TL, A, 0, 28, 0, 14, 8, FLAGS.uk, { phase: 1 });
     const sh = new THREE.Group(); sh.position.set(200, 0, 150); g.add(sh); add(sh, loft([{ y: 0, pts: ngon(4, 28, Math.PI / 4) }, { y: 310, pts: ngon(4, 1, Math.PI / 4) }]), lmat(0xbfd8ea, { rough: 0.1, metal: 0.5 }));
-    const gk = new THREE.Group(); gk.position.set(-210, 0, -250); g.add(gk); add(gk, lathe([[0.01, 0], [13, 4], [24, 60], [26, 110], [22, 150], [14, 190], [5, 220], [0.01, 232]], 24), lmat(0x8ab8c8, { rough: 0.15, metal: 0.5 }));
+    const gk = new THREE.Group(); gk.position.set(-330, 0, -430); g.add(gk); add(gk, lathe([[0.01, 0], [13, 4], [24, 60], [26, 110], [22, 150], [14, 190], [5, 220], [0.01, 232]], 24), lmat(0x8ab8c8, { rough: 0.15, metal: 0.5 }));
     const bl = rng(2), bb = []; for (let i = 0; i < 40; i++) { const x = -420 + i * 22, z = (i % 2 ? 1 : -1) * (180 + bl() * 120), h = 25 + bl() * 40; bb.push({ p: [x, h / 2, z], s: [24, h, 26], c: [0xd8c4a4, 0xb8553a, 0xb0b8c0, 0xe0d4b8][Math.floor(bl() * 4)] }); }
     instances(g, box(1, 1, 1), lmat(0xffffff, { rough: 0.85 }), bb);
     makeCrowd(g, A, 50, { x: 0, z: 0, w: 220, d: 12 }, { seed: 4, scale: 1.7, y: 14, speed: 0.4 });
@@ -289,7 +279,7 @@ export function stBasils({ base = true } = {}) {
   const tw = []; for (let i = 0; i < 8; i++) { const a = i / 8 * TAU + Math.PI / 8; tw.push({ p: [Math.cos(a) * 8.7, 31.5, Math.sin(a) * 8.7], r: [0, -a + Math.PI / 2, 0], s: [1.2, 4, 0.4], c: 0x2a2630 }); }
   instances(g, box(1, 1, 1), lmat(0xffffff, { rough: 0.4 }), tw);
   // glinting gold crosses blink softly
-  const gl = new THREE.MeshStandardMaterial({ color: 0xffd86a, emissive: 0xffc030, emissiveIntensity: 0.0, metal: 0.7 }); const gs = new THREE.Mesh(new THREE.SphereGeometry(0.9, 8, 6), gl); gs.position.set(0, 48, 0); g.add(gs); A.add((t) => { gl.emissiveIntensity = 0.5 + 0.6 * Math.sin(t * 2.2); });
+  const gl = new THREE.MeshStandardMaterial({ color: 0xffd86a, emissive: 0xffc030, emissiveIntensity: 0.0, metalness: 0.7 }); const gs = new THREE.Mesh(new THREE.SphereGeometry(0.9, 8, 6), gl); gs.position.set(0, 48, 0); g.add(gs); A.add((t) => { gl.emissiveIntensity = 0.5 + 0.6 * Math.sin(t * 2.2); });
   if (base) {
     slab(g, 420, 1, 0xb4b2ac, { y: -0.04, layer: 1 });
     // cobbled Red Square with paving bands; the Kremlin wall + GUM along two sides
@@ -387,8 +377,7 @@ export function washingtonMonument({ base = true } = {}) {
     const bb = rng(8), bl = []; for (let i = 0; i < 24; i++) { const sx = i % 2 ? 1 : -1, z = -600 + (i >> 1) * 90 + bb() * 20, h = 18 + bb() * 20; bl.push({ p: [sx * 200, h / 2, z], s: [70, h, 62], c: [0xefe8d8, 0xd8d0c0, 0xe8dcc0][Math.floor(bb() * 3)] }); }
     instances(g, box(1, 1, 1), lmat(0xffffff, { rough: 0.8 }), bl);
     birds(g, A, 20, 0, 120, 40, 60, 3, 2, 0.3);
-    drift(g, A, 6, 1800, 260, 4, 5, 60);
-    // helicopter on patrol around the monument
+        // helicopter on patrol around the monument
     const heli = new THREE.Group(); g.add(heli); add(heli, rbox(3.2, 2.4, 8, 1), lmat(0x1f3a6a), [0, 0, 0]); add(heli, box(0.5, 0.5, 6), lmat(0x1f3a6a), [0, 0.3, -6]); const rot = new THREE.Group(); rot.position.y = 1.7; heli.add(rot); add(rot, box(16, 0.1, 0.5), lmat(0x333640)); add(rot, box(0.5, 0.1, 16), lmat(0x333640));
     A.add((t) => { const a = t * 0.18; heli.position.set(Math.cos(a) * 190, 120 + Math.sin(t * 0.7) * 4, Math.sin(a) * 190); heli.rotation.y = -a + Math.PI; rot.rotation.y = t * 25; });
   }
@@ -436,7 +425,6 @@ export function gatewayArch({ base = true } = {}) {
     patch(g, 1400, 18, 0x474a55, 0, 0.2, 330, { layer: 3 }); makeTraffic(g, A, 18, linePath(-600, 330, 600, 330, 3), 2400, { speed: 14, scale: 1.8, y: 0.3, seed: 8 });
     makeCrowd(g, A, 100, { x: 0, z: 0, w: 300, d: 420 }, { seed: 4, scale: 1.8, y: 0.2, speed: 0.4 });
     birds(g, A, 16, 0, 110, 0, 110, 4, 2.0, 0.3);
-    drift(g, A, 5, 1500, 260, 4, 5, 60);
   }
   return finish(g, A, { name: 'Gateway Arch', realHeightM: 192, realWidthM: 192, source: '192 m (630 ft) tall and 192 m wide at the base' });
 }

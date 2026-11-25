@@ -55,7 +55,7 @@ void main(){ vec3 d = normalize(vD); float e = d.y;
 }
 
 // ---------- sun (3D: bright core, fresnel glow shells that look the same from any angle, spinning ray spikes) ----------
-function glowShell(R, color, k, p) {
+export function glowShell(R, color, k, p) {
   return new THREE.Mesh(new THREE.SphereGeometry(R, 24, 16), new THREE.ShaderMaterial({
     uniforms: { uC: { value: new THREE.Color(color) }, uK: { value: k } }, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false, fog: false,
     vertexShader: 'varying vec3 vN; varying vec3 vV; void main(){ vec4 mv = modelViewMatrix * vec4(position, 1.0); vN = normalize(normalMatrix * normal); vV = normalize(-mv.xyz); gl_Position = projectionMatrix * mv; }',

@@ -14,19 +14,20 @@ const KINDS = {
   wagon: { L: 4.8, belt: 0.98, roofY: 1.5, rc: -2.15, rt: -1.9, ft: 0.8, fc: 1.34, wr: 0.34, wb: 1.45, W: 1.82 },
   suv: { L: 4.7, belt: 1.12, roofY: 1.8, rc: -2.1, rt: -1.95, ft: 0.95, fc: 1.35, wr: 0.4, wb: 1.5, W: 1.95 },
 };
-function lowerPts(k) {
+function lowerPts(k, arcN = 10) {
   const hl = k.L / 2, { belt, rc, fc, wr, wb } = k, R = wr + 0.09, pts = [];
   pts.push([-hl, 0.42], [-hl - 0.02, 0.64], [-hl + 0.03, belt - 0.1], [rc - 0.35, belt - 0.01], [rc, belt], [fc, belt], [fc + 0.45, belt - 0.05], [hl - 0.22, belt - 0.17], [hl, belt - 0.34], [hl + 0.02, 0.5], [hl - 0.04, wr + 0.04], [hl - 0.12, wr]);
-  for (let i = 0; i <= 10; i++) { const a = (i / 10) * Math.PI; pts.push([wb + R * Math.cos(a), wr + R * Math.sin(a)]); }
-  for (let i = 0; i <= 10; i++) { const a = (i / 10) * Math.PI; pts.push([-wb + R * Math.cos(a), wr + R * Math.sin(a)]); }
+  for (let i = 0; i <= arcN; i++) { const a = (i / arcN) * Math.PI; pts.push([wb + R * Math.cos(a), wr + R * Math.sin(a)]); }
+  for (let i = 0; i <= arcN; i++) { const a = (i / arcN) * Math.PI; pts.push([-wb + R * Math.cos(a), wr + R * Math.sin(a)]); }
   pts.push([-hl + 0.12, wr]);
   return pts;
 }
 // adds one car's bodywork. bb = body-coloured parts, bd = details (can be the same batch). returns {wheels:[[x,z]], wr, k}
 export function carBody(bb, bd, { color = PAL.red, kind = 'sedan', lod = 'high' } = {}) {
   const k = KINDS[kind] ?? KINDS.sedan, hl = k.L / 2, W = k.W, { belt, roofY, rc, rt, ft, fc, wr, wb } = k, rot = [0, -Math.PI / 2, 0];
-  bb.profile(lowerPts(k), W, 0.13, color, [0, 0, 0], { r: rot, rough: 0.28, metal: 0.25 });
-  bd.profile([[rc, belt - 0.02], [rt, roofY], [ft, roofY], [fc, belt - 0.02]], W - 0.2, 0.04, GLASS, [0, 0, 0], { r: rot, rough: 0.08, metal: 0.4 });
+  const lowD = lod !== 'high'; if (lowD) bb.flat = bd.flat = true;
+  bb.profile(lowerPts(k, lowD ? 4 : 10), W, lowD ? 0 : 0.13, color, [0, 0, 0], { r: rot, rough: 0.28, metal: 0.25 });
+  bd.profile([[rc, belt - 0.02], [rt, roofY], [ft, roofY], [fc, belt - 0.02]], W - 0.2, lowD ? 0 : 0.04, GLASS, [0, 0, 0], { r: rot, rough: 0.08, metal: 0.4 });
   bb.rbox(ft - rt + 0.1, 0.1, W - 0.16, 0.04, color, [0, roofY + 0.03, (rt + ft) / 2], { r: [0, Math.PI / 2, 0], rough: 0.28, metal: 0.25 });
   for (const s of [-1, 1]) {
     const x = s * (W - 0.2) / 2;
@@ -88,7 +89,7 @@ export function policeCar({ speed = 0 } = {}) {
   b.box(1.3, 0.08, 0.34, 0x15161c, [0, 1.49, -0.05]);
   const red = lampMesh(gBox(0.5, 0.15, 0.3), 0xff2b2b, 0.2), blue = lampMesh(gBox(0.5, 0.15, 0.3), 0x2b6bff, 0.2);
   red.position.set(-0.32, 1.58, -0.05); blue.position.set(0.32, 1.58, -0.05); V.g.add(red, blue);
-  const hr = halo(0xff2b2b, 0.9, 0), hb = halo(0x2b6bff, 0.9, 0); hr.position.copy(red.position); hr.position.y += 0.1; hb.position.copy(blue.position); hb.position.y += 0.1; V.g.add(hr, hb);
+  const hr = halo(0xff2b2b, 0.45, 0), hb = halo(0x2b6bff, 0.45, 0); hr.position.copy(red.position); hr.position.y += 0.1; hb.position.copy(blue.position); hb.position.y += 0.1; V.g.add(hr, hb);
   for (const [s, ry] of [[1, Math.PI / 2], [-1, -Math.PI / 2]]) { const sg = signMesh('POLICE', 1.5, 0.34, { bg: null, fg: '#1b2438', weight: 400 }); sg.position.set(s * (W / 2 + 0.012), 0.72, -0.05); sg.rotation.y = ry; V.g.add(sg); }
   const hs = signMesh('POLICE', 1.3, 0.3, { bg: null, fg: '#1b2438', weight: 400 }); hs.rotation.x = -Math.PI / 2; hs.position.set(0, k.belt + 0.002 - 0.0, 1.6); hs.rotation.z = Math.PI; hs.visible = false;
   b.box(W - 0.2, 0.28, 0.1, 0x15161c, [0, 0.62, c.hl + 0.1]);   // push bar
@@ -160,7 +161,7 @@ export function deliveryTruck({ color = 0xf4f1e8, accent = 0x2f6fd6, speed = 0, 
   const lg = signMesh(name, 3.4, 1.15, { bg: '#' + new THREE.Color(accent).getHexString(), fg: '#ffffff', border: '#ffd23f' });
   for (const [s, ry] of [[1, Math.PI / 2], [-1, -Math.PI / 2]]) { const m = lg.clone(); m.position.set(s * (W / 2 + 0.02), 1.75, -0.9); m.rotation.y = ry; V.g.add(m); }
   const lg2 = signMesh(name, 1.6, 0.55, { bg: '#' + new THREE.Color(accent).getHexString(), fg: '#ffffff' }); lg2.rotation.y = Math.PI; lg2.position.set(0, 2.15, -3.23); V.g.add(lg2);
-  const hz = [], hh = []; for (const sz of [1, -1]) for (const s of [-1, 1]) { const m = lampMesh(gBox(0.2, 0.12, 0.06), 0xffa020, 0.2); m.position.set(s * 0.95, sz > 0 ? 1.15 : 1.15, sz > 0 ? 3.33 : -3.27); V.g.add(m); hz.push(m); const h = halo(0xffa020, 0.35, 0); h.position.copy(m.position); V.g.add(h); hh.push(h); }
+  const hz = [], hh = []; for (const sz of [1, -1]) for (const s of [-1, 1]) { const m = lampMesh(gBox(0.2, 0.12, 0.06), 0xffa020, 0.2); m.position.set(s * 0.95, sz > 0 ? 1.15 : 1.15, sz > 0 ? 3.33 : -3.27); V.g.add(m); hz.push(m); const h = halo(0xffa020, 0.22, 0); h.position.copy(m.position); V.g.add(h); hh.push(h); }
   V.A.on((t) => { const on = fract(t * 1.5) < 0.5 ? 1 : 0; hz.forEach((m, i) => { m.material.userData.set(0.15 + 1.5 * on); hh[i].material.opacity = 0.5 * on; hh[i].visible = !!on; }); });
   return meta(V.g, { h: 3.1, w: W, name: 'deliveryTruck' }), Object.assign(V.g.userData, { realLengthM: 6.6 }), V.g;
 }
@@ -195,7 +196,7 @@ export function fireTruck({ speed = 0 } = {}) {
   // light bar (red/white alternating) + front flashers
   const L1 = lampMesh(gBox(0.55, 0.16, 0.3), 0xff2020, 0.2), L2 = lampMesh(gBox(0.55, 0.16, 0.3), 0xffffff, 0.2), L3 = lampMesh(gBox(0.55, 0.16, 0.3), 0xff2020, 0.2), L4 = lampMesh(gBox(0.55, 0.16, 0.3), 0xffffff, 0.2);
   const lbs = [L1, L2, L3, L4]; lbs.forEach((m, i) => { m.position.set(-0.9 + i * 0.6, 2.77, 3.05); V.g.add(m); }); b2(V.g, 0x15161c, [0, 2.6, 3.05], [2.5, 0.1, 0.4]);
-  const hr = halo(0xff2020, 1.0, 0), hw = halo(0xffffff, 1.0, 0); hr.position.set(-0.6, 2.85, 3.05); hw.position.set(0.6, 2.85, 3.05); V.g.add(hr, hw);
+  const hr = halo(0xff2020, 0.55, 0), hw = halo(0xffffff, 0.55, 0); hr.position.set(-0.6, 2.85, 3.05); hw.position.set(0.6, 2.85, 3.05); V.g.add(hr, hw);
   V.A.on((t) => { const p = fract(t * 2.0), a = p < 0.5 ? 1 : 0; L1.material.userData.set(0.2 + 1.6 * a); L3.material.userData.set(0.2 + 1.6 * a); L2.material.userData.set(0.2 + 1.6 * (1 - a)); L4.material.userData.set(0.2 + 1.6 * (1 - a)); hr.material.opacity = 0.5 * a; hw.material.opacity = 0.5 * (1 - a); hr.visible = !!a; hw.visible = !a; });
   const fd = signMesh('FIRE DEPT', 1.9, 0.4, { bg: null, fg: '#ffffff', weight: 400 }); for (const [s, ry] of [[1, Math.PI / 2], [-1, -Math.PI / 2]]) { const m = fd.clone(); m.position.set(s * (W / 2 + 0.02), 1.55, 3.1); m.rotation.y = ry; V.g.add(m); }
   const n12 = signMesh('ENGINE 7', 1.5, 0.3, { bg: null, fg: '#f6c235', weight: 400 }); for (const [s, ry] of [[1, Math.PI / 2], [-1, -Math.PI / 2]]) { const m = n12.clone(); m.position.set(s * (W / 2 + 0.02), 1.35, -1.5); m.rotation.y = ry; V.g.add(m); }
@@ -220,7 +221,7 @@ export function ambulance({ speed = 0 } = {}) {
   b.build(V.g);
   for (const z of [2.1, -1.5]) for (const s of [-1, 1]) V.addWheel(s * (W / 2 - 0.1), wr, z, wr, 0.28);
   const bar = new THREE.Group(); const bb = new Batch(); bb.box(1.7, 0.12, 0.4, 0x15161c, [0, 0, 0]); bb.build(bar); bar.position.set(0, 1.98, 1.6); V.g.add(bar);
-  const mk = (c, x) => { const m = lampMesh(gBox(0.5, 0.16, 0.34), c, 0.2); m.position.set(x, 2.08, 1.6); V.g.add(m); const h = halo(c, 0.9, 0); h.position.set(x, 2.18, 1.6); V.g.add(h); return [m, h]; };
+  const mk = (c, x) => { const m = lampMesh(gBox(0.5, 0.16, 0.34), c, 0.2); m.position.set(x, 2.08, 1.6); V.g.add(m); const h = halo(c, 0.4, 0); h.position.set(x, 2.18, 1.6); V.g.add(h); return [m, h]; };
   const [r1, h1] = mk(0xff2020, -0.6), [w1, h2] = mk(0xffffff, 0), [b1, h3] = mk(0x2b6bff, 0.6);
   V.A.on((t) => { const p = fract(t * 1.8); const a = p < 0.33 ? 1 : 0, c = p >= 0.33 && p < 0.66 ? 1 : 0, d = p >= 0.66 ? 1 : 0; r1.material.userData.set(0.2 + 1.6 * a); w1.material.userData.set(0.2 + 1.6 * c); b1.material.userData.set(0.2 + 1.6 * d); h1.material.opacity = 0.5 * a; h2.material.opacity = 0.5 * c; h3.material.opacity = 0.5 * d; h1.visible = !!a; h2.visible = !!c; h3.visible = !!d; });
   const sg = signMesh('AMBULANCE', 1.7, 0.34, { bg: null, fg: '#d9262c', weight: 400 }); for (const [s, ry] of [[1, Math.PI / 2], [-1, -Math.PI / 2]]) { const m = sg.clone(); m.position.set(s * (W / 2 + 0.02), 1.2, 0.2); m.rotation.y = ry; V.g.add(m); }

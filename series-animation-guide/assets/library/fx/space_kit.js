@@ -55,13 +55,17 @@ void main(){
   float s = exp(-abs(d.x) * 38.0) * exp(-abs(d.y) * 3.2) + exp(-abs(d.y) * 38.0) * exp(-abs(d.x) * 3.2);
   a = max(a, s * (1.0 - r) * 0.9);
   #endif
+  #ifdef NORMALBLEND
+  gl_FragColor = vec4(vC, a * vF * uOp);
+  #else
   gl_FragColor = vec4(vC * uOp, a * vF);
+  #endif
 }`;
 const _v2 = new THREE.Vector2();
 export function spriteMat(o = {}) {
   const { atten = false, additive = true, soft = 3, op = 1, tw = 0, max = 256, uniforms = {}, attrs = '', unis = '', pos = '', defines = {}, depthTest = true } = o;
   return new THREE.ShaderMaterial({
-    transparent: true, depthWrite: false, depthTest, blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending, defines,
+    transparent: true, depthWrite: false, depthTest, blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending, defines: additive ? defines : { ...defines, NORMALBLEND: '' },
     uniforms: { uTime: { value: 0 }, uH: { value: 1080 }, uMax: { value: max }, uTw: { value: tw }, uAtten: { value: atten ? 1 : 0 }, uSoft: { value: soft }, uOp: { value: op }, uSpd: { value: 1 }, ...uniforms },
     vertexShader: VERT(unis, attrs, pos), fragmentShader: FRAG,
   });
@@ -216,7 +220,7 @@ export function rockGeo(seed = 1, detail = 2, { stretch = [1, 0.8, 0.9], lump = 
   const r = rng(seed), ox = r() * 50, oy = r() * 50, oz = r() * 50, cf = craterField(seed + 11, craters, { amin: 0.25, amax: 0.6, depth: 0.5 });
   const g = bodyGeo(1, detail, (d, c) => {
     const n = fbm3(d.x * 1.6 + ox, d.y * 1.6 + oy, d.z * 1.6 + oz, 3, seed), cr = cf(d);
-    const t = 0.42 + n * 0.3 + cr * 1.2; c[0] = 0.5 * t + 0.1; c[1] = 0.45 * t + 0.1; c[2] = 0.4 * t + 0.1;
+    const t = 0.6 + n * 0.5 + cr * 1.6; c[0] = 0.62 * t + 0.14; c[1] = 0.56 * t + 0.12; c[2] = 0.5 * t + 0.1;
     return (n - 0.5) * lump * 2 + cr * 0.6;
   });
   g.scale(stretch[0], stretch[1], stretch[2]); g.computeVertexNormals(); return g;

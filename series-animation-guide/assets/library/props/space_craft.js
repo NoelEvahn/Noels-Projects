@@ -167,7 +167,7 @@ export function jwst({ seed = 2 } = {}) {
   const centres = []; const d = 1.32; for (const [q, w] of [[1, 0], [0, 1], [-1, 1], [-1, 0], [0, -1], [1, -1]]) { centres.push([q, w, 1]); }
   const pos = (q, w) => [(q + w * 0.5) * d * 1.0, w * d * 0.866];
   const ring1 = [[1, 0], [0, 1], [-1, 1], [-1, 0], [0, -1], [1, -1]], ring2 = [[2, 0], [1, 1], [0, 2], [-1, 2], [-2, 2], [-2, 1], [-2, 0], [-1, -1], [0, -2], [1, -2], [2, -2], [2, -1]];
-  const goldM = new THREE.MeshStandardMaterial({ color: 0xe6b640, metalness: 1, roughness: 0.12 }), back = new MB(); back.box(6.2, 0.5, 0.4, PAL.dgrey, [0, 0, -0.45]); back.box(0.5, 5.8, 0.4, PAL.dgrey, [0, 0, -0.45]); mirror.add(back.mesh(mp.std, false));
+  const goldM = new THREE.MeshStandardMaterial({ color: 0xe6b640, metalness: 0.55, roughness: 0.25, emissive: 0x6a4a10, emissiveIntensity: 0.6 }), back = new MB(); back.box(6.2, 0.5, 0.4, PAL.dgrey, [0, 0, -0.45]); back.box(0.5, 5.8, 0.4, PAL.dgrey, [0, 0, -0.45]); mirror.add(back.mesh(mp.std, false));
   ring1.concat(ring2).forEach(([q, w], i) => { const [x, y] = pos(q, w), seg = new THREE.Mesh(hex, goldM); seg.rotation.x = Math.PI / 2; seg.rotation.y = Math.PI / 6; const pv = new THREE.Group(); pv.position.set(x, y, 0); pv.add(seg); mirror.add(pv); segs.push({ pv, ph: r() * TAU }); });
   const sec = new MB(); sec.sph(0.38, PAL.dgrey, [0, 0, 7.2]); for (let k = 0; k < 3; k++) { const an = k / 3 * TAU + Math.PI / 2; sec.bar([Math.cos(an) * 3.2, Math.sin(an) * 3.2, 0.2], [0, 0, 7.2], 0.07, PAL.dgrey); } mirror.add(sec.mesh(mp.std, false));
   const gm = new THREE.Mesh(new THREE.SphereGeometry(0.34, 16, 10), goldM); gm.position.set(0, 0, 7.25); mirror.add(gm);
@@ -186,7 +186,7 @@ export function jwst({ seed = 2 } = {}) {
 export function spaceCapsule({ kind = 'dragon' } = {}) {
   const g = new THREE.Group(), mp = M(), a = new MB(), f = new MB(), ticks = [];
   if (kind === 'apollo') {
-    a.g(new THREE.ConeGeometry(1.95, 3.2, 32, 1, true), PAL.silver, [0, 4.4, 0], [Math.PI, 0, 0]); f.cyl(0.55, 0.55, 0.2, 14, PAL.dgrey, [0, 6.1, 0]); f.cyl(2.0, 2.0, 0.25, 32, 0x8a5a2a, [0, 2.6, 0]);   // command module + heat shield
+    a.g(new THREE.ConeGeometry(1.95, 3.2, 32, 1, true), PAL.silver, [0, 4.4, 0]); f.cyl(0.55, 0.55, 0.2, 14, PAL.dgrey, [0, 6.1, 0]); f.cyl(2.0, 2.0, 0.25, 32, 0x8a5a2a, [0, 2.6, 0]);   // command module + heat shield
     a.cyl(1.95, 1.95, 7.4, 32, PAL.white, [0, -1.2, 0]); f.cyl(1.97, 1.97, 0.5, 32, PAL.gold, [0, -3.5, 0]); a.cyl(1.0, 0.3, 1.4, 20, PAL.dgrey, [0, -5.6, 0]); a.cyl(1.2, 1.0, 0.5, 20, PAL.black, [0, -4.8, 0]);
     for (let k = 0; k < 4; k++) { const an = k / 4 * TAU; a.box(0.6, 1.3, 0.6, PAL.grey, [Math.cos(an) * 2.1, -1.0, Math.sin(an) * 2.1]); for (let j = 0; j < 4; j++) a.cyl(0.07, 0.07, 0.2, 6, PAL.black, [Math.cos(an) * 2.35 + (j - 1.5) * 0.0, -0.7 - (j % 2) * 0.5, Math.sin(an) * 2.35], [0, 0, Math.PI / 2]); }
     a.cyl(0.05, 0.05, 1.8, 6, PAL.grey, [0, 6.9, 0]); a.sph(0.14, PAL.red, [0, 7.8, 0]);

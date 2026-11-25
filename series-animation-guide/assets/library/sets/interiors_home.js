@@ -174,7 +174,7 @@ export function buildBathroom({ seed = 4, wrecked = 0, ceiling = true, detail = 
   const lt = DEC.panelLight(0.5, 0.5); R.place(lt, 0, h, 0.2);
   const steamA = DEC.steam(8, { h: 1.6, r: 0.25, op: 0.12, speed: 0.12 }); R.place(steamA, hw - 0.8, 0.9, -hd + 0.6);
   R.g.add(clutter({ x: 0, z: 0.5, w: 3.2, d: 2.0 }, { kind: 'clothes', seed: seed + 5, density: 0.8 + wrecked * 2, avoid: [] }));
-  return R.finish({ bath }, camFor(R, { fov: 58, y: 1.5, ty: 1.2, fit: 0.95 }));
+  return R.finish({ bath }, camFor(R, { fov: 58, y: 1.5, ty: 1.2, fit: 1.2 }));
 }
 
 // ---------------------------------------------------------------- full living room (cluttered, fireplace, pets, TV)
@@ -194,27 +194,27 @@ export function buildLivingRoomFull({ seed = 5, wrecked = 0, ceiling = true, det
   // windows either side + curtains
   for (const [x, ph] of [[-2.2, 0], [2.2, 1.7]]) { const win = DEC.windowView(1.2, 1.3, { view: x < 0 ? 'day' : 'garden', seed: seed + (x < 0 ? 1 : 2), frame: 0xffffff }); R.place(win, x, 1.75, -hd); const cu = DEC.curtains(1.2, 1.9, x < 0 ? 0xd8604a : 0x3f9a8a, { phase: ph, sway: 0.055 }); R.place(cu, x, 2.62, -hd + 0.05); }
   // seating: sofa facing the TV is on the camera side? keep the sofa back to the camera's left, armchair right, TV on the left wall
-  const sofa = FUR.sofa({ seats: 3, color: 0x3f6fb5, seed: 1 }); R.place(R.topple(sofa, 1.1, 0.9), -hw + 1.5, 0, 0.8, HP);
-  const sofa2 = FUR.sofa({ seats: 2, color: 0xd8605a, seed: 2 }); R.place(sofa2, 0.2, 0, hd - 0.7, PI);
-  const arm = FUR.armchair({ color: 0x6aa86a }); R.place(R.topple(arm, 0.5, 0.55), hw - 1.5, 0, 0.9, -HP - 0.5);
-  const cat = DEC.pet('cat', { pose: 'loaf', fur: 0xe9e0d0, stripe: 0xb8a888 }); cat.scale.setScalar(0.85); R.place(cat, -hw + 1.55, 0.58, 1.55, HP + 0.2);
-  const ct = FUR.coffeeTable(0x7a5232); R.place(R.topple(ct, 0.55, 0.7), -0.7, 0, 0.9);
+  const sofa = FUR.sofa({ seats: 3, color: 0x3f6fb5, seed: 1 }); R.place(R.topple(sofa, 1.1, 0.9), 1.55, 0, 0.5, -HP);
+  const arm = FUR.armchair({ color: 0x6aa86a }); R.place(R.topple(arm, 0.5, 0.55), -1.0, 0, 2.0, HP + 0.9);
+  const sofa2 = FUR.ottoman(0xd8605a, 0.34); R.place(sofa2, -0.3, 0, 1.55, 0); R.place(FUR.ottoman(0xffd23f, 0.28), 0.2, 0, 1.8, 0);
+  const cat = DEC.pet('cat', { pose: 'loaf', fur: 0xe9e0d0, stripe: 0xb8a888 }); cat.scale.setScalar(0.85); R.place(cat, 1.5, 0.58, -0.3, -HP + 0.3);
+  const ct = FUR.coffeeTable(0x7a5232); R.place(R.topple(ct, 0.55, 0.7), -0.1, 0, 0.5, HP);
   on(ct, DEC.mug(0xe04a3a), -0.3, 0.42, 0.05); on(ct, DEC.mug(0x3fa060), 0.0, 0.42, -0.12); on(ct, DEC.bookStack(3, { seed: 4 }), 0.35, 0.42, 0.0); const pz = new THREE.Group(); P(pz, bg(0.32, 0.04, 0.32), mat(0xc8a060, { rough: 1 }), [0, 0.02, 0]); P(pz, new THREE.CylinderGeometry(0.14, 0.14, 0.012, 3), mat(0xffc040), [0, 0.046, 0], [0, 0.6, 0]); on(ct, pz, 0.1, 0.42, 0.2, 0.4);
   const rc = new THREE.Group(); P(rc, rg(0.16, 0.025, 0.05, 0.01), mat(0x15151c), [0, 0.0125, 0]); on(ct, rc, -0.4, 0.42, 0.2, 0.5);
   // TV + console on the left wall
   const tvs = FUR.tvStand({ w: 1.7 }); const tv = ELEC.tv({ w: 1.35, kind: 'tv', seed: seed + 3, wall: false }); on(tvs, tv, 0.0, 0.45, 0.0); on(tvs, ELEC.gameConsole(), -0.6, 0.45, 0.1); on(tvs, ELEC.router(), 0.62, 0.45, 0.05); on(tvs, ELEC.speaker({ h: 0.6 }), -1.05, 0.0, 0.0); on(tvs, ELEC.speaker({ h: 0.6 }), 1.05, 0.0, 0.0);
-  R.place(R.topple(tvs, 0.8, 0.8), -hw + 0.32, 0, 0.8 - 1.6 + 0.0 + 0.0, HP);  // TV on the left wall in front of the sofa? (sofa is in front, facing TV)
+  R.place(R.topple(tvs, 0.8, 0.8), -hw + 0.32, 0, 0.5, HP);  // TV on the left wall in front of the sofa? (sofa is in front, facing TV)
   // bookshelves right side + back corners, filled
   const bk = FUR.shelfFilled({ w: 1.2, h: 2.0, kind: 'books', seed: seed + 1 }); R.place(R.topple(bk, 0.6, 0.7), hw - 0.2, 0, -hd + 1.0, -HP); const bk2 = FUR.shelfFilled({ w: 1.2, h: 2.0, kind: 'mixed', seed: seed + 2, color: 0x4a2e1c }); R.place(bk2, -hw + 0.2, 0, -hd + 0.9, HP);
   const bk3 = FUR.shelfFilled({ w: 1.0, h: 1.4, kind: 'toys', seed: seed + 3, color: 0xe8d8b8, rows: 3 }); R.place(bk3, hw - 0.2, 0, -hd + 2.3, -HP);
   // gallery wall, floor lamp, plants, rug, toys on the floor, dog
-  const gal = DEC.gallery(7, { w: 2.0, h: 1.1, seed: seed + 6 }); gal.position.set(hw - 0.0, 1.95, 0.9); gal.rotation.y = -HP; g.add(gal);
-  const lamp = DEC.floorLamp(0xfff0d0, { style: 'arc' }); R.place(R.topple(lamp, 0.3, 0.5), hw - 0.9, 0, 0.2, 0);
+  const gal = DEC.gallery(7, { w: 2.0, h: 1.1, seed: seed + 6 }); gal.position.set(hw - 0.003, 1.95, 0.5); gal.rotation.y = -HP; g.add(gal);
+  const lamp = DEC.floorLamp(0xfff0d0, { style: 'arc' }); R.place(R.topple(lamp, 0.3, 0.5), hw - 0.5, 0, 1.9, -0.8);
   R.place(DEC.plant({ kind: 'monstera', h: 1.5, seed: 2 }), -hw + 0.5, 0, -hd + 2.2); R.place(DEC.plant({ kind: 'tree', h: 1.8, seed: 5, pot: 0x6aa0c8 }), hw - 0.45, 0, hd - 0.5); R.place(DEC.hangingPlant({ seed: 2 }), 1.9, 2.5, -hd + 0.4);
-  R.place(rug(3.2, 2.3, { colors: [0xc84a4a, 0xf2d27a, 0x3a78a8, 0xf2ead8] }), -0.5, 0, 0.8);
-  const dog = DEC.pet('dog', { pose: 'sleep', fur: 0xd8a060 }); dog.scale.setScalar(0.9); R.place(dog, 0.9, 0, 1.5, 0.8);
+  R.place(rug(3.6, 2.5, { colors: [0xc84a4a, 0xf2d27a, 0x3a78a8, 0xf2ead8] }), 0.2, 0, 0.6);
+  const dog = DEC.pet('dog', { pose: 'sleep', fur: 0xd8a060 }); dog.scale.setScalar(0.9); R.place(dog, 0.7, 0.012, 1.4, 0.8);
   const fan = DEC.ceilingFan({ r: 0.7, color: 0x6a4428 }); R.place(fan, -0.2, h, 0.6);
-  R.g.add(clutter({ x: -0.3, z: 1.1, w: 5.4, d: 3.6 }, { kind: 'mixed', seed: seed + 9, density: dens(1.4, wrecked), avoid: [{ x: -hw + 0.8, z: 0.8, w: 1.4, d: 3 }, { x: -0.7, z: 0.9, w: 1.4, d: 0.8 }, { x: 0.2, z: hd - 0.7, w: 1.9, d: 1.0 }, { x: hw - 1.5, z: 0.9, w: 1.1, d: 1.1 }] }));
+  R.g.add(clutter({ x: -0.3, z: 1.1, w: 5.4, d: 3.6 }, { kind: 'mixed', seed: seed + 9, density: dens(1.4, wrecked), avoid: [{ x: -hw + 0.5, z: 0.5, w: 0.8, d: 2.0 }, { x: -0.1, z: 0.5, w: 0.8, d: 1.4 }, { x: 1.55, z: 0.5, w: 1.1, d: 2.3 }] }));
   const dor = door({ color: 0xc8302b }); R.place(dor, hw - 0.04, 0, hd - 1.1, -HP);
   return R.finish({ sofa, tv, rug: null }, camFor(R, { fov: 56, y: 1.7, ty: 1.1 }));
 }
@@ -271,7 +271,7 @@ export function buildGarage({ seed = 7, wrecked = 0, ceiling = true, detail = 'h
   const car = new THREE.Group(); const cc = 0xd4403a; P(car, rg(1.8, 0.55, 4.2, 0.2), mat(cc, { rough: 0.25, metal: 0.3 }), [0, 0.55, 0], [0, 0, 0], 1, true); P(car, rg(1.5, 0.5, 2.0, 0.18), mat(cc, { rough: 0.25, metal: 0.3 }), [0, 1.0, -0.2], [0, 0, 0], 1, true); P(car, rg(1.4, 0.4, 1.8, 0.14), mat(0x9ad8f0, { rough: 0.05, opacity: 0.8 }), [0, 1.02, -0.2]);
   for (const sx of [-1, 1]) for (const sz of [-1.35, 1.35]) { P(car, cg(0.36, 0.36, 0.24, 18), mat(0x15151c, { rough: 0.9 }), [sx * 0.88, 0.36, sz], [0, 0, HP], 1, true); P(car, cg(0.2, 0.2, 0.26, 14), mat(0xc8ccd6, { metal: 0.8 }), [sx * 0.88, 0.36, sz], [0, 0, HP]); }
   for (const sx of [-1, 1]) { P(car, rg(0.3, 0.14, 0.05, 0.02), glow(0xfff2c8, 1.2), [sx * 0.6, 0.62, 2.08]); P(car, rg(0.3, 0.12, 0.05, 0.02), glow(0xe53030, 0.8), [sx * 0.6, 0.62, -2.08]); } P(car, bg(1.2, 0.1, 0.05), mat(0xc8ccd6, { metal: 0.8 }), [0, 0.35, 2.1]);
-  car.userData.realWidthM = 1.8; car.userData.realHeightM = 1.4; R.place(R.topple(car, 0.9, 0.95), 0.9, 0, 0.0, 0.0); car.rotation.y = 0.05;
+  car.userData.realWidthM = 1.8; car.userData.realHeightM = 1.4; car.scale.setScalar(0.85); R.place(R.topple(car, 0.9, 0.95), 0.9, 0, 0.5, 0.3);
   // bikes, ladder, tyres, barrels, mower, toolbox, paint cans, bare bulbs on swinging cords, fluorescents, fan
   const tyres = new THREE.Group(); for (let i = 0; i < 4; i++) P(tyres, new THREE.TorusGeometry(0.28, 0.12, 10, 20), mat(0x15151c, { rough: 0.95 }), [0, 0.12 + i * 0.22, 0], [HP, 0, 0], 1, true); R.place(tyres, -hw + 0.7, 0, 2.2);
   const barrel = new THREE.Group(); P(barrel, cg(0.3, 0.3, 0.85, 18), mat(0x2f6a9a, { rough: 0.5, metal: 0.4 }), [0, 0.42, 0], [0, 0, 0], 1, true); for (const y of [0.15, 0.7]) P(barrel, new THREE.TorusGeometry(0.3, 0.015, 6, 20), mat(0x1a4a6a), [0, y, 0], [HP, 0, 0]); R.place(R.topple(barrel, 0.3, 0.5), hw - 0.5, 0, 2.2); R.place(R.topple(barrel.clone(), 0.3, 0.7), hw - 1.0, 0, 2.5);
@@ -282,7 +282,7 @@ export function buildGarage({ seed = 7, wrecked = 0, ceiling = true, detail = 'h
   const fl = DEC.fluorescent(1.2, { flicker: 0.35, seed: seed }); R.place(fl, 1.0, h, -1.2); const fl2 = DEC.fluorescent(1.2, { flicker: 0, seed: seed + 3 }); R.place(fl2, -1.2, h, 1.8);
   const fan = new THREE.Group(); P(fan, cg(0.2, 0.2, 0.05, 14), mat(0x555a66, { metal: 0.5 }), [0, 0.0, 0]); const blades = new THREE.Group(); fan.add(blades); for (let i = 0; i < 4; i++) P(blades, rg(0.2, 0.012, 0.05, 0.005), mat(0xc8ccd6, { metal: 0.7 }), [Math.cos(i * HP) * 0.1, Math.sin(i * HP) * 0.1, 0.05], [0, 0, i * HP]); P(fan, cg(0.02, 0.02, 0.8, 8), mat(0x555a66), [0, -0.4, 0]); P(fan, cg(0.2, 0.22, 0.03, 12), mat(0x555a66), [0, -0.8, 0]); fan.userData.update = (t) => { blades.rotation.z = t * 22; fan.rotation.y = Math.sin(t * 0.4) * 0.5; }; fan.position.set(0, 0, 0); const fp = new THREE.Group(); fp.add(fan); fan.position.y = 1.2; R.place(fp, hw - 0.5, 0, 0.2);
   // radio on a crate, cobweb-ish cables on the ceiling, oil spills; clutter
-  R.g.add(clutter({ x: 0, z: 0.8, w: 5.6, d: 4.2 }, { kind: 'garage', seed: seed + 6, density: dens(0.9, wrecked), avoid: [{ x: 0.9, z: 0, w: 2.1, d: 4.6 }] }));
+  R.g.add(clutter({ x: 0, z: 0.8, w: 5.6, d: 4.2 }, { kind: 'garage', seed: seed + 6, density: dens(0.9, wrecked), avoid: [{ x: 0.9, z: 0.5, w: 2.1, d: 4.0 }] }));
   R.place(DEC.neonSign('GARAGE', '#6ad0ff', 0.8, 0.28, { flicker: 0.25, seed }), -hw + 0.1, 2.5, 1.6, HP);
   return R.finish({ car }, camFor(R, { fov: 56, y: 1.7, ty: 1.2 }));
 }

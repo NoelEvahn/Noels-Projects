@@ -45,7 +45,7 @@ export const mtx = (x = 0, y = 0, z = 0, ry = 0, sx = 1, sy = sx, sz = sx, rx = 
   const o = new THREE.Object3D(); o.position.set(x, y, z); o.rotation.set(rx, ry, rz); o.scale.set(sx, sy, sz); o.updateMatrix(); return o.matrix.clone();
 };
 // heightfield: w x d metres centred on (cx, cz), nx x nz cells. fn(x,z)->height. color(x,z,h,ny,c) sets vertex colour (ny = normal.y, 1 = flat).
-export function terrainGeo({ w, d, nx, nz, fn, color, cx = 0, cz = 0 }) {
+export function terrainGeo({ w, d, nx, nz, fn, color, cx = 0, cz = 0, facet = false }) {
   const g = new THREE.PlaneGeometry(w, d, nx, nz); g.rotateX(-Math.PI / 2); g.translate(cx, 0, cz);
   const p = g.attributes.position;
   for (let i = 0; i < p.count; i++) p.setY(i, fn(p.getX(i), p.getZ(i)));
@@ -55,7 +55,13 @@ export function terrainGeo({ w, d, nx, nz, fn, color, cx = 0, cz = 0 }) {
     for (let i = 0; i < p.count; i++) { c.setRGB(1, 1, 1); color(p.getX(i), p.getZ(i), p.getY(i), n.getY(i), c, n.getX(i), n.getZ(i)); a[i * 3] = c.r; a[i * 3 + 1] = c.g; a[i * 3 + 2] = c.b; }
     g.setAttribute('color', new THREE.BufferAttribute(a, 3));
   }
-  return g;
+  return facet ? facetize(g) : g;
+}
+// low-poly look: unshare vertices, one flat colour per triangle (crisp facets that read at any distance instead of blurry gradients)
+export function facetize(g) {
+  const n = g.toNonIndexed(), c = n.attributes.color;
+  if (c) for (let i = 0; i < c.count; i += 3) { const r = (c.getX(i) + c.getX(i + 1) + c.getX(i + 2)) / 3, gg = (c.getY(i) + c.getY(i + 1) + c.getY(i + 2)) / 3, b = (c.getZ(i) + c.getZ(i + 1) + c.getZ(i + 2)) / 3; for (let k = 0; k < 3; k++) c.setXYZ(i + k, r, gg, b); }
+  n.computeVertexNormals(); return n;
 }
 export const vcMat = (o = {}) => new THREE.MeshStandardMaterial({ vertexColors: true, roughness: o.rough ?? 0.92, metalness: 0, flatShading: !!o.flat, side: o.side ?? THREE.FrontSide, transparent: o.opacity !== undefined && o.opacity < 1, opacity: o.opacity ?? 1, emissive: o.emissive ?? 0x000000, emissiveIntensity: o.emissiveIntensity ?? 1 });
 export function mesh(geo, material, { cast = false, receive = true, pos, ry } = {}) { const m = new THREE.Mesh(geo, material); m.castShadow = cast; m.receiveShadow = receive; if (pos) m.position.set(...pos); if (ry) m.rotation.y = ry; return m; }

@@ -3,13 +3,14 @@ import * as TW from '../props/landmarks_towers.js';
 import * as LT from '../props/landmarks_lattice.js';
 import * as MA from '../props/landmarks_monuments.js';
 import * as MB from '../props/landmarks_monuments_b.js';
+import * as MC from '../props/landmarks_monuments_c.js';
 import { bigStage } from '../props/landmarks_kit.js';
 
 export const ITEMS = [];
 // e: {id,title,note,make(),H (height m),d (cam dist),az (azimuth rad),hy (target height frac of H),el (cam height frac),fov,ground,sky,R (shadow radius)}
 function entry(e) {
   const az = e.az ?? 0.55, hy = (e.hy ?? 0.4) * e.H, d = e.d ?? e.H * 1.75, el = (e.el ?? 0.55) * e.H, fov = e.fov ?? 38;
-  const pos = [Math.sin(az) * d, el, Math.cos(az) * d], target = [e.tx ?? 0, hy, 0];
+  const pos = [Math.sin(az) * d, e.cy ?? el, Math.cos(az) * d], target = [e.tx ?? 0, e.ty ?? hy, e.tz ?? 0];
   const sky = e.sky ?? ['#7fc4f2', '#eaf5ff'];
   ITEMS.push({
     id: 'landmarks_' + e.id, cat: 'landmarks', title: e.title, note: e.note ?? '',
@@ -43,11 +44,19 @@ entry({ id: 'giza', title: 'Pyramids of Giza + Sphinx (139 m)', make: () => MA.p
 entry({ id: 'tajmahal', title: 'Taj Mahal (73 m)', make: () => MA.tajMahal(), H: 73, d: 230, hy: 0.4, az: 0.2, el: 0.5, ground: 0xd8c79a, R: 300 });
 entry({ id: 'christ', title: 'Christ the Redeemer (38 m)', make: () => MA.christRedeemer(), H: 38, d: 100, hy: 0.62, az: 0.3, el: 0.55, ground: 0x5a9a4a, R: 400, sky: ['#6fb8ee', '#fff0d6'] });
 
-entry({ id: 'sydney', title: 'Sydney Opera House (65 m) + Harbour Bridge (134 m)', make: () => MB.sydneyOperaHouse(), H: 65, d: 330, hy: 0.7, az: 0.5, el: 0.9, ground: 0x2f8fc4, R: 600 });
-entry({ id: 'goldengate', title: 'Golden Gate Bridge (227 m towers)', make: () => MB.goldenGate(), H: 227, d: 1500, hy: 0.35, az: 0.5, el: 0.4, ground: 0x2a7fb6, R: 1300 });
+entry({ id: 'sydney', title: 'Sydney Opera House (65 m) + Harbour Bridge (134 m)', make: () => MB.sydneyOperaHouse(), H: 65, d: 380, hy: 0.55, az: -0.45, el: 1.2, ground: 0x2f8fc4, R: 600 });
+entry({ id: 'goldengate', title: 'Golden Gate Bridge (227 m towers)', make: () => MB.goldenGate(), H: 227, d: 900, hy: 0.4, tx: -120, az: 0.45, el: 0.7, ground: 0x2a7fb6, R: 1300 });
 entry({ id: 'towerbridge', title: 'Tower Bridge (65 m)', make: () => MB.towerBridge(), H: 65, d: 260, hy: 0.4, az: 0.5, el: 0.8, ground: 0xb8b4a8, R: 320 });
 entry({ id: 'arc', title: 'Arc de Triomphe (50 m)', make: () => MB.arcDeTriomphe(), H: 50, d: 160, hy: 0.45, az: 0.4, el: 0.7, ground: 0xd4c8aa, R: 300 });
 entry({ id: 'stbasils', title: "St Basil's Cathedral (47 m)", make: () => MB.stBasils(), H: 47, d: 150, hy: 0.45, az: 0.5, el: 0.6, ground: 0xb4b2ac, R: 260 });
 entry({ id: 'kremlin', title: 'Kremlin Spasskaya Tower (71 m)', make: () => MB.kremlinTower(), H: 71, d: 160, hy: 0.5, az: 0.4, el: 0.5, ground: 0xa8a49c, R: 260 });
 entry({ id: 'washington', title: 'Washington Monument (169 m)', make: () => MB.washingtonMonument(), H: 169, d: 360, hy: 0.45, az: 0.4, el: 0.5, ground: 0x5aa84a, R: 400 });
 entry({ id: 'gatewayarch', title: 'Gateway Arch (192 m)', make: () => MB.gatewayArch(), H: 192, d: 380, hy: 0.45, az: 0.45, el: 0.5, ground: 0x5aa84a, R: 450 });
+
+entry({ id: 'greatwall', title: 'Great Wall section (wall ~8 m, towers 12 m)', make: () => MC.greatWall(), H: 8, d: 430, ty: 120, cy: 230, az: 0.3, ground: 0x6aae52, R: 800 });
+entry({ id: 'rushmore', title: 'Mount Rushmore (heads 18 m)', make: () => MC.mountRushmore(), H: 18, d: 230, ty: 198, cy: 215, tx: 12, az: 0.12, ground: 0x6aae52, R: 350 });
+entry({ id: 'stonehenge', title: 'Stonehenge (7.3 m)', make: () => MC.stonehenge(), H: 7.3, d: 48, ty: 2.5, cy: 18, az: 0.7, ground: 0x7fb054, R: 200 });
+entry({ id: 'hoover', title: 'Hoover Dam (221 m)', make: () => MC.hooverDam(), H: 221, d: 560, ty: 100, tz: 100, cy: 250, az: 0.55, ground: 0x9c5e3c, R: 900 });
+entry({ id: 'angkor', title: 'Angkor Wat (65 m)', make: () => MC.angkorWat(), H: 65, d: 520, ty: 30, cy: 250, az: Math.PI + 0.35, ground: 0x4f9a46, R: 700 });
+entry({ id: 'machupicchu', title: 'Machu Picchu (peak ~290 m above site)', make: () => MC.machuPicchu(), H: 290, d: 560, ty: 80, cy: 210, az: 0.3, ground: 0x4f8f48, R: 700 });
+entry({ id: 'hollywood', title: 'Hollywood sign (13.7 m letters)', make: () => MC.hollywoodSign(), H: 13.7, d: 320, ty: 170, cy: 195, az: 0.25, ground: 0xc0aa68, R: 350 });

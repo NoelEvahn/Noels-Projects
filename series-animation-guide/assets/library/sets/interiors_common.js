@@ -74,13 +74,13 @@ export function fairyLights(a, b, { n = 16, sag = 0.18, colors = [0xff5c8a, 0xff
 
 // ---- background people (low-detail rig) ----
 const PEOPLE_COLS = [0xe76f51, 0x2a9d8f, 0xe9c46a, 0x264653, 0xf4a261, 0x7b2cbf, 0x3a86ff, 0xff006e];
-export function sitter(r, { seat = 0.46, ry = 0, typing = false, preset = null, scale = 1, lookAround = 0.25, accs = null } = {}) {
+export function sitter(r, { seat = 0.46, ry = 0, typing = false, preset = null, scale = 0.875, lookAround = 0.25, accs = null } = {}) {
   const p = preset ? makeCharacter({ ...PRESETS[preset], detail: 'low' }) : randomPerson(r, PEOPLE_COLS); const ph = r() * 6, g = new THREE.Group(); g.add(p.root); g.rotation.y = ry; g.scale.setScalar(scale);
   const f = FACES.neutral;
-  g.userData.update = (t) => { CLOCK.t = t; const ex = typing ? { aLf: 0.75 + Math.sin(t * 7 + ph) * 0.04, aRf: 0.75 + Math.sin(t * 8 + ph) * 0.04, aLe: 1.3 + Math.sin(t * 9 + ph) * 0.08, aRe: 1.3 + Math.cos(t * 9 + ph) * 0.08, hx: 0.12, hy: Math.sin(t * 0.4 + ph) * 0.06 } : { hy: Math.sin(t * 0.5 + ph) * lookAround, hx: Math.sin(t * 0.3 + ph) * 0.05 }; p.pose({ ...POSES.sitOn(t, seat), ...ex, plant: true }); p.face(f); };
+  g.userData.update = (t) => { CLOCK.t = t; const ex = typing ? { aLf: 0.75 + Math.sin(t * 7 + ph) * 0.04, aRf: 0.75 + Math.sin(t * 8 + ph) * 0.04, aLe: 1.3 + Math.sin(t * 9 + ph) * 0.08, aRe: 1.3 + Math.cos(t * 9 + ph) * 0.08, hx: 0.12, hy: Math.sin(t * 0.4 + ph) * 0.06 } : { hy: Math.sin(t * 0.5 + ph) * lookAround, hx: Math.sin(t * 0.3 + ph) * 0.05 }; p.pose({ ...POSES.sitOn(t, seat / scale), ...ex, plant: true }); p.face(f); };
   g.userData.update(0.6); g.userData.person = p; return g;
 }
-export function stander(r, { pose = 'idle', preset = null, ry = 0, scale = 1, talk = false } = {}) {
+export function stander(r, { pose = 'idle', preset = null, ry = 0, scale = 0.875, talk = false } = {}) {
   const p = preset ? makeCharacter({ ...PRESETS[preset], detail: 'low' }) : randomPerson(r, PEOPLE_COLS); const ph = r() * 6, g = new THREE.Group(); g.add(p.root); g.rotation.y = ry; g.scale.setScalar(scale);
   g.userData.update = (t) => { CLOCK.t = t; const base = (POSES[pose] ?? POSES.idle)(t + ph); p.pose({ ...base, hy: (base.hy ?? 0) + Math.sin(t * 0.6 + ph) * 0.15 }); p.face(talk ? { ...FACES.neutral, open: 0.3 + 0.3 * Math.abs(Math.sin(t * 7 + ph)) } : FACES.neutral); };
   g.userData.update(0.6); g.userData.person = p; return g;

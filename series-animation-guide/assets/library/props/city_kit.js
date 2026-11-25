@@ -55,7 +55,7 @@ const _m4 = new THREE.Matrix4(), _q4 = new THREE.Quaternion(), _e = new THREE.Eu
 export class Batch {
   constructor() { this.g = new Map(); this.tris = 0; }
   add(geo, color, o = {}) {
-    const key = o.glow ? 'glow' : `${o.rough ?? 0.72}|${o.metal ?? 0}`;
+    const lay = o.layer ?? this.layer ?? 0, key = o.glow ? 'glow' : `${o.rough ?? 0.72}|${o.metal ?? 0}|${lay}`;
     let G = this.g.get(key); if (!G) { G = { pos: [], nor: [], col: [] }; this.g.set(key, G); }
     const p = o.p ?? [0, 0, 0], r = o.r ?? [0, 0, 0], s = o.s ?? 1;
     _e.set(r[0], r[1], r[2]); _q4.setFromEuler(_e);
@@ -73,7 +73,7 @@ export class Batch {
     return this;
   }
   box(w, h, d, color, p, o = {}) { return this.add(gBox(w, h, d), color, { ...o, p }); }
-  rbox(w, h, d, r, color, p, o = {}) { return this.add(gRbox(w, h, d, r), color, { ...o, p }); }
+  rbox(w, h, d, r, color, p, o = {}) { return this.flat ? this.box(w, h, d, color, p, o) : this.add(gRbox(w, h, d, r), color, { ...o, p }); }
   cyl(rt, rb, h, s, color, p, o = {}) { return this.add(gCyl(rt, rb, h, s), color, { ...o, p }); }
   cone(r, h, s, color, p, o = {}) { return this.add(gCone(r, h, s), color, { ...o, p }); }
   sph(r, color, p, o = {}) { return this.add(gSph(r, o.w ?? 12, o.h ?? 8), color, { ...o, p }); }
@@ -102,7 +102,7 @@ export class Batch {
       geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(G.col), 3));
       let m;
       if (k === 'glow') m = new THREE.Mesh(geo, basicVC());
-      else { const [r, me] = k.split('|').map(Number); m = new THREE.Mesh(geo, vcMat(r, me)); }
+      else { const [r, me, ly] = k.split('|').map(Number); m = new THREE.Mesh(geo, ly ? vcMat(r, me, { polygonOffset: true, polygonOffsetFactor: -ly, polygonOffsetUnits: -ly * 4 }) : vcMat(r, me)); }
       m.castShadow = shadow && k !== 'glow'; m.receiveShadow = true;
       parent.add(m);
     }

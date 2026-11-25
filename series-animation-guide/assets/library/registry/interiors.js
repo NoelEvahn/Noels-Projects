@@ -7,6 +7,8 @@ import * as ELEC from '../props/interiors_electronics.js';
 import * as DEC from '../props/interiors_decor.js';
 import { clutter } from '../props/interiors_clutter.js';
 import * as HOME from '../sets/interiors_home.js';
+import * as PUB from '../sets/interiors_public.js';
+import * as WORK from '../sets/interiors_work.js';
 
 export const ITEMS = [];
 const reg = (i) => ITEMS.push(i);
@@ -121,3 +123,16 @@ setItem('interiors_set_livingroom', 'Living room (full): flickering fireplace, s
 setItem('interiors_set_livingroom_wrecked', 'Living room, wrecked 0.9', 'buildLivingRoomFull({wrecked:0.9})', HOME.buildLivingRoomFull, { wrecked: 0.9 });
 setItem('interiors_set_hallway', 'Hallway with staircase: front door with side lights, console table, gallery walls, coat rack, shoes, runner rug, swinging pendants, cat on the stairs', 'buildHallwayStairs() · ' + OPT, HOME.buildHallwayStairs);
 setItem('interiors_set_garage', 'Garage: roll-up door, pegboard + workbench, shelving, car, bike, ladder, tyres, barrels, mower, swinging bulbs, flickering strip light, oscillating fan', 'buildGarage() · ' + OPT, HOME.buildGarage);
+setItem('interiors_set_classroom', 'Classroom: whiteboard with text, 12 student desks + chairs + backpacks, teacher desk, bulletin boards, windows with blinds, flag, globe, fish tank, ceiling fans, ticking clock, pupils', 'buildClassroom({people}) · ' + OPT, PUB.buildClassroom);
+setItem('interiors_set_supermarket', 'Supermarket aisle: two stocked gondolas + wall shelves (instanced products), glowing freezer wall, hanging aisle signs, can pyramid, trolley, wet-floor sign, flickering strip lights', 'buildSupermarketAisle() · camera looks down the aisle · ' + OPT, PUB.buildSupermarketAisle);
+setItem('interiors_set_diner', 'Diner: counter with chrome stools + spinning milkshake mixers + steaming coffee, red booths, jukebox with light bars, neon signs, menu screens, ceiling fans', 'buildDiner() · ' + OPT, PUB.buildDiner);
+setItem('interiors_set_gym', 'Gym: treadmills (moving belts), spin bikes (turning flywheels), dumbbell rack, bench press, swinging punching bag, mirror wall, wall TVs, lockers, fans', 'buildGym() · ' + OPT, PUB.buildGym);
+setItem('interiors_set_cinema', 'Cinema: raked rows of seats (instanced), big screen playing a canvas movie, flickering projector beam through dust, swaying curtains, sconces, pulsing exit signs, audience', 'buildCinema({rows, cols}) · camera behind the audience · ' + OPT, PUB.buildCinema);
+setItem('interiors_set_hospital', 'Hospital room: bed with rails, IV drip (drops fall), heart monitor with scrolling ECG, swaying privacy curtain, wheelchair, wall TV, get-well flowers', 'buildHospitalRoom() · ' + OPT, PUB.buildHospitalRoom);
+setItem('interiors_set_elevator', 'Elevator cab: sliding doors open/close with a hallway beyond, floor indicator counting, mirror wall, button panel with blinking buttons, handrails', 'buildElevator({doorsOpen: null|0..1, people}) · doors auto-cycle · ' + OPT, PUB.buildElevator);
+setItem('interiors_set_office', 'Office with cubicles: 6 partitioned workstations (shared flickering screens: code / charts / desktop), swivelling chairs, printer with blinking LEDs, water cooler, whiteboard, city window, staff typing', 'buildOfficeCubicles() · ' + OPT, WORK.buildOfficeCubicles);
+setItem('interiors_set_newsstudio', 'TV news studio: LED wall (news ticker, map, weather), curved anchor desk with glowing strip, two anchors, panning studio cameras, light grid with spots, blinking ON AIR light', 'buildNewsStudio() · ' + OPT, WORK.buildNewsStudio);
+setItem('interiors_set_missioncontrol', 'NASA-style mission control: raked rows of consoles (24 live screens), giant wall map + telemetry + radar + MET countdown, world clocks, rotating red beacons, staff at work', 'buildMissionControl({rows, perRow}) · camera behind the staff · ' + OPT, WORK.buildMissionControl);
+setItem('interiors_set_secretcontrol', 'Secret military control room: riveted steel walls, blast door, sweeping radar, holo map table with blips, server racks blinking, rotating red beacons, caged lamps, steam vent', 'buildSecretControlRoom() · ' + OPT, WORK.buildSecretControlRoom);
+setItem('interiors_set_secretcontrol_wrecked', 'Secret control room, wrecked 0.8: sparks, rubble, toppled consoles and racks, hole through the wall', 'buildSecretControlRoom({wrecked:0.8})', WORK.buildSecretControlRoom, { wrecked: 0.8 });
+setItem('interiors_set_lab', 'Science lab: benches with bubbling glassware, Bunsen flame, centrifuge, test-tube racks, tesla coil with flickering arcs, skeleton, fume hood with steam, whiteboard, periodic table, rat wheel', 'buildLab() · ' + OPT, WORK.buildLab);

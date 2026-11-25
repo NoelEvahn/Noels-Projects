@@ -17,8 +17,8 @@ export function comet({ R = 1, tailLen = 26, seed = 33, sunDir = [1, -0.12, 0.25
   const r = rng(seed + 3), ice = new THREE.MeshStandardMaterial({ color: 0xe8f4ff, roughness: 0.5, emissive: 0x6aa0d0, emissiveIntensity: 0.2 });
   for (let i = 0; i < 7; i++) { const d = V3(r.range(-1, 1), r.range(-1, 1), r.range(-1, 1)).normalize(), m = new THREE.Mesh(new THREE.SphereGeometry(r.range(0.12, 0.2), 14, 10), ice); m.scale.set(1, 1, 0.4); m.position.set(d.x * 1.25 * 0.93, d.y * 0.9 * 0.93, d.z * 0.93); m.quaternion.setFromUnitVectors(V3(0, 0, 1), d); nuc.add(m); }
   g.add(glowDot(0xbfeaff, R * 5, { k: 0.4, soft: 2.2 }), glowDot(0xffffff, R * 2.6, { k: 0.5, soft: 3 }));
-  const ion = flowSprites({ n: lod === 'low' ? 260 : 700, dir: tail.toArray(), length: R * tailLen * 1.1, spread: R * 0.9, speed: 0.22, size: [R * 0.5, R * 1.7], colors: [0xe8f8ff, 0x6ac8ff, 0x2a60e0], pow: 1.2, soft: 2, seed: seed + 1, spread0: 0.5, op: 0.9 });
-  const side = V3().crossVectors(tail, V3(0, 1, 0)).normalize(); const dust = flowSprites({ n: lod === 'low' ? 260 : 700, dir: tail.toArray(), length: R * tailLen * 0.8, spread: R * 1.7, speed: 0.15, size: [R * 0.7, R * 2.6], colors: [0xfff4d8, 0xf0c890, 0xb08060], curve: side.multiplyScalar(R * tailLen * 0.28).toArray(), pow: 1.3, soft: 1.8, seed: seed + 2, spread0: 0.5, op: 0.75 });
+  const ion = flowSprites({ n: lod === 'low' ? 260 : 700, dir: tail.toArray(), length: R * tailLen * 1.1, spread: R * 0.9, speed: 0.22, size: [R * 0.5, R * 1.7], colors: [0xe8f8ff, 0x6ac8ff, 0x2a60e0], pow: 1.4, soft: 2, seed: seed + 1, spread0: 0.5, op: 0.22 });
+  const side = V3().crossVectors(tail, V3(0, 1, 0)).normalize(); const dust = flowSprites({ n: lod === 'low' ? 260 : 700, dir: tail.toArray(), length: R * tailLen * 0.8, spread: R * 1.7, speed: 0.15, size: [R * 0.7, R * 2.6], colors: [0xfff4d8, 0xf0c890, 0xb08060], curve: side.multiplyScalar(R * tailLen * 0.28).toArray(), pow: 1.5, soft: 1.8, seed: seed + 2, spread0: 0.5, op: 0.2 });
   g.add(ion, dust); ticks.push((t) => { ion.setTime(t); dust.setTime(t); });
   // vents: little jets spurting from the nucleus toward the sun
   const jets = flowSprites({ n: 90, dir: sd.toArray(), length: R * 3.2, spread: R * 0.35, speed: 0.6, size: [R * 0.12, R * 0.3], colors: [0xffffff, 0xcfeaff, 0x7ab0ff], pow: 1.0, seed: seed + 4, spread0: 0.1 }); jets.position.set(R * 0.5 * sd.x, R * 0.4, R * 0.1); g.add(jets); ticks.push((t) => jets.setTime(t));
@@ -28,7 +28,7 @@ export function comet({ R = 1, tailLen = 26, seed = 33, sunDir = [1, -0.12, 0.25
 }
 
 // ---------- shared: tumbling instanced rocks that wrap inside a box ----------
-function rockSet(count, { seed = 1, lod = 'high', size = [1, 5], area = [140, 60, 140], drift = [1.2, 0, -0.8], tumble = 0.5, palette = [0x8a7a6a, 0x6a625c, 0x9a8a78, 0x7a6e66], kinds = 4 } = {}) {
+function rockSet(count, { seed = 1, lod = 'high', size = [1, 5], area = [140, 60, 140], drift = [1.2, 0, -0.8], tumble = 0.5, palette = [0xc0a890, 0xa09488, 0xd0b89c, 0xb0a296], kinds = 4 } = {}) {
   const r = rng(seed), g = new THREE.Group(), meshes = [], per = Math.ceil(count / kinds), data = [];
   const mt = vcMat({ flat: true, rough: 0.95 });
   for (let k = 0; k < kinds; k++) {

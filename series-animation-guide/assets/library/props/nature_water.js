@@ -94,7 +94,7 @@ export function beachShore({ length = 260, depth = 200, seed = 6, palms = 14 } =
 
 // ---------- river ----------
 const riverPath = (s, seed = 1) => ({ x: 22 * Math.sin(s * 0.018 + seed) + 9 * Math.sin(s * 0.047 + 2 + seed), z: -s });
-function riverMat(U, color, speed) {
+export function riverMat(U, color, speed) {
   const m = new THREE.MeshStandardMaterial({ color, roughness: 0.3, vertexColors: true, transparent: true, opacity: 0.95, side: THREE.DoubleSide, emissive: 0x1a78a0, emissiveIntensity: 0.55 });
   m.onBeforeCompile = (sh) => {
     sh.uniforms.uT = U;
@@ -107,6 +107,13 @@ function riverMat(U, color, speed) {
   };
   m.customProgramCacheKey = () => 'river' + speed; return m;
 }
+export function ribbonGeo(C, length, width, y = 0, N = 190, M = 8) {
+  const pos = [], aS = [], aV = [], aT = [], cs = [], idx = [];
+  for (let i = 0; i <= N; i++) { const s = i / N * length, a = C(s), b = C(s + 1), tx = b.x - a.x, tz = b.z - a.z, tl = Math.hypot(tx, tz), nx = -tz / tl, nz = tx / tl;
+    for (let j = 0; j <= M; j++) { const v = j / M * 2 - 1, wd = width * 0.52 * (1 + 0.12 * Math.sin(s * 0.05)); pos.push(a.x + nx * v * wd, y - 0.12, a.z + nz * v * wd); aS.push(s); aV.push(v); aT.push(tx / tl, tz / tl); const c = new THREE.Color(0x3fb0d8).lerp(new THREE.Color(0x1a7ab0), 1 - v * v).lerp(new THREE.Color(0x9ee8e8), Math.pow(Math.abs(v), 4) * 0.7); cs.push(c.r, c.g, c.b); }
+    if (i < N) for (let j = 0; j < M; j++) { const q = i * (M + 1) + j; idx.push(q, q + M + 1, q + 1, q + 1, q + M + 1, q + M + 2); } }
+  const rg = new THREE.BufferGeometry(); rg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); rg.setAttribute('aS', new THREE.Float32BufferAttribute(aS, 1)); rg.setAttribute('aV', new THREE.Float32BufferAttribute(aV, 1)); rg.setAttribute('aTan', new THREE.Float32BufferAttribute(aT, 2)); rg.setAttribute('color', new THREE.Float32BufferAttribute(cs, 3)); rg.setIndex(idx); return rg;
+}
 export function river({ length = 340, width = 16, seed = 3, speed = 2.2, trees = 120, y = 0, w = 300 } = {}) {
   const g = new THREE.Group(), U = uni(0), r = rng(seed), C = (s) => riverPath(s, seed);
   const bankD = (x, z) => { const c = C(-z); return Math.abs(x - c.x); };
@@ -114,12 +121,7 @@ export function river({ length = 340, width = 16, seed = 3, speed = 2.2, trees =
   const col = (x, z, h, ny, c) => { const d = bankD(x, z); c.set(0x5aa844).lerp(new THREE.Color(0x3f8a3a), sstep(10, 60, d) * 0.8).lerp(new THREE.Color(0xc2b080), (1 - sstep(width * 0.5, width * 0.5 + 2.5, d)) * 0.9).lerp(new THREE.Color(0x7a8a6a), (1 - ny) * 3); c.multiplyScalar(0.9 + 0.2 * fbm(x * 0.2, z * 0.2, seed, 2)); };
   const terr = terrainGeo({ w, d: length + 120, nx: 150, nz: 240, cx: 0, cz: -length / 2 + 60, fn: hf, color: col });
   const tm = new THREE.Mesh(terr, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95 })); tm.receiveShadow = true; g.add(tm);
-  // water ribbon
-  const N = 190, M = 8, pos = [], aS = [], aV = [], aT = [], cs = [], idx = [];
-  for (let i = 0; i <= N; i++) { const s = i / N * length, a = C(s), b = C(s + 1), tx = b.x - a.x, tz = b.z - a.z, tl = Math.hypot(tx, tz), nx = -tz / tl, nz = tx / tl;
-    for (let j = 0; j <= M; j++) { const v = j / M * 2 - 1, wd = width * 0.52 * (1 + 0.12 * Math.sin(s * 0.05)); pos.push(a.x + nx * v * wd, y - 0.12, a.z + nz * v * wd); aS.push(s); aV.push(v); aT.push(tx / tl, tz / tl); const c = new THREE.Color(0x3fb0d8).lerp(new THREE.Color(0x1a7ab0), 1 - v * v).lerp(new THREE.Color(0x9ee8e8), Math.pow(Math.abs(v), 4) * 0.7); cs.push(c.r, c.g, c.b); }
-    if (i < N) for (let j = 0; j < M; j++) { const q = i * (M + 1) + j; idx.push(q, q + M + 1, q + 1, q + 1, q + M + 1, q + M + 2); } }
-  const rg = new THREE.BufferGeometry(); rg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); rg.setAttribute('aS', new THREE.Float32BufferAttribute(aS, 1)); rg.setAttribute('aV', new THREE.Float32BufferAttribute(aV, 1)); rg.setAttribute('aTan', new THREE.Float32BufferAttribute(aT, 2)); rg.setAttribute('color', new THREE.Float32BufferAttribute(cs, 3)); rg.setIndex(idx);
+  const rg = ribbonGeo(C, length, width, y);
   const rm = new THREE.Mesh(rg, riverMat(U, 0xffffff, speed)); rm.frustumCulled = false; g.add(rm);
   // foam streaks gliding downstream on the surface
   const SN = 150, sg = new THREE.PlaneGeometry(1, 1); sg.rotateX(-Math.PI / 2);

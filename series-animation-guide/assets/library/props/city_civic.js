@@ -154,7 +154,7 @@ export function policeStation({ w = 22, d = 14, floors = 3, seed = 10, lod = 'hi
   b.profile([[-4.6, 0], [4.6, 0], [0, 1.5]], 0.1, 0.02, 0x4a586e, [0, 9.5, pz + 4.8]);
   for (let i = 0; i < 5; i++) b.box(11.2 - i * 0.3, 0.28, 3.6 + i * 0.5, 0xc9c5ba, [0, 0.14 + (4 - i) * 0.0 + 0.0 * i, pz + 1.8 + i * 0.5 + 1.0]);
   b.box(4.4, 4.0, 0.2, 0x2a2018, [0, 2.4, pz + 0.1]); b.box(0.1, 4.0, 0.24, 0xc9a24a, [0, 2.4, pz + 0.12]);
-  const ps = signMesh('POLICE', 7.4, 1.0, { bg: '#1a2a52', fg: '#ffffff', border: '#79b6ff' }); ps.position.set(0, 7.0, pz + 0.12); g.add(ps);
+  const ps = signMesh('POLICE', 9.4, 0.8, { bg: '#1a2a52', fg: '#ffffff', border: '#79b6ff' }); ps.position.set(0, 9.0, pz + 4.84); g.add(ps);
   // badge star (geometry, glows)
   const star = []; for (let i = 0; i < 10; i++) { const a = i / 10 * TAU, r = i % 2 ? 0.55 : 1.3; star.push([Math.sin(a) * r, Math.cos(a) * r]); }
   const sgeo = profileGeo(star, 0.2, 0.04); b.add(sgeo, 0xf6c235, { p: [0, 6.2, pz + 4.9], metal: 0.5, rough: 0.35 });
@@ -274,7 +274,7 @@ export function factory({ w = 42, d = 26, seed = 12, lod = 'high', sidewalk = tr
     b.cyl(1.1, 2.0, h, 14, brick, [x, h / 2, z]); for (let i = 0; i < 4; i++) b.cyl(1.08 + (1 - i / 4) * 0.4 + 0.1, 1.08 + (1 - i / 4) * 0.4 + 0.1, 0.5, 14, i % 2 ? 0xf4f1e8 : 0xd9392f, [x, h - 1.6 - i * 1.8, z]);
     b.cyl(1.35, 1.1, 0.8, 14, 0x3a3f4a, [x, h + 0.2, z]); b.add(new THREE.TorusGeometry(1.3, 0.08, 4, 14), 0x6a7380, { p: [x, h + 0.65, z], r: [Math.PI / 2, 0, 0] });
     for (let i = 0; i < 8; i++) b.box(0.3, 0.05, 0.1, 0x6a7380, [x + 1.8, 2.2 + i * (h - 3) / 8, z + 0.0]);
-    const sm = plume({ n: 12, rise: 26, r0: 0.9, r1: 3.2, period: 9 + k * 1.5, drift: [4.5, 0, 1.5], color: k === 2 ? 0xdedee2 : 0x9a9aa4, seed: k + 3, spread: 0.12 }); sm.position.set(x, h + 0.8, z); g.add(sm); S.A.on(sm.userData.update);
+    const sm = plume({ n: 30, rise: 24, r0: 1.4, r1: 4.2, period: 10 + k * 1.5, drift: [3.5, 0, 1.2], color: k === 2 ? 0xe4e4e8 : 0xa8a8b2, seed: k + 3, spread: 0.2 }); sm.position.set(x, h + 0.8, z); g.add(sm); S.A.on(sm.userData.update);
   });
   // tanks + silo + pipes + gantry
   for (const [x, z, r, h, c] of [[w / 2 + 5, 2, 3.2, 12, 0xd8dce2], [w / 2 + 5, -6, 2.6, 9, 0xd8dce2], [w / 2 + 11, -2, 2.2, 15, 0xf6c235]]) { b.cyl(r, r, h, 18, c, [x, h / 2, z], { metal: 0.3, rough: 0.5 }); b.sph(r, c, [x, h, z], { w: 14, h: 6, metal: 0.3 }); for (let i = 1; i < 4; i++) b.add(new THREE.TorusGeometry(r + 0.02, 0.06, 4, 18), 0x6a7380, { p: [x, i * h / 4, z], r: [Math.PI / 2, 0, 0] }); b.cyl(0.05, 0.05, h + 2, 6, 0x59616d, [x + r - 0.3, h / 2 + 1, z + r - 0.3], { }); }
@@ -394,7 +394,7 @@ export function stadium({ seed = 14, crowd = 'full', home = '#d9392f', away = '#
   const bobM = bobMaterial(0xffffff, { amp: 0.4, rate: 5.0, share: 0.5 });
   const fm = new THREE.InstancedMesh(gBox(0.55, 0.9, 0.4), bobM, fans.length); fm.frustumCulled = false; fm.castShadow = false; const oo = new THREE.Object3D();
   fans.forEach((f, i) => { oo.position.set(...f.p); oo.rotation.set(...f.r); oo.scale.set(1, 1, 1); oo.updateMatrix(); fm.setMatrixAt(i, oo.matrix); fm.setColorAt(i, new THREE.Color(f.c)); }); fm.instanceMatrix.needsUpdate = true; g.add(fm);
-  const hm = new THREE.InstancedMesh(gSph(0.22, 7, 5), (() => { const m = bobMaterial(0xffffff, { amp: 0.4, rate: 5.0, share: 0.5 }); return m; })(), fans.length); hm.frustumCulled = false; hm.castShadow = false;
+  const hm = new THREE.InstancedMesh(gSph(0.22, 5, 3), (() => { const m = bobMaterial(0xffffff, { amp: 0.4, rate: 5.0, share: 0.5 }); return m; })(), fans.length); hm.frustumCulled = false; hm.castShadow = false;
   const skin = [0xf2b98f, 0xd99a6c, 0x9b6338, 0xf8d5b8, 0x6b4226]; fans.forEach((f, i) => { oo.position.set(f.p[0], f.p[1] + 0.62, f.p[2]); oo.rotation.set(0, 0, 0); oo.scale.setScalar(1); oo.updateMatrix(); hm.setMatrixAt(i, oo.matrix); hm.setColorAt(i, new THREE.Color(skin[i % 5])); }); g.add(hm);
   // floodlight towers
   const lampPanels = [];

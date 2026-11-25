@@ -96,13 +96,13 @@ export function nebula({ palette = 'orion', R = 100, n = 800, seed = 1, flat = 0
     cp.push([p.x * R, p.y * R * flat, p.z * R * 0.85, d, fbm3(p.x * 1.2 + off2, p.y * 1.2, p.z * 1.2, 3, 5)]);
   }
   const nn = cp.length, P = new Float32Array(nn * 3), C = new Float32Array(nn * 3), S = new Float32Array(nn);
-  cp.forEach((q, i) => { const u = Math.min(1, q[3] * 1.6), hue = q[4]; const lo = mix3(cs[0], cs[1], Math.min(1, hue * 1.5)), c = mix3(lo, cs[2], Math.max(0, u - 0.55) * 1.6); const b = (0.07 + 0.14 * u) * bright;
+  cp.forEach((q, i) => { const u = Math.min(1, q[3] * 1.6), hue = q[4]; const lo = mix3(cs[0], cs[1], Math.min(1, hue * 1.5)), c = mix3(lo, cs[2], Math.max(0, u - 0.55) * 1.6); const b = (0.1 + 0.2 * u) * bright;
     P.set([q[0], q[1], q[2]], i * 3); C.set([c[0] * b, c[1] * b, c[2] * b], i * 3); S[i] = R * (0.16 + 0.26 * r()); });
   const posCode = `vec3 ph = vec3(aPh * 31.0, aPh * 57.0, aPh * 83.0); P += ${(R * 0.03 * drift).toFixed(3)} * vec3(sin(uTime * 0.17 + ph.x), cos(uTime * 0.13 + ph.y), sin(uTime * 0.11 + ph.z)); col *= 1.0 + 0.18 * sin(uTime * 0.35 + ph.x * 3.0);`;
   const cloud = sprites(P, C, S, { atten: true, soft: 1.7, max: 300, seed: seed + 3, pos: posCode }); g.add(cloud); ticks.push((t) => cloud.setTime(t));
-  if (dark) { const m = Math.round(nn * 0.14), P2 = new Float32Array(m * 3), C2 = new Float32Array(m * 3), S2 = new Float32Array(m);
-    for (let i = 0; i < m; i++) { const q = cp[Math.floor(r() * nn)]; P2.set([q[0] * 0.8 + r.range(-1, 1) * R * 0.1, q[1] * 0.8 + R * 0.04, q[2] * 0.8 + R * 0.25], i * 3); const c = mix3([0.01, 0.01, 0.03], cs[0], 0.18); C2.set(c, i * 3); S2[i] = R * r.range(0.12, 0.28); }
-    const d = sprites(P2, C2, S2, { atten: true, soft: 1.6, additive: false, op: 0.55, max: 300, seed: seed + 8, pos: posCode }); g.add(d); ticks.push((t) => d.setTime(t)); }
+  if (dark) { const m = Math.round(nn * 0.05), P2 = new Float32Array(m * 3), C2 = new Float32Array(m * 3), S2 = new Float32Array(m);
+    for (let i = 0; i < m; i++) { const q = cp[Math.floor(r() * nn)]; P2.set([q[0] * 0.8 + r.range(-1, 1) * R * 0.1, q[1] * 0.8 + R * 0.04, q[2] * 0.8 + R * 0.25], i * 3); const c = mix3([0.01, 0.01, 0.03], cs[0], 0.18); C2.set(c, i * 3); S2[i] = R * r.range(0.2, 0.4); }
+    const d = sprites(P2, C2, S2, { atten: true, soft: 1.6, additive: false, op: 0.5, max: 300, seed: seed + 8, pos: posCode }); g.add(d); ticks.push((t) => d.setTime(t)); }
   { const m = stars, P3 = new Float32Array(m * 3), C3 = new Float32Array(m * 3), S3 = new Float32Array(m);
     for (let i = 0; i < m; i++) { const q = cp[Math.floor(r() * nn)]; P3.set([q[0] + r.range(-1, 1) * R * 0.05, q[1], q[2] + R * 0.02], i * 3); const c = mix3(rgb(P0.star), [1, 1, 1], r() * 0.6); const b = r.range(0.5, 1); C3.set([c[0] * b, c[1] * b, c[2] * b], i * 3); S3[i] = r() < 0.12 ? r.range(12, 22) : r.range(2.2, 4.5); }
     const st = sprites(P3, C3, S3, { soft: 3.5, tw: 0.35, defines: { SPIKES: '' }, seed: seed + 12 }); g.add(st); ticks.push((t) => st.setTime(t)); }
@@ -120,9 +120,9 @@ export function spiralGalaxy({ R = 60, n = 9000, arms = 2, twist = 3.4, seed = 8
   const gauss = () => (r() + r() + r() - 1.5) * 0.8165;
   const nArm = Math.round(n * 0.62), nBulge = Math.round(n * 0.22), nBar = bar ? Math.round(n * 0.08) : 0, nField = n - nArm - nBulge - nBar;
   for (let i = 0; i < nArm; i++) {
-    const t = Math.pow(r(), 0.75), rad = R * (0.1 + 0.9 * t), arm = i % arms, th = arm * TAU / arms + twist * Math.log(1 + 5 * rad / R) / Math.log(6) * 1.4 + gauss() * (0.3 - 0.12 * t);
+    const t = Math.pow(r(), 0.75), rad = R * (0.1 + 0.9 * t), arm = i % arms, th = arm * TAU / arms + twist * Math.log(1 + 5 * rad / R) / Math.log(6) * 1.4 + gauss() * (0.5 - 0.2 * t);
     const c = mix3(mix3(cc, ca, Math.min(1, t * 1.4)), [1, 1, 1], r() * 0.25); const knot = r() < 0.07, cx = knot ? mix3(ch, [1, 1, 1], 0.2) : c, b = knot ? r.range(0.7, 1) : r.range(0.35, 0.95);
-    push(rad, th, gauss() * R * 0.018 * (1 - 0.5 * t), [cx[0] * b, cx[1] * b, cx[2] * b], R * (knot ? r.range(0.035, 0.06) : r.range(0.008, 0.022)) * (knot ? 1 : 1));
+    push(rad, th, gauss() * R * 0.03 * (1 - 0.5 * t), [cx[0] * b, cx[1] * b, cx[2] * b], R * (knot ? r.range(0.035, 0.06) : r.range(0.008, 0.022)) * (knot ? 1 : 1));
   }
   for (let i = 0; i < nField; i++) { const rad = R * Math.pow(r(), 0.8) * 1.0, th = r() * TAU, c = mix3(cc, ca, rad / R), b = r.range(0.15, 0.45); push(rad, th, gauss() * R * 0.04, [c[0] * b, c[1] * b, c[2] * b], R * r.range(0.007, 0.016)); }
   for (let i = 0; i < nBulge; i++) { const rr = Math.abs(gauss()) * R * 0.16, th = r() * TAU, c = mix3(cc, [1, 0.95, 0.85], r() * 0.5), b = r.range(0.4, 1); push(rr, th, gauss() * R * 0.07 * (1 - rr / (R * 0.4)), [c[0] * b, c[1] * b, c[2] * b], R * r.range(0.01, 0.03)); }
@@ -130,9 +130,9 @@ export function spiralGalaxy({ R = 60, n = 9000, arms = 2, twist = 3.4, seed = 8
   const m = arr.length, P = new Float32Array(m * 3), C = new Float32Array(m * 3), S = new Float32Array(m), O = new Float32Array(m * 4);
   arr.forEach((q, i) => { C.set(q[3], i * 3); S[i] = q[4]; O.set([q[1], q[5], q[0], q[2]], i * 4); });
   const disc = sprites(P, C, S, { orbit: O, atten: true, soft: 2.4, max: 90, seed: seed + 2 }); g.add(disc); ticks.push((t) => disc.setTime(t));
-  if (dust) { const k = Math.round(n * 0.06), P2 = new Float32Array(k * 3), C2 = new Float32Array(k * 3), S2 = new Float32Array(k), O2 = new Float32Array(k * 4);
-    for (let i = 0; i < k; i++) { const t = Math.pow(r(), 0.8), rad = R * (0.14 + 0.8 * t), arm = i % arms, th = arm * TAU / arms + twist * Math.log(1 + 5 * rad / R) / Math.log(6) * 1.4 - 0.2 + gauss() * 0.08; O2.set([th, spin * (0.5 + 0.5 * (1 - rad / R * 0.8)), rad, R * 0.012 * gauss()], i * 4); C2.set([0.03, 0.02, 0.05], i * 3); S2[i] = R * r.range(0.03, 0.07); }
-    const d = sprites(P2, C2, S2, { orbit: O2, atten: true, soft: 1.5, additive: false, op: 0.6, max: 120, seed: seed + 9 }); g.add(d); ticks.push((t) => d.setTime(t)); }
+  if (dust) { const k = Math.round(n * 0.025), P2 = new Float32Array(k * 3), C2 = new Float32Array(k * 3), S2 = new Float32Array(k), O2 = new Float32Array(k * 4);
+    for (let i = 0; i < k; i++) { const t = Math.pow(r(), 0.8), rad = R * (0.14 + 0.8 * t), arm = i % arms, th = arm * TAU / arms + twist * Math.log(1 + 5 * rad / R) / Math.log(6) * 1.4 - 0.2 + gauss() * 0.08; O2.set([th, spin * (0.5 + 0.5 * (1 - rad / R * 0.8)), rad, R * 0.012 * gauss()], i * 4); C2.set([0.03, 0.02, 0.05], i * 3); S2[i] = R * r.range(0.05, 0.1); }
+    const d = sprites(P2, C2, S2, { orbit: O2, atten: true, soft: 1.5, additive: false, op: 0.28, max: 120, seed: seed + 9 }); g.add(d); ticks.push((t) => d.setTime(t)); }
   const halo = glowDot(core, R * 0.55, { k: 0.5, soft: 2.0, max: 512 }); g.add(halo); const halo2 = glowDot(armCol, R * 2.3, { k: 0.06, soft: 1.2, max: 700 }); g.add(halo2);
   g.rotation.x = tilt; g.userData = { radiusUnits: R, arms, stars: m, note: 'inner stars orbit faster than outer ones; 1 unit = 1 unit (scale as you like)' };
   return addTicks(g, ticks);

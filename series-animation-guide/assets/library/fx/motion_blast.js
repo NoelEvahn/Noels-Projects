@@ -99,7 +99,7 @@ export function shockwave({ mode = 'ground', radius = 8, color = 0xfff4dc, heigh
     const set = (age) => {
       const k = clamp(age / dur), e = 1 - Math.pow(1 - k, 3), rr = Math.max(0.01, R * e), fade = 1 - k * k;
       g.visible = age >= 0 && age < dur + 0.8;
-      lip.scale.set(rr, height * (0.3 + 0.7 * Math.sin(Math.min(1, k * 2.2) * Math.PI / 2)) * (1 - 0.55 * k), rr); lip.position.y = lip.scale.y / 2; lipM.uniforms.uA.value = fade * 0.95;
+      lip.scale.set(rr, Math.max(height, R * 0.22) * (0.3 + 0.7 * Math.sin(Math.min(1, k * 2.2) * Math.PI / 2)) * (1 - 0.55 * k), rr); lip.position.y = lip.scale.y / 2; lipM.uniforms.uA.value = fade * 0.95;
       ring.scale.set(rr, rr, rr); ringM.opacity = fade; disk.scale.setScalar(rr); diskM.opacity = 0.45 * fade;
       for (let i = 0; i < ND; i++) {
         const p = P[i], a = age - 0.03;
